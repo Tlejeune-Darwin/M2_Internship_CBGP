@@ -213,21 +213,25 @@ copy_numbers = copy_number_matrix(mut_ts)
 # First line display after verification
 print("Extract of copy number matrix :") # PROMPT : can be ignored
 print(copy_numbers[:5])  # Display 5 first sites - PROMPT : can be ignored
+print(f"Shape of copy_numbers matrix: {copy_numbers.shape}")  # PROMPT : can be ignored
 
 output_gen_file = os.path.join(OUTPUT_DIR, "simulation_data.gen")
 
 # Récupérer le nombre d'individus et de loci
+copy_numbers = copy_numbers.T
 num_individuals, num_loci = copy_numbers.shape
+loci_names = " ".join([f"Locus_{i+1}" for i in range(num_loci)])
 
 with open(output_gen_file, "w") as f:
-    f.write(f"{num_individuals} {num_loci}\n")  # Première ligne : nb individus & loci
+    f.write("Simulated GENEPOP Data \n")  # Première ligne : nb individus & loci
+    f.write(loci_names + "\n")
+    f.write("pop\n")
+
     for i in range(num_individuals):
-        genotype_line = " ".join(map(str, copy_numbers[i]))  # Convertir les allèles
+        genotype_line = ", " + " ".join(f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i, j]):03}" for j in range(num_loci))  # Convertir les allèles
         f.write(f"Indiv_{i+1} {genotype_line}\n")  # Ajouter ID individu + génotypes
 
-print(f"Fichier .gen corrigé : {output_gen_file}")
-
-
+print(f".gen file generated : {output_gen_file}") #PROMPT : can be ignored
 
                                                     # ---___---___---___--- Tree Display ---___---___---___--- #
 
