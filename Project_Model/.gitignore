@@ -1,0 +1,28 @@
+# 📂 Ignorer les fichiers volumineux et temporaires
+*.csv
+*.tsv
+*.log
+*.tmp
+*.gz
+*.zip
+*.tar
+
+# 📂 Ignorer les fichiers de simulation SLiM
+*.trees
+*.out
+
+# 📂 Ignorer les dossiers de résultats temporaires
+results/raw/
+external_data/
+
+# 📂 Ignorer les fichiers spécifiques à Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 📂 Ignorer les fichiers spécifiques à R
+*.Rhistory
+*.Rdata
+
+# 📂 Ignorer les fichiers de notebook non nettoyés
+notebooks/.ipynb_checkpoints/
