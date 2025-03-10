@@ -27,13 +27,13 @@ print(f"Base directory : {BASE_DIR}") # PROMPT : can be ignored
 print(f"SLiM script : {SLIM_SCRIPT}") # PROMPT : can be ignored
 print(f"Output directory : {OUTPUT_DIR}") # PROMPT : can be ignored
 
-# Définir le chemin du fichier log
+# Define log output path
 log_file_path = os.path.join(OUTPUT_DIR, "simulation_output.log")
 
-# Ouvrir le fichier log en mode écriture
+# Write the output inside de log file
 log_file = open(log_file_path, "w")
 
-# Rediriger la sortie standard (console) vers le fichier log
+# Commands and prompts in console will be written in the log file
 sys.stdout = log_file
 
                                                     # ---___---___---___--- Parameters ---___---___---___--- #
@@ -217,19 +217,20 @@ print(f"Shape of copy_numbers matrix: {copy_numbers.shape}")  # PROMPT : can be 
 
 output_gen_file = os.path.join(OUTPUT_DIR, "simulation_data.gen")
 
-# Récupérer le nombre d'individus et de loci
-copy_numbers = copy_numbers.T
-num_individuals, num_loci = copy_numbers.shape
-loci_names = " ".join([f"Locus_{i+1}" for i in range(num_loci)])
+# Get individual number and loci
+copy_numbers = copy_numbers.T # T to transpose line and column 
+num_individuals, num_loci = copy_numbers.shape 
+loci_names = " ".join([f"Locus_{i+1}" for i in range(num_loci)]) # Create the list of loci in a specific combination
 
+# To make Neestimator work, it is required to write the log file in a very specific way (For GENEPOP format, it is different in Fstat format) 
 with open(output_gen_file, "w") as f:
-    f.write("Simulated GENEPOP Data \n")  # Première ligne : nb individus & loci
-    f.write(loci_names + "\n")
-    f.write("pop\n")
+    f.write("Simulated GENEPOP Data \n")  # Title
+    f.write(loci_names + "\n") # Loci number
+    f.write("pop\n") # Population name
 
     for i in range(num_individuals):
-        genotype_line = ", " + " ".join(f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i, j]):03}" for j in range(num_loci))  # Convertir les allèles
-        f.write(f"Indiv_{i+1} {genotype_line}\n")  # Ajouter ID individu + génotypes
+        genotype_line = ", " + " ".join(f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i, j]):03}" for j in range(num_loci))  # Convert the alleles and double it (diploid) to get the genotype of each individual
+        f.write(f"Indiv_{i+1} {genotype_line}\n")  # Individual ID + their genotype
 
 print(f".gen file generated : {output_gen_file}") #PROMPT : can be ignored
 
