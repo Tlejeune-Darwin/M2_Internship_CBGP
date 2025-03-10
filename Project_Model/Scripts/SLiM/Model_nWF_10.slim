@@ -1,40 +1,40 @@
 initialize() {
-    defineConstant("popSize", 200);     // Taille de la population
-    defineConstant("generations", 10);  // Nombre de générations
-    defineConstant("sampleSize", 20);   // Nombre d'individus à échantillonner
+    defineConstant("popSize", 200);     // Population size
+    defineConstant("generations", 100);  // Number of generations of the simulation
+    defineConstant("sampleSize", 50);   // Number of individuals to sample
 
-    initializeSLiMModelType("nonWF");   // Modèle Non Wright-Fisher
+    initializeSLiMModelType("nonWF");   // Non Wright-Fisher Model
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
     initializeGenomicElementType("g1", m1, 9);
     initializeGenomicElement(g1, 0, 9);
     initializeRecombinationRate(0.5);
 
-    // 🔹 Initialisation correcte de l’enregistrement des arbres
+    // Initialization of tree sequence recording
     initializeTreeSeq(retainCoalescentOnly=F);
 }
 
 1 early() {
     catn("🔹 Simulation started with seed: " + getSeed());
-    sim.addSubpop("p1", popSize); // 🔹 Création de la population
+    sim.addSubpop("p1", popSize); // Pop creation
 }
 
 1 late() {
-    catn("🔹 Sélection et enregistrement des individus de la 1ère génération :");
+    catn("Selecting and saving individuals in the first generation :");
 
-    // 🔹 Vérifier qu'on a bien des individus disponibles
+    // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sampleSize) {
         sampled_first_gen = sample(p1.individuals, sampleSize, replace=F);
 
-        // 🔹 Marquer ces individus comme "Remembered" (permanent)
+        // Mark this individuals as "Remembered"
         for (ind in sampled_first_gen) {
             sim.treeSeqRememberIndividuals(ind, permanent=T);
         }
 
-        catn("  ➝ Individus retenus (Remembered - 1ère génération) : "); 
+        catn("  ➝ Remembered individuals (Remembered - first generation) : "); 
 		  catn(sampled_first_gen);
     } else {
-        catn("⚠️ Pas assez d'individus pour l'échantillonnage de la 1ère génération !");
+        catn("Not enough individuals for the first sample");
     }
 }
 
@@ -50,33 +50,33 @@ reproduction() {
 }
 
 early() {
-    // 🔹 Supprime les individus âgés pour éviter la surpopulation
+    // Individuals with an age of more than 1 tick are deleted from the pool
     inds = p1.individuals;
     inds[inds.age > 0].fitnessScaling = 0.0;
 }
 
 9 late() {
-    catn("🔹 Sélection et enregistrement des individus de la dernière génération :");
+    catn("Selecting and saving individuals in the last generation :");
 
-    // 🔹 Vérifier qu'on a bien des individus disponibles
+    // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sampleSize) {
         sampled_last_gen = sample(p1.individuals, sampleSize, replace=F);
 
-        // 🔹 Marquer ces individus comme "Retained" (temporaire)
+        // Mark this individuals as "Retained"
         for (ind in sampled_last_gen) {
             sim.treeSeqRememberIndividuals(ind, permanent=F);
         }
 
-        catn("  ➝ Individus retenus (Retained - Dernière génération) : ");
+        catn(" Retained individuals (Retained - last generation) : ");
 		  catn(sampled_last_gen);
     } else {
-        catn("⚠️ Pas assez d'individus pour l'échantillonnage de la dernière génération !");
+        catn("Not enough individuals for the last sample");
     }
 
-    // 🔹 Assurer que le dossier output_trees existe
+    // Make sure the file output exists
     system("mkdir -p output_trees");
 
-    // 🔹 Sauvegarde du fichier .trees
+    // Save .trees file
     sim.treeSeqOutput("C:/Users/poupe/OneDrive/Bureau/Dossier_cours/M2_Semestre_1/Stage/SLiM/Models/output_trees/simulation.trees");
-    catn("✅ Données enregistrées dans : output_trees/simulation.trees");
+    catn("Data saved in : output_trees/simulation.trees");
 }
