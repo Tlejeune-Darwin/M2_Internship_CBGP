@@ -1,0 +1,135 @@
+initialize() {
+
+    // 📂 Lire le fichier de configuration SLiM-compatible
+    defineGlobal("config_data", readFile(config_file));
+
+    // 📌 Définir les paramètres en lisant le fichier
+    config_lines = strsplit(paste(config_data, sep=""), "\n");
+    defineGlobal("params", Dictionary());
+	 output_file = paste(params.getValue("output_folder"), "/slim_results.txt", sep="");
+
+
+    for (line in config_lines) {
+        if (line != "") {
+            parts = strsplit(line, "=");
+            key = parts[0];
+            value = parts[1];
+
+            // Convertir les valeurs si nécessaire
+            if (size(strsplit(value, ",")) > 1) {
+                value = strsplit(value, ","); // Convertir en liste si c'est un tableau
+            } else if (isFloat(value)) {
+                value = asFloat(value);
+            } else if (isInteger(value)) {
+                value = asInteger(value);
+            }
+
+            params.setValue(key, value);
+        }
+    }
+
+    // 📌 Récupérer les valeurs
+    defineGlobal("pop_size", params.getValue("pop_size"));
+    defineGlobal("num_loci", params.getValue("num_loci"));
+    defineGlobal("num_generations", asInteger(params.getValue("num_generations")));
+    defineGlobal("output_folder", params.getValue("output_folder"));
+    defineGlobal("sample_sizes", params.getValue("sample_sizes"));
+
+   defineConstant("popSize", 10000);     // Population size
+   defineConstant("generations", 100);  // Number of generations of the simulation
+   defineConstant("sampleSize", 100);   // Number of individuals to sample
+
+    initializeSLiMModelType("nonWF");   // Non Wright-Fisher Model
+    initializeMutationRate(0);
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeGenomicElementType("g1", m1, 29);
+    initializeGenomicElement(g1, 0, 29);
+    initializeRecombinationRate(0.5);
+
+    // Initialization of tree sequence recording
+    initializeTreeSeq(retainCoalescentOnly=F);
+}
+
+1 early() {
+    catn("🔹 Simulation started with seed: " + getSeed());
+    sim.addSubpop("p1", popSize); // Pop creation
+}
+
+1 late() {
+    catn("Selecting and saving individuals in the first generation :");
+
+    // Verify that there is enough individuals to sample
+    if (size(p1.individuals) >= sampleSize) {
+        sampled_first_gen = sample(p1.individuals, sampleSize, replace=F);
+
+        // Mark this individuals as "Remembered"
+        for (ind in sampled_first_gen) {
+            sim.treeSeqRememberIndividuals(ind, permanent=T);
+        }
+
+        catn("  ➝ Remembered individuals (Remembered - first generation) : "); 
+		  catn(sampled_first_gen);
+    } else {
+        catn("Not enough individuals for the first sample");
+    }
+}
+
+reproduction() {
+    K = popSize;
+    parents1 = p1.sampleIndividuals(K, replace=F);
+    parents2 = p1.sampleIndividuals(K, replace=F);
+
+    for (i in seqLen(K))
+        p1.addCrossed(parents1[i], parents2[i]);
+
+    self.active = 0;
+}
+
+early() {
+    // Individuals with an age of more than 1 tick are deleted from the pool
+    inds = p1.individuals;
+    inds[inds.age > 0].fitnessScaling = 0.0;
+}
+
+late() {
+
+
+output_folder = params.getValue("output_folder");
+output_folder = gsub(" ", "", output_folder);
+catn(paste("📂 Chemin du dossier de sortie (corrigé) =", output_folder));
+log_file = paste(params.getValue("output_folder"), "/slim_log.txt");
+catn(paste("📂 Vérification log_file =", log_file));
+
+	writeFile(log_file, paste("Simulation ID:", params.getValue("simulation_id")), append=T);
+	writeFile(log_file, paste("Population size:", pop_size), append=T);
+	writeFile(log_file, paste("Number of loci:", num_loci), append=T);
+	writeFile(log_file, paste("Generations:", num_generations), append=T);
+	writeFile(log_file, paste("Random seed:", seed_value), append=T);  // ✅ Ajout du numéro de seed
+	writeFile(log_file, paste("Final tree file:", tree_file), append=T);
+	writeFile(log_file, "------------------------", append=T);
+	 
+
+    catn("Selecting and saving individuals in the last generation :");
+
+    // Verify that there is enough individuals to sample
+    if (size(p1.individuals) >= sampleSize) {
+        sampled_last_gen = sample(p1.individuals, sampleSize, replace=F);
+
+        // Mark this individuals as "Retained"
+        for (ind in sampled_last_gen) {
+            sim.treeSeqRememberIndividuals(ind, permanent=F);
+        }
+
+        catn(" Retained individuals (Retained - last generation) : ");
+		  catn(sampled_last_gen);
+    } else {
+        catn("Not enough individuals for the last sample");
+    }
+
+    // Make sure the file output exists
+    system("mkdir -p output_trees");
+
+    // Save .trees file
+    sim.treeSeqOutput("C:/Users/poupe/OneDrive/Bureau/Dossier_cours/M2_Semestre_1/Stage/SLiM/Models/output_trees/simulation.trees");
+    catn("Data saved in : output_trees/simulation.trees");
+}
