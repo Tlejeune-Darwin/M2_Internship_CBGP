@@ -1,0 +1,102 @@
+En Français : 
+
+Le principe du pipeline est de combiner des scripts issus de python, SLiM, NeEstimator et Remembered
+
+
+------------ 1. Python --------------
+
+1.1. Importation des différents packages 
+        -- os
+        -- time
+        -- subprocess
+        -- tskit
+        -- pyslim
+        -- msprime
+        -- numpy
+        -- matplotlib
+        -- random
+
+1.2. Génération d'un nouveau dossier
+        -- On génère un nouveau dossier qui va accueillir les différents fichiers
+        de données et d'informations spécifiques à la simulation en cours.
+        Le dossier va contenir : 
+                --- Les paramètres de la simulation (valeurs spécifiques des variables)
+                --- Données liées au Tree Sequence Recorgind de SLiM
+                --- Données issues de la réorganisation sur python, à la suite de la 
+                recapitation et de la simulation du processus mutationnel
+                --- Statistiques résumantes obtenues via NeEstimator
+                --- Graphiques et résultats traités via R.
+
+1.3. Execution de SLiM
+
+1.4. Gestion des informations issues des échantillons obtenus dans SLiM
+        -- gestion des individus 
+                --- Gérer les individus des deux échantillons
+                --- Si ajout d'autres échantillons ? À voir, il faut attribuer une
+                liste pour chaque échantillon afin qu'il soit clairement reconnu
+                et retenu au cours de la simulation. Peut-être au lieu d'un nom on 
+                attribue un numéro au groupe par exemple "Retenus_1 ; Retenus_2 ; etc..."
+                Peut être utile à exploiter
+        -- vérifier quel noeud est utilisé pour la gestion des individus échantillonnés
+
+1.5. Recapitation 
+        -- Utilisation des paramètres utilisés dans la simulation SLiM
+        On utilise exactement les mêmes paramètres pour la taille de la pop
+        justement pour ne pas causer d'erreurs lors de la recapitation
+        Il faut d'ailleurs attribuer ce paramètre à la partie "demography" 
+        du script pour que tout fonctionne
+
+1.6. Ajout de mutationne
+        -- On ajoute les mutations sur Python après la recapitation selon un algorithme
+        prédéterminé. Cela permet de simuler le processus mutationnel.
+        -- On stocke les variations dans le nombre de répétitions pour chaque individu
+        au sein d'un matrice de nombres
+
+1.7. Organisation de la matrice de nombres
+        -- Il faut ensuite réorganiser la matrice afin qu'elle soit exploitable par le
+        logiciel suivant (NeEstimator). Pour cela, il est nécessaire de fusionner les
+        allèles car la matrice considère les individus comme étant haploïdes mais le
+        logiciel s'attend à ce qu'ils soient diploïdes.
+
+1.8. Il est possible d'ajouter tout au long du script des parties permettant de vérifier 
+son intégrité et son bon fonctionnement mais le résultat final ne les présentera pas.
+En effet, même si individuellement, leur calcul est instantané, sur des milliers de 
+simulation cela peut causer des ralentissement significatifs.
+
+
+----------- 2. SLiM --------------
+
+2.1. Ajout et organisation des paramètres de la simulation
+        -- On importe les valeurs de paramètres du script python
+        -- Il faut les attribuer à chaque valeur de paramètre.
+        -- Nécessité de créer des vecteurs
+
+2.2. Définition d'un modèle de Non Wright-Fisher
+        -- Reproduction aléatoire
+        -- générations non chevauchantes
+        -- taille de population constante
+        -- pas de force évolutive à l'oeuvre
+
+2.3. Lancement d'un script de TreeSequenceRecording
+        -- permet d'enregistrer la généalogie des individus au cours de la simulation
+        -- Ne retient pas toutes les informations désirées (notamment certaines données
+        génétiques nécessaires au calcul des stats résumantes) donc à exploiter en 
+        tandem avec d'autres méthodes
+        
+2.4. Attribution d'une reproduction
+        -- aléatoire
+        -- possibilité d'autofécondation
+
+2.5. Générations non chevauchantes
+        -- Par suppression des individus nés à la génération précédente. 
+        -- À réaliser après la reproduction sinon mort de la population.
+
+2.6. Renvoi des informations obtenues
+        -- Un  fichier log de la simulation avec
+                --- numéro de seed (afin de l'identifier facilement)
+                --- résumé des paramètres utilisés
+        -- Un fichier ".trees" utilisé ensuite dans python (voir 1.4)
+
+----------- 3. NeEstimator ----------
+
+
