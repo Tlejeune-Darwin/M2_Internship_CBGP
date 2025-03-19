@@ -1,13 +1,12 @@
 initialize() {
-    defineConstant("popSize", 200);     // Population size
-    defineConstant("generations", 100);  // Number of generations of the simulation
-    defineConstant("sampleSize", 50);   // Number of individuals to sample
+    defineConstant("popSize", 6);     // Population size
+    defineConstant("sampleSize", 6);   // Number of individuals to sample
 
     initializeSLiMModelType("nonWF");   // Non Wright-Fisher Model
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
-    initializeGenomicElementType("g1", m1, 9);
-    initializeGenomicElement(g1, 0, 9);
+    initializeGenomicElementType("g1", m1, 0);
+    initializeGenomicElement(g1, 0, 0);
     initializeRecombinationRate(0.5);
 
     // Initialization of tree sequence recording
@@ -55,7 +54,7 @@ early() {
     inds[inds.age > 0].fitnessScaling = 0.0;
 }
 
-9 late() {
+19 late() {
     catn("Selecting and saving individuals in the last generation :");
 
     // Verify that there is enough individuals to sample

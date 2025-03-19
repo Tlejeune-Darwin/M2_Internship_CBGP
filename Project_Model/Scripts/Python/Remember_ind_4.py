@@ -38,9 +38,9 @@ sys.stdout = log_file
 
                                                     # ---___---___---___--- Parameters ---___---___---___--- #
 
-RECAP_Ne = 200  # Effective population size for recapitation
+RECAP_Ne = 6  # Effective population size for recapitation
 RECOMB_RATE = 0.5  # Recombination rate
-MUT_RATE = 1e-2  # Mutation rate
+MUT_RATE = 1e-1  # Mutation rate
 HI = 50
 LO = 5
 
@@ -98,17 +98,77 @@ print(f"Number of Remembered and Retained individuals {len(kept_individuals)}") 
 kept_nodes = []
 for ind in kept_individuals:
     kept_nodes.extend(tree_sequence.individual(ind).nodes)
-
+    
 print(f"Total number of nodes after filtering {len(kept_nodes)}") # PROMPT : can be ignored
 
 # Simplify tree sequence to keep the filtered individuals
 filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
+
+for ind in filtered_ts.individuals():
+    print(f"Individu {ind.id} -> Nœuds {ind.nodes}")
+
+
 
 print(f"Number of trees after filtering {filtered_ts.num_trees}") # PROMPT : can be ignored
 
 # Verify simplification worked
 if filtered_ts.num_trees == 0:
     print("No tree found after simplification. Please verify individual flags.") # PROMPT : can be ignored
+
+# Nombre total d'individus dans l'arbre initial
+total_individuals = tree_sequence.num_individuals
+print(f"Nombre total d'individus avant filtrage : {total_individuals}")
+
+# Nombre d'individus retenus
+print(f"Nombre d'individus conservés : {len(kept_individuals)}")
+
+# Nombre total de nœuds dans l'arbre initial
+total_nodes = tree_sequence.num_nodes
+print(f"Nombre total de nœuds avant filtrage : {total_nodes}")
+
+# Nombre de nœuds conservés
+print(f"Nombre de nœuds conservés après filtrage : {len(kept_nodes)}")
+
+
+print(f"ID des individus retenus : {kept_individuals}")
+for ind_id in kept_individuals:
+    print(f"Individu {ind_id}, nœuds associés : {tree_sequence.individual(ind_id).nodes}")
+
+
+valid_nodes = {node for ind in kept_individuals for node in tree_sequence.individual(ind).nodes}
+node_check = all(node in valid_nodes for node in kept_nodes)
+
+print(f"Tous les nœuds retenus appartiennent bien à des individus filtrés : {node_check}")
+
+
+
+# Affichage d'un arbre avant filtrage
+output_tree_file = os.path.join(OUTPUT_DIR, "tree_before_filtering.txt")
+with open(output_tree_file, "w", encoding="utf-8") as f:
+    f.write(tree_sequence.first().draw_text())
+
+print(f"L'arbre avant filtrage a été enregistré dans {output_tree_file}")
+
+
+# Affichage d'un arbre après filtrage
+output_filtered_tree_file = os.path.join(OUTPUT_DIR, "tree_after_filtering.txt")
+with open(output_filtered_tree_file, "w", encoding="utf-8") as f:
+    f.write(filtered_ts.first().draw_text())
+
+print(f"L'arbre après filtrage a été enregistré dans {output_filtered_tree_file}")
+
+
+
+remaining_inds = set(ind.id for ind in filtered_ts.individuals())
+missing_inds = set(kept_individuals) - remaining_inds
+print(f"Individus qui ont été supprimés après filtrage : {missing_inds}")
+
+for tree in filtered_ts.trees():
+    if tree.num_roots > 1:
+        print(f"Avertissement : Arbre avec plusieurs racines détecté après simplification ({tree.num_roots} racines).")
+
+
+
 
                                                     # ---___---___---___--- Recapitation ---___---___---___--- #
 
@@ -120,15 +180,20 @@ demography.add_population(name="p1", initial_size=RECAP_Ne)
 recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=RECOMB_RATE, demography=demography)
 
 # New simplification to avoid more than one root
-recap_ts = recap_ts.simplify(keep_input_roots=False)
+#recap_ts = recap_ts.simplify(keep_input_roots=False)
 
 # Verify that recapitation worked
 for tree in recap_ts.trees():
     print(f"After recapitation - Root number : {tree.num_roots}") # PROMPT : can be ignored
 
 # Text tree in console for verification
-##         print("\nTree plot - Text version :\n") # PROMPT : can be ignored          ##
-##         print(recap_ts.first().draw_text())         ##
+print("\nTree plot - Text version :\n") # PROMPT : can be ignored          ##
+output_tree_file = os.path.join(OUTPUT_DIR, "recapitated_tree.txt")
+with open(output_tree_file, "w", encoding="utf-8") as f:
+    f.write(recap_ts.first().draw_text())
+
+print(f"L'arbre recapité a été enregistré dans {output_tree_file}. Ouvre-le avec un éditeur UTF-8.")
+        
 
 # Most Recent Common Ancestor (MRCA)
 mrca_ages = []
@@ -228,31 +293,111 @@ with open(output_gen_file, "w") as f:
     f.write(loci_names + "\n") # Loci number
     f.write("pop\n") # Population name
 
-    for i in range(num_individuals):
-        genotype_line = ", " + " ".join(f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i, j]):03}" for j in range(num_loci))  # Convert the alleles and double it (diploid) to get the genotype of each individual
-        f.write(f"Indiv_{i+1} {genotype_line}\n")  # Individual ID + their genotype
+    for i in range(0, num_individuals, 2):  # On saute une ligne sur deux
+        genotype_line = ", " + " ".join(f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i+1, j]):03}" for j in range(num_loci))
+        f.write(f"Indiv_{(i//2)+1}{genotype_line}\n")  # Unique ID per individual
+
+for mut in mut_ts.mutations():
+    node = mut_ts.node(mut.node)
+    print(f"Mutation {mut.derived_state} attachée au nœud {mut.node} (temps {node.time})")
+
 
 print(f".gen file generated : {output_gen_file}") #PROMPT : can be ignored
 
+
                                                     # ---___---___---___--- Tree Display ---___---___---___--- #
 
-# Generat SVG
+def get_node_labels(ts, site_index=0):
+    """
+    Retourne un dictionnaire avec les labels des nœuds,
+    contenant l'ID de l'individu et son génotype pour un site donné.
+    """
+    node_labels = {}
+
+    # Obtenir la matrice de génotypes
+    copy_numbers = copy_number_matrix(ts)
+
+    # Associer chaque individu à son/ses nœuds et à son génotype
+    for ind in ts.individuals():
+        ind_id = ind.id  # ID de l'individu
+        nodes = ind.nodes  # Noeuds associés
+
+        # Vérifier qu’on a bien les informations génétiques
+        if ind_id < copy_numbers.shape[1]:  
+            for i, node in enumerate(nodes):  # Chaque nœud a son propre allèle
+                genotype = copy_numbers[site_index, node]  # Génotype spécifique au nœud
+                node_labels[node] = f"N:{node} | ID:{ind_id} | G:{genotype}"  # Afficher seulement cet allèle
+
+    # Ajouter les labels pour les nœuds intermédiaires (ancêtres communs)
+    for tree in ts.trees():
+        for node in tree.nodes():
+            if node not in node_labels:  # Ajouter seulement si ce n'est pas une feuille
+                node_labels[node] = f"N:{node}"  # Afficher uniquement l’ID du nœud
+
+    return node_labels
+
+
+# Générer les labels pour l'affichage
+node_labels = get_node_labels(mut_ts, site_index=0)  # Étudie le site 0 par défaut
+
+def get_mutation_labels(ts):
+    """
+    Retourne un dictionnaire contenant les labels des mutations, indiquant si elles 
+    représentent un gain (+1) ou une perte (-1), même si le nœud parent est un nœud recapité.
+    """
+    mutation_labels = {}
+
+    for tree in ts.trees():
+        last_known_state = {}  # Dictionnaire stockant la dernière mutation connue pour chaque lignée
+
+        for mut in tree.mutations():
+            node = mut.node  # Nœud portant la mutation
+            current_allele = int(mut.derived_state)  # État après mutation
+
+            # Trouver la mutation connue la plus proche dans l'ascendance
+            previous_allele = None
+            parent_node = node  # On commence par le parent immédiat
+            
+            while parent_node != -1:
+                # Vérifier si une mutation précédente existe sur cette lignée
+                if parent_node in last_known_state:
+                    previous_allele = last_known_state[parent_node]
+                    break  # On a trouvé un état génétique précédent
+                
+                parent_node = tree.parent(parent_node)  # Remonter encore si nécessaire
+            
+            # Si aucune mutation connue n'a été trouvée, ignorer la mutation (évite les erreurs)
+            if previous_allele is not None:
+                mutation_effect = current_allele - previous_allele
+                sign = "+" if mutation_effect > 0 else "-"
+
+                mutation_labels[mut.id] = f"{sign}{abs(mutation_effect)}"  # Ex : "+1" ou "-1"
+
+            # Stocker la mutation actuelle pour qu'elle serve de référence aux suivantes
+            last_known_state[node] = current_allele
+
+    return mutation_labels
+
+
+
+
+mutation_labels = get_mutation_labels(mut_ts)
+
+# Génération du SVG avec les labels
 svg_output = mut_ts.draw_svg(
-    size=(3000, 3000),
-    node_labels={},
-    mutation_labels=None,
-    time_scale="log_time",  # Using "Rank" is better to visualize all ancestor by recapitation and mutations but less representative
-    x_axis=True, # Genomic position
-    y_axis=True  # Time axis
+    size=(3000, 1000),
+    node_labels=node_labels,  # On ajoute les labels
+    mutation_labels=mutation_labels,
+    time_scale="rank",
+    x_axis=True,
+    y_axis=True
 )
 
-# Graphical representation of mutation rate
-from matplotlib import pyplot as plt # type: ignore
-
-# Saved in output_trees file
-tree_file_path = os.path.join(OUTPUT_DIR, "tree_output.svg")
+# Sauvegarde de l'arbre annoté
+tree_file_path = os.path.join(OUTPUT_DIR, "tree_with_labels.svg")
 with open(tree_file_path, "w") as f:
     f.write(svg_output)
 
-print(f"Tree recapitated and saved to {tree_file_path}")  # PROMPT : can be ignored
+print(f"Tree with labels saved to {tree_file_path}")
+
 
