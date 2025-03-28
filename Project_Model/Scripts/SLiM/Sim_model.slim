@@ -1,0 +1,121 @@
+initialize() {
+    
+    // Read the config file made by python
+    config_data = paste(readFile(config_file), sep="/n");
+    config_lines = strsplit(config_data, "/n");
+
+    p = Dictionary();
+    for (line in config_lines) {
+        parts = strsplit(line, "=");
+        if (size(parts) == 2) {
+            key = parts[0];
+            value = parts[1];
+            p.setValue(key, value);
+        }
+    }
+
+    defineGlobal("params", p); // Get the parameters accessible to all script
+	 defineGlobal("simulation_id", params.getValue("simulation_id"));
+	 defineGlobal("output_folder", params.getValue("output_folder"));
+	 defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
+    defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
+    defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
+    defineGlobal("num_generations", asInteger(params.getValue("num_generations")));
+    defineGlobal("mutation_rate", asFloat(params.getValue("mutation_rate")));
+    defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
+    defineGlobal("output_folder", params.getValue("output_folder"));
+    defineGlobal("seed", asInteger(params.getValue("seed")));
+
+    sizes = strsplit(params.getValue("sample_sizes"), ","); // samples 
+    defineGlobal("sample_size_0", asInteger(sizes[0]));
+    defineGlobal("sample_size_1", asInteger(sizes[1]));
+
+	 defineConstant("NUM_GENERATIONS", num_generations); // Used for ending the simulation
+
+    // SLiM model initialization
+    initializeSLiMModelType("nonWF");
+    initializeMutationRate(0);
+    initializeMutationType("m1", 0.5, "f", 0.0);
+    initializeGenomicElementType("g1", m1, num_loci);
+    initializeGenomicElement(g1, 0, num_loci);
+    initializeRecombinationRate(0.5);
+
+    // Tree Sequence Recording activation
+    initializeTreeSeq(retainCoalescentOnly=F);
+}
+
+1 early() {
+
+    sim.addSubpop("p1", pop_size); // Pop creation
+}
+
+1 late() {
+
+	 // First sample
+    // Verify that there is enough individuals to sample
+    if (size(p1.individuals) >= sample_size_0) {
+        sampled_first_gen = sample(p1.individuals, sample_size_0, replace=F);
+
+        // Mark this individuals as "Remembered"
+        for (ind in sampled_first_gen) {
+            sim.treeSeqRememberIndividuals(ind, permanent=T);
+        }
+
+    } else {
+        catn("Not enough individuals for the first sample");
+    }
+}
+
+reproduction() {
+    K = pop_size;
+    parents1 = p1.sampleIndividuals(K, replace=F);
+    parents2 = p1.sampleIndividuals(K, replace=F);
+
+    for (i in seqLen(K))
+        p1.addCrossed(parents1[i], parents2[i]);
+
+    self.active = 0;
+}
+
+early() {
+    // Individuals with an age of more than 1 tick are deleted from the pool
+    inds = p1.individuals;
+    inds[inds.age > 0].fitnessScaling = 0.0;
+}
+
+// Generation number is determined by pythono script
+(NUM_GENERATIONS - 1) late() {
+
+    // Verify that there is enough individuals to sample
+    if (size(p1.individuals) >= sample_size_1) {
+        sampled_last_gen = sample(p1.individuals, sample_size_1, replace=F);
+
+        // Mark this individuals as "Retained"
+        for (ind in sampled_last_gen) {
+            sim.treeSeqRememberIndividuals(ind, permanent=F);
+        }
+    } else {
+        catn("Not enough individuals for the last sample");
+    }
+
+    // Output Folder
+    output_folder = paste(strsplit(output_folder, " "), sep="");
+
+    // Creating .trees file 
+tree_file = output_folder + "/simulation.trees";
+sim.treeSeqOutput(tree_file);
+
+
+// Making of the path to the log file
+log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
+
+// Merge the new file with the old one containing the parameters
+appendLine = "log_file=" + log_file;
+writeFile(config_file, appendLine + "\n", append=T);
+
+	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
+	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
+	writeFile(config_file, "------------------------", append=T);
+
+}
+
