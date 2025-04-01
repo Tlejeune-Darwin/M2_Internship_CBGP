@@ -1,4 +1,4 @@
-def run_simulation(config_dict):
+def run_simulation():
 
     # Packages needed to run python script
     import os
@@ -13,6 +13,7 @@ def run_simulation(config_dict):
     import shutil
     import pandas as pd                     # type: ignore
     import re
+    from datetime import datetime
 
     # ---___---___---___--- Setup directories ---___---___---___--- #
 
@@ -23,15 +24,10 @@ def run_simulation(config_dict):
     os.makedirs(all_simulations, exist_ok=True)
 
     # Create a folder for each simulation
-    from datetime import datetime
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     sim_id = f"sim_{timestamp}_local" # Give a number to the simulation's name
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
-
-    original_slim_script = os.path.join(SCRIPT_DIR, "Sim_model.slim")
-    copied_slim_script = os.path.join(sim_folder, "Sim_model.slim")
-    shutil.copyfile(original_slim_script, copied_slim_script)
 
     # Creating text file with every simulation parameters
     config = {
@@ -39,7 +35,8 @@ def run_simulation(config_dict):
         "pop_size" : int(np.random.lognormal(mean=5, sigma=0.3)),
         "num_loci" : random.choice([5, 10, 20, 50]),
         "num_generations" : random.randint(5, 15),
-        "sample_sizes" : [random.randint(20, 50), random.randint(20, 50)],
+        "sample_sizes_Ne" : [random.randint(20, 50), random.randint(20, 50)],
+        "sample_sizes_CMR" : [random.randint(20, 50), random.randint(20, 50)],
         "mutation_rate" : np.random.uniform(1e-5, 1e-2),
         "recap_Ne" : int(np.random.uniform(50, 500)),
         "output_folder" : sim_folder,
@@ -59,7 +56,7 @@ def run_simulation(config_dict):
     slim_script = os.path.join(SCRIPT_DIR, "Sim_model.slim")
     slim_executable = os.path.join(SCRIPT_DIR, "slim.exe")
     slim_config_file = slim_config_file.replace("\\", "/")
-    slim_command = [slim_executable, "-d", f'config_file="{slim_config_file}"', copied_slim_script]
+    slim_command = [slim_executable, "-d", f'config_file="{slim_config_file}"', slim_script]
 
     log_file_path = os.path.join(sim_folder, "slim.log")
 
@@ -90,7 +87,7 @@ def run_simulation(config_dict):
     # ---___---___---___--- Add Mutations ---___---___---___--- #
 
     mut_model = msprime.SMM(lo=5, hi=50)
-    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=42)
+    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"])
 
     # ---___---___---___--- Format Data for NeEstimator (GENEPOP) ---___---___---___--- #
 
@@ -106,9 +103,9 @@ def run_simulation(config_dict):
     output_gen_file = os.path.join(sim_folder, "simulation_data.gen")
 
     # Separate the different samples and mark "pop" between them
-    sample_sizes = config["sample_sizes"]
-    sample1_size = sample_sizes[0]
-    sample2_size = sample_sizes[1]
+    sample_sizes_Ne = config["sample_sizes_Ne"]
+    sample1_size_Ne = sample_sizes_Ne[0]
+    sample2_size_Ne = sample_sizes_Ne[1]
 
     with open(output_gen_file, "w") as f:
         # Title
@@ -117,7 +114,7 @@ def run_simulation(config_dict):
 
         # First sample
         f.write("pop\n")
-        for i in range(0, sample1_size * 2, 2):
+        for i in range(0, sample1_size_Ne * 2, 2):
             genotype_line = ", " + " ".join(
                 f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i+1, j]):03}"
                 for j in range(num_loci)
@@ -126,8 +123,8 @@ def run_simulation(config_dict):
 
         # Second sample
         f.write("pop\n")
-        offset = sample1_size * 2
-        for i in range(offset, offset + sample2_size * 2, 2):
+        offset = sample1_size_Ne * 2
+        for i in range(offset, offset + sample2_size_Ne * 2, 2):
             genotype_line = ", " + " ".join(
                 f"{int(copy_numbers[i, j]):03}{int(copy_numbers[i+1, j]):03}"
                 for j in range(num_loci)
@@ -137,8 +134,6 @@ def run_simulation(config_dict):
     # ---___---___---___--- Run NeEstimator ---___---___---___--- #
 
     ne2_exe = os.path.join(SCRIPT_DIR, "Ne2.exe")
-    ne_command_file = os.path.join(sim_folder, "ne_command.nei")
-    ne_output_file = os.path.join(sim_folder, "ne_estimates.txt")
 
     # --- Copy info file template to the simulation file ---
     os.makedirs(os.path.join(SCRIPT_DIR, "templates"), exist_ok=True)
@@ -157,12 +152,12 @@ def run_simulation(config_dict):
             try:
                 shutil.move(origin_file, destination_file)
             except Exception as e:
-                print(f"⚠️ Erreur lors du déplacement du fichier : {e}")
+                pass
         else:
-            print(f"❌ Aucun fichier 'simulation_dataNe.txt' trouvé dans : {simulations_dir}")
+            pass
 
     except subprocess.CalledProcessError:
-        print(f"❌ NeEstimator a échoué avec les paramètres info/option.")
+        pass
 
     # ---___---___---___--- Organize the data into a CSV file ---___---___---___--- #
 
@@ -201,24 +196,26 @@ def run_simulation(config_dict):
             "Neb_Coan": parse_value(neb_coan[0]) if neb_coan else None,
             "Ne_Pollak": parse_value(pollak_ne[0]) if pollak_ne else None,
             "Ne_Nei": parse_value(nei_ne[0]) if nei_ne else None,
-            "Ne_Jorde": parse_value(jorde_ne[0]) if jorde_ne else None
+            "Ne_Jorde": parse_value(jorde_ne[0]) if jorde_ne else None, 
         }
 
-
     def read_config(path):
-        """Lit le fichier slim_config.txt en dict, avec traitement des sample_sizes"""
+        """Lit le fichier slim_config.txt en dict, avec traitement spécial des sample_sizes"""
         config_dict = {}
         with open(path, "r") as f:
             for line in f:
                 if "=" in line:
                     key, value = line.strip().split("=", 1)
-                    if key == "sample_sizes":
+
+                    # Cas des tailles d’échantillons structurées
+                    if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
                         try:
                             s1, s2 = map(int, value.split(","))
-                            config_dict["sample1_size"] = s1
-                            config_dict["sample2_size"] = s2
+                            suffix = key.replace("sample_sizes_", "")
+                            config_dict[f"sample1_size_{suffix}"] = s1
+                            config_dict[f"sample2_size_{suffix}"] = s2
                         except ValueError:
-                            print(f"⚠️ Erreur parsing sample_sizes: {value}")
+                            pass
                     else:
                         config_dict[key] = value
         return config_dict
@@ -233,7 +230,7 @@ def run_simulation(config_dict):
         ne_stats = extract_ne_stats(ne_data_path)
         config_dict.update(ne_stats)
     else:
-        print("⚠️ Aucune stats NeEstimator à ajouter.")
+        pass
 
     # Ajouter l'identifiant de simulation
     config_dict["simulation_id"] = sim_id
@@ -253,6 +250,5 @@ def run_simulation(config_dict):
     else:
         df_row.to_csv(summary_path, index=False)
 
-    print(f"✅ Résumé ajouté à : {summary_path}")
 
 

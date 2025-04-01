@@ -26,9 +26,13 @@ initialize() {
     defineGlobal("output_folder", params.getValue("output_folder"));
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
-    sizes = strsplit(params.getValue("sample_sizes"), ","); // samples 
-    defineGlobal("sample_size_0", asInteger(sizes[0]));
-    defineGlobal("sample_size_1", asInteger(sizes[1]));
+    sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
+    defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
+    defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
+
+    sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); // samples 
+    defineGlobal("sample_size_CMR_0", asInteger(sizes_CMR[0]));
+    defineGlobal("sample_size_CMR_1", asInteger(sizes_CMR[1]));
 
 	 defineConstant("NUM_GENERATIONS", num_generations); // Used for ending the simulation
 
@@ -53,8 +57,8 @@ initialize() {
 
 	 // First sample
     // Verify that there is enough individuals to sample
-    if (size(p1.individuals) >= sample_size_0) {
-        sampled_first_gen = sample(p1.individuals, sample_size_0, replace=F);
+    if (size(p1.individuals) >= sample_size_Ne_0) {
+        sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
 
         // Mark this individuals as "Remembered"
         for (ind in sampled_first_gen) {
@@ -86,9 +90,38 @@ early() {
 // Generation number is determined by pythono script
 (NUM_GENERATIONS - 1) late() {
 
+		//sample1
+	sample1 = sample(p1.individuals, sample_size_CMR_0, replace = F);
+	//sample2
+	sample2 = sample(p1.individuals, sample_size_CMR_1, replace = F);
+
+	//Add a matchcount that gains a point for each match
+	matchCount = 0;
+
+	//For loop that analyse the two samples then compare the matches
+	for (ind1 in sample1) {
+		for (ind2 in sample2) {
+			if (ind1 == ind2) {
+				matchCount = matchCount + 1;
+				}
+			}
+		}
+	if(matchCount > 0) {
+		estimatePopSize = ((sample_size_CMR_0 + 1) * (sample_size_CMR_1 + 1) / ((matchCount + 1) - 1));
+	} else {
+		estimatePopSize = "undefined"; 
+	}
+
+	if(matchCount > 0) {
+		catn("Estimated population size: ");
+		catn(estimatePopSize);
+	} else {
+		catn("Estimated population size: Cannot be estimated (zero matches).");
+	}
+
     // Verify that there is enough individuals to sample
-    if (size(p1.individuals) >= sample_size_1) {
-        sampled_last_gen = sample(p1.individuals, sample_size_1, replace=F);
+    if (size(p1.individuals) >= sample_size_Ne_1) {
+        sampled_last_gen = sample(p1.individuals, sample_size_Ne_1, replace=F);
 
         // Mark this individuals as "Retained"
         for (ind in sampled_last_gen) {
@@ -113,9 +146,9 @@ log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
+	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
 	writeFile(config_file, "------------------------", append=T);
-
 }
 
