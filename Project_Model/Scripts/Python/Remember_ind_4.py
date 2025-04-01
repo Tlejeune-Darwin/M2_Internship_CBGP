@@ -4,7 +4,6 @@ import msprime # type: ignore
 import warnings # type: ignore
 import numpy as np # type: ignore
 import matplotlib.pyplot as plt # type: ignore
-import IPython.display # type: ignore
 import os
 import subprocess
 import shutil
@@ -38,9 +37,9 @@ sys.stdout = log_file
 
                                                     # ---___---___---___--- Parameters ---___---___---___--- #
 
-RECAP_Ne = 6  # Effective population size for recapitation
+RECAP_Ne = 200  # Effective population size for recapitation
 RECOMB_RATE = 0.5  # Recombination rate
-MUT_RATE = 1e-1  # Mutation rate
+MUT_RATE = 5e-4  # Mutation rate
 HI = 50
 LO = 5
 
@@ -378,9 +377,6 @@ def get_mutation_labels(ts):
 
     return mutation_labels
 
-
-
-
 mutation_labels = get_mutation_labels(mut_ts)
 
 # Génération du SVG avec les labels
@@ -388,7 +384,7 @@ svg_output = mut_ts.draw_svg(
     size=(3000, 1000),
     node_labels=node_labels,  # On ajoute les labels
     mutation_labels=mutation_labels,
-    time_scale="rank",
+    time_scale="log_time",
     x_axis=True,
     y_axis=True
 )
