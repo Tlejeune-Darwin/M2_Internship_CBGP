@@ -1,5 +1,24 @@
 initialize() {
     
+  if (exists("slimgui")){
+	  defineGlobal("simulation_id", 1111);
+     defineGlobal("output_folder", "test");
+     defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
+     defineGlobal("pop_size", 200);
+     defineGlobal("num_loci", 2);
+     defineGlobal("num_generations", 10);
+     defineGlobal("mutation_rate", 0.001);
+     defineGlobal("recap_Ne", 200);
+     defineGlobal("seed", 123456);
+     defineGlobal("sample_size_Ne_0", 50);
+     defineGlobal("sample_size_Ne_1", 50);
+     defineGlobal("sample_size_CMR_0", 50);
+     defineGlobal("sample_size_CMR_1", 50);
+     defineConstant("NUM_GENERATIONS", num_generations); // Used to end the simulation
+
+  }else{
+// your code to read the file
+
     // Read the config file made by python
     config_data = paste(readFile(config_file), sep="/n");
     config_lines = strsplit(config_data, "/n");
@@ -36,6 +55,7 @@ initialize() {
 
 	 defineConstant("NUM_GENERATIONS", num_generations); // Used for ending the simulation
 
+}
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
     initializeMutationRate(0);
@@ -135,14 +155,13 @@ return (individual.age == 0);
     } else {
         catn("Not enough individuals for the last sample");
     }
-
+if (!exists("slimgui")) {
     // Output Folder
     output_folder = paste(strsplit(output_folder, " "), sep="");
 
     // Creating .trees file 
 tree_file = output_folder + "/simulation.trees";
 sim.treeSeqOutput(tree_file);
-
 
 // Making of the path to the log file
 log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
@@ -155,5 +174,8 @@ writeFile(config_file, appendLine + "\n", append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
 	writeFile(config_file, "------------------------", append=T);
+}else{
+	sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
+}
 }
 
