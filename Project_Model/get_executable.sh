@@ -3,8 +3,8 @@
 echo "🔎 Vérification des exécutables dans ./bin/"
 
 # Vérifie SLiM
-if [ ! -f bin/slim_linux ]; then
-    echo "❌ SLiM (slim_linux) manquant dans bin/"
+if [ ! -f bin/slim ]; then
+    echo "❌ SLiM (slim) manquant dans bin/"
     exit 1
 else
     chmod +x bin/slim_linux
@@ -12,8 +12,8 @@ else
 fi
 
 # Vérifie NeEstimator
-if [ ! -f bin/NeEstimator_linux ]; then
-    echo "❌ NeEstimator (NeEstimator_linux) manquant dans bin/"
+if [ ! -f bin/Ne2x ]; then
+    echo "❌ NeEstimator (Ne2x) manquant dans bin/"
     exit 1
 else
     chmod +x bin/NeEstimator_linux
