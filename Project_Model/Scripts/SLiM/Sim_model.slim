@@ -38,7 +38,7 @@ initialize() {
 	 defineGlobal("output_folder", params.getValue("output_folder"));
 	 defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
     defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
-    defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
+    defineGlobal("num_loci", asInteger(params.getValue("num_loci"))-1);
     defineGlobal("num_generations", asInteger(params.getValue("num_generations")));
     defineGlobal("mutation_rate", asFloat(params.getValue("mutation_rate")));
     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
