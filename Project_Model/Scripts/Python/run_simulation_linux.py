@@ -177,7 +177,7 @@ def run_simulation_linux():
 
     # ---___---___---___--- Run NeEstimator ---___---___---___--- #
 
-    ne2_exe = os.path.join(SCRIPT_DIR, "..," "..", "Bin", "Ne2x")
+    ne2_exe = os.path.join(SCRIPT_DIR, "..", "..", "Bin", "Ne2x")
 
     try:
         subprocess.run([ne2_exe, "i:info", "o:option"], cwd=sim_folder, check=True)
