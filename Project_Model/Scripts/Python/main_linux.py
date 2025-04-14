@@ -1,4 +1,4 @@
-from run_simulation_test import run_simulation_test  # Name of the simulation script
+from run_simulation_linux import run_simulation_linux  # Name of the simulation script
 import argparse
 import time
 
@@ -13,5 +13,5 @@ parser.add_argument(  # Create the argument that will be converted
 args = parser.parse_args()
 
 for i in range(args.num_simulations):  # 10 simulations
-    run_simulation_test()  # Python script 
+    run_simulation_linux()  # Python script 
     time.sleep(0.5)  # Latency between every simulation, necessary for RAM purpose
