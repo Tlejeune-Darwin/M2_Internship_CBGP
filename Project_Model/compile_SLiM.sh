@@ -14,4 +14,4 @@ cmake ..
 make -j$(nproc)
 
 # Copier l'exécutable dans le dossier bin
-cp slim ../../bin/slim_linux
+cp slim ../../bin/slim
