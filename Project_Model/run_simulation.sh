@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Vérifier que les exécutables existent
-if [ ! -f bin/slim_linux ]; then
+if [ ! -f Bin/slim_linux ]; then
     echo "SLiM n'est pas compilé. Exécutez ./compile_slim.sh"
     exit 1
 fi
 
-if [ ! -f bin/NeEstimator_linux ]; then
+if [ ! -f Bin/NeEstimator_linux ]; then
     echo "NeEstimator n'est pas compilé. Exécutez ./compile_neestimator.sh"
     exit 1
 fi
