@@ -94,7 +94,7 @@ def run_simulation_linux():
     # ---___---___---___--- Run SLiM ---___---___---___--- #
 
     slim_script = os.path.join(SCRIPT_DIR, "Sim_model.slim")
-    slim_executable = os.path.join(SCRIPT_DIR, "../Bin/slim")
+    slim_executable = os.path.join(SCRIPT_DIR, "~/Bin/slim")
     slim_config_file = slim_config_file.replace("\\", "/")
     slim_command = [slim_executable, "-d", f'config_file="{slim_config_file}"', slim_script]
 
@@ -177,7 +177,7 @@ def run_simulation_linux():
 
     # ---___---___---___--- Run NeEstimator ---___---___---___--- #
 
-    ne2_exe = os.path.join(SCRIPT_DIR, "../Bin/Ne2x")
+    ne2_exe = os.path.join(SCRIPT_DIR, "~/Bin/Ne2x")
 
     try:
         subprocess.run([ne2_exe, "i:info", "o:option"], cwd=sim_folder, check=True)
