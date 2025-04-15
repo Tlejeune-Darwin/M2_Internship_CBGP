@@ -112,7 +112,7 @@ def run_simulation_linux():
 
     log_file_path = os.path.join(sim_folder, "slim.log")
 
-    ### 4.3. Run SLiM via subprocess and lof output to slim.log ###
+    ### 4.3. Run SLiM via subprocess and log output to slim.log ###
     with open(log_file_path, "w") as log_file:
         slim_process = subprocess.run(slim_command, stdout = log_file, stderr = log_file, text = True, cwd = SCRIPT_DIR)
 
