@@ -1,0 +1,5 @@
+numpy
+pandas
+tskit
+pyslim
+matplotlib
