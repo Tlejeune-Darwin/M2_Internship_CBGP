@@ -7,7 +7,6 @@ def run_simulation_linux():
     import pyslim                           # type: ignore
     import msprime                          # type: ignore
     import numpy as np                      # type: ignore
-    import matplotlib.pyplot as plt         # type: ignore
     import random
     import warnings
     import shutil
@@ -17,19 +16,28 @@ def run_simulation_linux():
 
     # ---___---___---___--- Setup directories ---___---___---___--- #
 
+    # Directory script
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Simulation folder
-    all_simulations = os.path.join(SCRIPT_DIR, "simulations")
-    os.makedirs(all_simulations, exist_ok=True)
+    # Choose depending on the desktop name
+    def get_desktop_path():
+        desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
+        desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
+        return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
 
+    # Simulations directory placed on the desktop
+    all_simulations = os.path.join(get_desktop_path(), "simulations")
+    os.makedirs(all_simulations, exist_ok=True)
+    
     # Create a folder for each simulation
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     sim_id = f"sim_{timestamp}_local" # Give a number to the simulation's name
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
-    # Creating text file with every simulation parameters
+    # ---___---___---___--- File creation ---___---___---___--- #
+
+    # Config file with every parameters values
     config = {
         "simulation_id" : sim_id,
         "pop_size" : 100,
@@ -53,48 +61,47 @@ def run_simulation_linux():
                 value = ",".join(map(str, value))
             f.write(f"{key}={value}\n")
 
-        # Création manuelle du fichier "info" propre
+    # "Info" file used for NeEstimator calculations
     info_path = os.path.join(sim_folder, "info")
     num_generations = int(config["num_generations"])
 
     with open(info_path, "w") as f:
-        f.write("15  0\n")  # Méthodes : LD + Het + Coan + Temporal
-        f.write("\n")
-        f.write("simulation_data.gen\n")
-        f.write("2\n")
-        f.write(os.path.join(sim_folder, "") + "\n")
-        f.write("simulation_dataNe.txt\n")
-        f.write("3\n")
-        f.write("0.05  0.02  0.01\n")
-        f.write("0\n")  # Random mating
-        f.write(f"0 10 {num_generations}\n")  # Plan II, génération 1 à num_generations
-        f.write("0\n")  # Fin des générations
+        f.write("15  0\n")                                      # Calculation methods : by addition (15 means all methods)
+        f.write("\n")                                           # The line break is important here
+        f.write("simulation_data.gen\n")                        # Input directory
+        f.write("2\n")                                          # Define the format of the file (1 for FSTAT; 2 for GENEPOP)
+        f.write(os.path.join(sim_folder, "") + "\n")            # Output directory
+        f.write("simulation_dataNe.txt\n")                      # Output folder name
+        f.write("3\n")                                          # Number of critical values
+        f.write("0.05  0.02  0.01\n")                           # Critical values
+        f.write("0\n")                                          # Random mating (0) or monogamy (1)
+        f.write(f"0 10 {num_generations}\n")                    # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
+        f.write("0\n")                                          # 0 must be added here to stop the generations
 
-    # Création du fichier "option" pour NeEstimator avec les bons paramètres
+    # "Option" file used for NeEstimator outputs
     option_path = os.path.join(sim_folder, "option")
 
     option_lines = [
-        "15  0  1  1",  # Méthodes activées + max indiv/pop + tabulated output + delimiter
-        "0",            # Pas de fichier de fréquence alléliques
-        "-1",           # Pas de restriction de pop pour fréquence
-        "-1  1  0  0",  # Burrows: actif, toutes les pops, toutes, pas de critère
-        "1",            # Missing data output activé
-        "1",            # Tabular output actif
-        "0",            # Fréquence off
-        "0",
-        "1",            # LD coefficients actifs
-        "0"             # Pas de restriction chromosomique
+        "15  0  1  1",                                          # First number : sum of methods ; second number : sum of temporal methods (7 = all TP methods); third number : number of critical values added (if 0 only the smallest is shown); Fourth entry : tab delimiter (if > 0)
+        "0",                                                    # Maximum individuals/pop, if 0 : no limit
+        "-1",                                                   # -1 to ouptut the allelic frequencies
+        "-1  1  0  0",                                          # -1 activate Burrows outputs for all pop; second entry shows all critical values
+        "1",                                                    # Parameter Confidence Interval
+        "1",                                                    # Jackknife Confidence Interval
+        "0",                                                    # Up to population, or range of population to run (if more than 2), 0 means no restriction
+        "0",                                                    # All loci are accepted
+        "1",                                                    # Input 1 to create a file that documents missing data from the input file
+        "0"                                                     # Line for chromosome/Loci option and file
     ]
 
-    # Écriture ligne par ligne avec un saut de ligne unique
+    # Alternative method of writing in the file (other than the one used for the "info" file)
     with open(option_path, "w") as f:
         f.write("\n".join(option_lines) + "\n")
 
-
     # ---___---___---___--- Run SLiM ---___---___---___--- #
 
-    slim_script = os.path.join(SCRIPT_DIR, "..", "SLiM", "Sim_model.slim")
-    slim_executable = os.path.join(SCRIPT_DIR, "..", "..", "Bin", "slim")
+    slim_script = os.path.join(SCRIPT_DIR, "Sim_model.slim")
+    slim_executable = os.path.join(SCRIPT_DIR, "../Bin/slim")
     slim_config_file = slim_config_file.replace("\\", "/")
     slim_command = [slim_executable, "-d", f'config_file="{slim_config_file}"', slim_script]
 
@@ -177,7 +184,7 @@ def run_simulation_linux():
 
     # ---___---___---___--- Run NeEstimator ---___---___---___--- #
 
-    ne2_exe = os.path.join(SCRIPT_DIR, "..", "..", "Bin", "Ne2x")
+    ne2_exe = os.path.join(SCRIPT_DIR, "../Bin/Ne2x")
 
     try:
         subprocess.run([ne2_exe, "i:info", "o:option"], cwd=sim_folder, check=True)
@@ -208,11 +215,11 @@ def run_simulation_linux():
         results = {}
 
         for pop in [1, 2]:
-            # LINKAGE
+            # LINKAGE DESEQUILIBRIUM
             ne_values_raw = re.findall(rf"Population\s+{pop}.*?Estimated Ne\^ =\s*(\S+)", content, re.DOTALL)
             ld_ne_value = float(ne_values_raw[0]) if ne_values_raw and ne_values_raw[0] not in ("Infinite", "None") else None
 
-            # HETEROZYGOTE EXCESS (par bloc population)
+            # HETEROZYGOTE EXCESS
             he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?Estimated Neb\^  =\s+(\S+)", content, re.DOTALL)
             if he_block:
                 he_raw = he_block.group(1)
@@ -257,7 +264,7 @@ def run_simulation_linux():
         return results
 
     def read_config(path):
-        """Lit le fichier slim_config.txt en dict, avec traitement spécial des sample_sizes"""
+        """Read the config file"""
         config_dict = {}
         with open(path, "r") as f:
             for line in f:
@@ -440,7 +447,7 @@ def run_simulation_linux():
 
         import os
 
-    # Liste des noms de fichiers à supprimer
+    # Documents the files that must be deleted to gain disk space
     files_to_remove = [
         "info",
         "option",
@@ -457,7 +464,7 @@ def run_simulation_linux():
         "slim.log"
     ]
 
-    # Suppression
+    # Deleting all the files marked
     for filename in files_to_remove:
         filepath = os.path.join(sim_folder, filename)
         if os.path.exists(filepath):
