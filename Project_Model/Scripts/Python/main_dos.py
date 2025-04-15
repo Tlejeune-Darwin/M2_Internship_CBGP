@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from Project_Model.Scripts.Python.run_simulation_dos import run_simulation_dos  # Name of the simulation script
 import argparse
 import time
