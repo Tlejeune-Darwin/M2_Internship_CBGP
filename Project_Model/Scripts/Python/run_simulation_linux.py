@@ -1,5 +1,6 @@
 def run_simulation_linux():
 
+    # ---___---___---___--- 1. Imports ---___---___---___--- #
     # Packages needed to run python script
     import os
     import subprocess
@@ -14,30 +15,30 @@ def run_simulation_linux():
     import re
     from datetime import datetime
 
-    # ---___---___---___--- Setup directories ---___---___---___--- #
+    # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
 
-    # Directory script
+    ### 2.1. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Choose depending on the desktop name
+    ### 2.2. Choose depending on the desktop name ###
     def get_desktop_path():
         desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
         desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
         return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
 
-    # Simulations directory placed on the desktop
+    ### 2.3. Simulations directory placed on the desktop ###
     all_simulations = os.path.join(get_desktop_path(), "simulations")
     os.makedirs(all_simulations, exist_ok=True)
     
-    # Create a folder for each simulation
+    ### 2.4. Create a folder for each simulation ###
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     sim_id = f"sim_{timestamp}_local" # Give a number to the simulation's name
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
-    # ---___---___---___--- File creation ---___---___---___--- #
+    # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
-    # Config file with every parameters values
+    ### 3.1. Create the simulation parameter dictionary "config_file" ###
     config = {
         "simulation_id" : sim_id,
         "pop_size" : 100,
@@ -54,6 +55,7 @@ def run_simulation_linux():
         "seed" : random.randint(1, 10**6)
     }
 
+    ### 3.2. Write the "slim_config.txt" file (for SLiM input) ###
     slim_config_file = os.path.join(sim_folder, "slim_config.txt")
     with open(slim_config_file, "w") as f:
         for key, value in config.items():
@@ -61,7 +63,7 @@ def run_simulation_linux():
                 value = ",".join(map(str, value))
             f.write(f"{key}={value}\n")
 
-    # "Info" file used for NeEstimator calculations
+    ### 3.3. Create the "info" file (for NeEstimator input) ###
     info_path = os.path.join(sim_folder, "info")
     num_generations = int(config["num_generations"])
 
@@ -78,7 +80,7 @@ def run_simulation_linux():
         f.write(f"0 10 {num_generations}\n")                    # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
         f.write("0\n")                                          # 0 must be added here to stop the generations
 
-    # "Option" file used for NeEstimator outputs
+    ### 3.4. Create the "option" file (for NeEstimator input) ###
     option_path = os.path.join(sim_folder, "option")
 
     option_lines = [
@@ -98,50 +100,64 @@ def run_simulation_linux():
     with open(option_path, "w") as f:
         f.write("\n".join(option_lines) + "\n")
 
-    # ---___---___---___--- Run SLiM ---___---___---___--- #
+    # ---___---___---___--- 4. Run SLiM Simulation ---___---___---___--- #
 
+    ### 4.1. Define paths to the SLiM executable and script ###
     slim_script = os.path.join(SCRIPT_DIR, "..", "SLiM", "Sim_model.slim")
     slim_executable = os.path.join(SCRIPT_DIR, "..", "..", "Bin", "slim")
     slim_config_file = slim_config_file.replace("\\", "/")
+
+    ### 4.2. Build the SLiM command ###
     slim_command = [slim_executable, "-d", f'config_file="{slim_config_file}"', slim_script]
 
     log_file_path = os.path.join(sim_folder, "slim.log")
 
+    ### 4.3. Run SLiM via subprocess and lof output to slim.log ###
     with open(log_file_path, "w") as log_file:
         slim_process = subprocess.run(slim_command, stdout = log_file, stderr = log_file, text = True, cwd = SCRIPT_DIR)
 
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    # ---___---___---___--- Load and Filter Tree Sequence ---___---___---___--- #
+    # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
 
+    ### 5.1. Load the ".trees" file ###
     tree_file = os.path.join(config["output_folder"], "simulation.trees")
     tree_sequence = tskit.load(tree_file)
 
+    ### 5.2. Filter for "REMEMBERED" and "RETAINED" individuals ###
     kept_individuals = [ind.id for ind in tree_sequence.individuals() if 
                         (ind.flags & pyslim.INDIVIDUAL_REMEMBERED) or 
                         (ind.flags & pyslim.INDIVIDUAL_RETAINED)]
     kept_nodes = [node for ind in kept_individuals for node in tree_sequence.individual(ind).nodes]
 
+    ### 5.3. Simplify the tree sequence to reduce memory and noise ###
     filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
 
-    # ---___---___---___--- Recapitation ---___---___---___--- #
+    # ---___---___---___--- 6. Recapitation ---___---___---___--- #
 
+    ### 6.1. Create the demographic model ###
     demography = msprime.Demography()
     demography.add_population(name="p1", initial_size=config["recap_Ne"])
+    
+    ### 6.2. Recapitate ###
     recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=1e-8, demography=demography)
 
-    # ---___---___---___--- Add Mutations ---___---___---___--- #
+    # ---___---___---___--- 7. Simulate Mutations ---___---___---___--- #
 
+    ### 7.1. Define the stepwise mutation model (SMM) ###
     lo_repeat = config["low_repeats"]
     hi_repeat = config["high_repeats"]
     root_dist = [0.0] * (hi_repeat - lo_repeat + 1)
     root_dist[100 - hi_repeat - 1] = 1.0 
     mut_model = msprime.SMM(lo=lo_repeat, hi=hi_repeat, root_distribution = root_dist)
+
+    ### 7.2. Simulate mutation process ###
     mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"])
 
-    # ---___---___---___--- Format Data for NeEstimator (GENEPOP) ---___---___---___--- #
+    # ---___---___---___--- 8. Format Data for NeEstimator (GENEPOP) ---___---___---___--- #
 
+    ### 8.1. Generate the copy number matrix ###
     def copy_number_matrix(ts):
         C = np.zeros((ts.num_sites, ts.num_samples), dtype=int)
         for var in ts.variants():
@@ -153,7 +169,7 @@ def run_simulation_linux():
     num_individuals, num_loci = copy_numbers.shape
     output_gen_file = os.path.join(sim_folder, "simulation_data.gen")
 
-    # Separate the different samples and mark "pop" between them
+    ### Write the ".gen" file in GENEPOP format ###
     sample_sizes_Ne = config["sample_sizes_Ne"]
     sample2_size_Ne = sample_sizes_Ne[0]
     sample1_size_Ne = sample_sizes_Ne[1]
@@ -182,8 +198,9 @@ def run_simulation_linux():
             )
             f.write(f"Indiv_{(i//2)+1}{genotype_line}\n")
 
-    # ---___---___---___--- Run NeEstimator ---___---___---___--- #
+    # ---___---___---___--- 9. Run NeEstimator ---___---___---___--- #
 
+    ### 9.1. Execute the NeEstimator binary (Ne2x)
     ne2_exe = os.path.join(SCRIPT_DIR, "..", "..", "Bin", "Ne2x")
 
     try:
@@ -204,7 +221,7 @@ def run_simulation_linux():
     except subprocess.CalledProcessError:
         pass
 
-    # ---___---___---___--- Organize the data into a CSV file ---___---___---___--- #
+    # ---___---___---___--- 10. Extract NeEstimator results ---___---___---___--- #
 
     def extract_ne_stats(txt_path):
         """Extract the main stats from the NeEstimator analysis"""
@@ -214,6 +231,7 @@ def run_simulation_linux():
 
         results = {}
 
+        ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
         for pop in [1, 2]:
             # LINKAGE DESEQUILIBRIUM
             ne_values_raw = re.findall(rf"Population\s+{pop}.*?Estimated Ne\^ =\s*(\S+)", content, re.DOTALL)
@@ -234,12 +252,14 @@ def run_simulation_linux():
             else:
                 coan_val = None
 
+            ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
             # Temporal methods (Two-sample methods)
             if pop == 2:  # Only with two samples
                 pollak_ne = re.findall(r"\(Pollak\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
                 nei_ne = re.findall(r"\(Nei/Tajima\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
                 jorde_ne = re.findall(r"\(Jorde/Ryman\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
 
+            ### 10.3. Use "parse_value" for cleanup and validation ###
             def parse_value(v):
                 try:
                     f = float(v)
@@ -263,6 +283,7 @@ def run_simulation_linux():
 
         return results
 
+    ### 10.4. Load config values with "read_config()" ###
     def read_config(path):
         """Read the config file"""
         config_dict = {}
@@ -296,7 +317,9 @@ def run_simulation_linux():
     # Add the simulation ID
     config_dict["simulation_id"] = sim_id
 
-# Mean allele number for each sample
+    # ---___---___---___--- 11. Genetic diversity summaries ---___---___---___--- #
+
+    ### 11.1. Read the "simulation_dataLoc.txt" file ###
     loc_file = os.path.join(sim_folder, "simulation_dataLoc.txt")
 
     per_pop_summaries = {}
@@ -322,7 +345,8 @@ def run_simulation_linux():
                     het_exp[current_pop] = []
                     locus_counter = 0
                     continue
-
+                
+                ### 11.2. Compute per-locus statistics ###
                 if re.match(r"\s*\d+:Locus_", line) and current_pop is not None:
                     locus_counter += 1
 
@@ -354,6 +378,7 @@ def run_simulation_linux():
                         per_pop_summaries[current_pop][-1]["Obs_Het"] = obs
                         per_pop_summaries[current_pop][-1]["Exp_Het"] = exp
 
+    ### 11.3. Compute per-population averages ###
     for pop_id in per_pop_summaries:
         if het_obs[pop_id]:
             config_dict[f"mean_obs_het_pop{pop_id}"] = round(np.mean(het_obs[pop_id]), 4)
@@ -366,7 +391,10 @@ def run_simulation_linux():
         if allele_variances[pop_id]:
             config_dict[f"var_allele_size_pop{pop_id}"] = round(np.mean(allele_variances[pop_id]), 4)
 
+    # ---___---___---___--- 12. Write summary ".txt" file ---___---___---___--- #
 
+
+    ### 12.1. Write overall sections to a human-readable summary ###
     summary_txt_path = os.path.join(sim_folder, "summary.txt")
     with open(summary_txt_path, "w") as f:
         def write_section(header, keys, file_handle):
@@ -396,6 +424,8 @@ def run_simulation_linux():
         write_section("Genetic Diversity - Allelic Size Variance", [
                 "var_allele_size_pop1", "var_allele_size_pop2"
             ], f)
+        
+        ### 12.2. Write per-locus summary tables ###
         for pop_id, allelic_summary in per_pop_summaries.items():
             if not allelic_summary:
                 continue
@@ -429,13 +459,14 @@ def run_simulation_linux():
             for row in rows:
                 f.write(" | ".join(f"{row[key]:<{column_widths[key]}}" for key in header_labels) + "\n")
 
+    # ---___---___---___--- 13. Append to global CSV summary ---___---___---___--- #
 
-    # Delete unsollicited parts of the config file
+    ### 13.1. Remove unnecessary keys before writing ###
     UNWANTED_KEYS = ["output_folder", "log_file", "timestamp", "seed"]
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
 
-    # Save the summary file
+    ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
     if os.path.exists(summary_path):
@@ -447,7 +478,9 @@ def run_simulation_linux():
 
         import os
 
-    # Documents the files that must be deleted to gain disk space
+    # ---___---___---___--- 14. Cleanup temporary files ---___---___---___--- #
+
+    ### 14.1. List of files to remove to save space ###
     files_to_remove = [
         "info",
         "option",
@@ -464,7 +497,7 @@ def run_simulation_linux():
         "slim.log"
     ]
 
-    # Deleting all the files marked
+    ### 14.2. Delete each file if it exists ###
     for filename in files_to_remove:
         filepath = os.path.join(sim_folder, filename)
         if os.path.exists(filepath):
