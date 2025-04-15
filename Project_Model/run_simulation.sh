@@ -12,7 +12,7 @@ if [ ! -f Bin/Ne2x ]; then
 fi
 
 # Lancer la simulation SLiM
-./bin/slim_linux slim_scripts/Model_microsat.slim
+./bin/slim slim_scripts/Model_microsat.slim
 
 # Lancer NeEstimator
 ./bin/NeEstimator_linux config/option
