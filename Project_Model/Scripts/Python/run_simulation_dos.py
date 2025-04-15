@@ -506,6 +506,8 @@ def run_simulation_dos():
             except Exception as e:
                 pass
 
+    print(f"✅ Simulation completed. Output saved in:\n{sim_folder}")
+
 
 
 

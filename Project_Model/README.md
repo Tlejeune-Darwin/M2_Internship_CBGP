@@ -16,6 +16,8 @@
 
 Install dependencies via pip:
     pip install tskit pyslim msprime numpy matplotlib pandas
+or use the requirements.txt in the "Project_Model" directory : 
+    pip install -r requirements.txt
 
 ### SLIM & NEESTIMATOR INSTALLATION ###
 
@@ -67,3 +69,6 @@ Each simulation creates:
 ### TROUBLESHOOTING ###
 
 Every errors I encountered would be present here (if I remember to add them)
+- Use "python" instead of "python3" for Windows
+- Watch out for OneDrive directories
+- 
