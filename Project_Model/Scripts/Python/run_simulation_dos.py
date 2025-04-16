@@ -41,14 +41,14 @@ def run_simulation_dos():
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
     config = {
         "simulation_id" : sim_id,
-        "pop_size" : 100,
+        "pop_size" : int(np.random.loguniform(mean=5, sigma=0.3)),
         "num_loci" : 20,
         "num_generations" : 40,
         "sample_sizes_Ne" : [50,50],
         "sample_sizes_CMR" : [100,100],
         "low_repeats" : 1,
         "high_repeats" : 200,
-        "mutation_rate" : 1e-2,
+        "mutation_rate" : 1e-3,
         "recap_Ne" : 100,
         "output_folder" : sim_folder,
         "timestamp" : timestamp,
@@ -506,7 +506,7 @@ def run_simulation_dos():
             except Exception as e:
                 pass
 
-    print(f"✅ Simulation completed. Output saved in:\n{sim_folder}")
+
 
 
 
