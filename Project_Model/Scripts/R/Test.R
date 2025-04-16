@@ -1,7 +1,7 @@
 library(tidyverse)
 
 # Read the file
-df <- read_csv("simulations/summary_table.csv")
+df <- read_csv("summary_table.csv")
 
 # Keep interesting columns only
 df <- df %>%
@@ -10,7 +10,7 @@ df <- df %>%
          Coan_Neb_n_Pop2, Ne_Pollak, Ne_Nei, Ne_Jorde, mean_alleles_pop1, mean_alleles_pop2)
 
 # True value is important for the bias
-true_value <- 100
+true_value <- df$pop_size
 
 # Stat calculation
 summary_list <- lapply(df, function(col) {
@@ -77,94 +77,208 @@ print(summary_df)
 
 #######################################################################################
 
+# Chargement des packages
 library(tidyverse)
-library(tibble)
 
-# Chargement manuel de chaque fichier
-df_5 <- read_csv("L_5.csv")
-df_10 <- read_csv("L_10.csv")
-df_15 <- read_csv("L_15.csv")
-df_20 <- read_csv("L_20.csv")
-df_25 <- read_csv("L_25.csv")
-df_30 <- read_csv("L_30.csv")
-df_35 <- read_csv("L_35.csv")
-df_40 <- read_csv("L_40.csv")
+# Lecture du fichier
+df <- read_csv("summary_table.csv")
 
-val_5 <- df_5[4, "Wang_RMSE"]
-val_10 <- df_10[4, "Wang_RMSE"]
-val_15 <- df_15[4, "Wang_RMSE"]
-val_20 <- df_20[4, "Wang_RMSE"]
-val_25 <- df_25[4, "Wang_RMSE"]
-val_30 <- df_30[4, "Wang_RMSE"]
-val_35 <- df_35[4, "Wang_RMSE"]
-val_40 <- df_40[4, "Wang_RMSE"]
+# Calcul du biais
+df <- df %>%
+  mutate(
+    bias = census_N - pop_size,
+    relative_bias = (census_N - pop_size) / pop_size
+  )
 
+# Statistiques descriptives
+summary(df$bias)
+summary(df$relative_bias)
 
-# Création du tableau des résultats
-rmse_df <- tibble(
-  Param = c(5, 10, 15, 20, 25, 30, 35, 40),
-  Wang_RMSE = c(val_5, val_10, val_15, val_20, val_25, val_30, val_35, val_40)
-)
+# Histogramme du biais absolu
+ggplot(df, aes(x = bias)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais absolu (census_N - pop_size)",
+       x = "Biais", y = "Nombre de simulations")
 
-library(ggplot2)
+# Boxplot du biais relatif
+ggplot(df, aes(y = relative_bias)) +
+  geom_boxplot(fill = "orange") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Biais relatif de l'estimation du census_N",
+       y = "(census_N - pop_size) / pop_size")
 
-# Si ce n’est pas encore fait :
-rmse_df$Param <- as.numeric(rmse_df$Param)  # assure que l'axe x est bien numérique
-rmse_df$Wang_RMSE <- as.numeric(rmse_df$Wang_RMSE)
-
-library(ggplot2)
-
-ggplot(rmse_df, aes(x = Param, y = Wang_RMSE)) +
-  geom_line(linewidth = 1, color = "black", linetype = "dashed") +
-  geom_point(size = 2, color = "black") +
-  scale_x_log10(breaks = rmse_df$Param) +  # Échelle log avec les valeurs entières affichées
-  labs(
-    x = expression(italic(L)),
-    y = "RMSE"
-  ) +
-  theme_minimal(base_size = 14)
+# Affichage de quelques exemples
+head(df %>% select(simulation_id, pop_size, census_N, bias, relative_bias), 10)
 
 #######################################################################################
 
+# Chargement des packages
 library(tidyverse)
-library(tibble)
 
-# Chargement manuel de chaque fichier
-df_10 <- read_csv("Ne_10.csv")
-df_50 <- read_csv("Ne_50.csv")
-df_250 <- read_csv("Ne_250.csv")
-df_1250 <- read_csv("Ne_1250.csv")
-df_6250 <- read_csv("Ne_6250.csv")
-df_31250 <- read_csv("Ne_31250.csv")
+# Lecture du fichier
+df <- read_csv("summary_table.csv")
 
-val_10 <- df_10[4, "Wang_RMSE"]
-val_50 <- df_50[4, "Wang_RMSE"]
-val_250 <- df_250[4, "Wang_RMSE"]
-val_1250 <- df_1250[4, "Wang_RMSE"]
-val_6250 <- df_6250[4, "Wang_RMSE"]
-val_31250 <- df_31250[4, "Wang_RMSE"]
+# Calcul des biais en excluant les NA
+df <- df %>%
+  mutate(
+    bias_LD_pop1 = LD_Ne_0.05_Pop1 - pop_size,
+    relative_bias_LD_pop1 = (LD_Ne_0.05_Pop1 - pop_size) / pop_size,
+    
+    bias_LD_pop2 = LD_Ne_0.05_Pop2 - pop_size,
+    relative_bias_LD_pop2 = (LD_Ne_0.05_Pop2 - pop_size) / pop_size
+  )
 
-# Création du tableau des résultats
-rmse_df <- tibble(
-  Param = c(10, 50, 250, 1250, 6250, 31250),
-  Wang_RMSE = c(val_10, val_50, val_250, val_1250, val_6250, val_31250)
-)
+# Statistiques descriptives avec exclusion des NA
+summary(df$bias_LD_pop1)
+summary(df$relative_bias_LD_pop1)
+summary(df$bias_LD_pop2)
+summary(df$relative_bias_LD_pop2)
 
-library(ggplot2)
+# Histogrammes avec exclusion des NA
+ggplot(df %>% filter(!is.na(bias_LD_pop1)), aes(x = bias_LD_pop1)) +
+  geom_histogram(bins = 30, fill = "cornflowerblue", color = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Biais absolu LD Ne (pop 1)", x = "Biais", y = "Nombre de simulations")
 
-# Si ce n’est pas encore fait :
-rmse_df$Param <- as.numeric(rmse_df$Param)  # assure que l'axe x est bien numérique
-rmse_df$Wang_RMSE <- as.numeric(rmse_df$Wang_RMSE)
+ggplot(df %>% filter(!is.na(bias_LD_pop2)), aes(x = bias_LD_pop2)) +
+  geom_histogram(bins = 30, fill = "forestgreen", color = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Biais absolu LD Ne (pop 2)", x = "Biais", y = "Nombre de simulations")
 
-library(ggplot2)
+# Préparation des biais relatifs en long format (en filtrant les NA)
+df_long <- df %>%
+  select(simulation_id, pop_size,
+         relative_bias_LD_pop1, relative_bias_LD_pop2) %>%
+  pivot_longer(cols = starts_with("relative_bias"), names_to = "population", values_to = "relative_bias") %>%
+  mutate(population = recode(population,
+                             "relative_bias_LD_pop1" = "Pop 1",
+                             "relative_bias_LD_pop2" = "Pop 2")) %>%
+  filter(!is.na(relative_bias))
 
-ggplot(rmse_df, aes(x = Param, y = Wang_RMSE)) +
-  geom_line(linewidth = 1, color = "black", linetype = "dashed") +
-  geom_point(size = 2, color = "black") +
-  scale_x_log10(breaks = rmse_df$Param) +  # Échelle log avec les valeurs entières affichées
-  labs(
-    x = expression(italic(Ne)),
-    y = "RMSE"
-  ) +
-  theme_minimal(base_size = 14)
+# Boxplot
+ggplot(df_long, aes(x = population, y = relative_bias)) +
+  geom_boxplot(fill = "orange") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Biais relatif LD Ne 0.05",
+       y = "(LD_Ne - pop_size) / pop_size", x = "Population")
 
+# Aperçu de quelques lignes complètes
+df %>%
+  select(simulation_id, pop_size, LD_Ne_0.05_Pop1, LD_Ne_0.05_Pop2,
+         bias_LD_pop1, relative_bias_LD_pop1,
+         bias_LD_pop2, relative_bias_LD_pop2) %>%
+  drop_na() %>%
+  head(10)
+
+###################################################################################
+
+library(tidyverse)
+
+# Lecture du fichier CSV
+df <- read_csv("summary_table.csv")
+
+# Calcul des biais
+df <- df %>%
+  mutate(
+    bias_pollak = Ne_Pollak - pop_size,
+    relative_bias_pollak = (Ne_Pollak - pop_size) / pop_size,
+    
+    bias_nei = Ne_Nei - pop_size,
+    relative_bias_nei = (Ne_Nei - pop_size) / pop_size,
+    
+    bias_jorde = Ne_Jorde - pop_size,
+    relative_bias_jorde = (Ne_Jorde - pop_size) / pop_size
+  )
+
+# Pollak
+ggplot(df %>% filter(!is.na(bias_pollak)), aes(x = bias_pollak)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais absolu - Méthode Pollak", x = "Biais (Ne_Pollak - pop_size)", y = "Nombre de simulations")
+
+# Nei
+ggplot(df %>% filter(!is.na(bias_nei)), aes(x = bias_nei)) +
+  geom_histogram(bins = 30, fill = "lightgreen", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais absolu - Méthode Nei", x = "Biais (Ne_Nei - pop_size)", y = "Nombre de simulations")
+
+# Jorde-Ryman
+ggplot(df %>% filter(!is.na(bias_jorde)), aes(x = bias_jorde)) +
+  geom_histogram(bins = 30, fill = "orange", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais absolu - Méthode Jorde-Ryman", x = "Biais (Ne_Jorde - pop_size)", y = "Nombre de simulations")
+
+summary(select(df, bias_pollak, relative_bias_pollak,
+               bias_nei, relative_bias_nei,
+               bias_jorde, relative_bias_jorde))
+
+# Histogramme du biais relatif - Pollak
+ggplot(df %>% filter(!is.na(relative_bias_pollak)), aes(x = relative_bias_pollak)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais relatif - Méthode Pollak",
+       x = "(Ne_Pollak - pop_size) / pop_size", y = "Nombre de simulations")
+
+# Histogramme du biais relatif - Nei
+ggplot(df %>% filter(!is.na(relative_bias_nei)), aes(x = relative_bias_nei)) +
+  geom_histogram(bins = 30, fill = "lightgreen", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais relatif - Méthode Nei",
+       x = "(Ne_Nei - pop_size) / pop_size", y = "Nombre de simulations")
+
+# Histogramme du biais relatif - Jorde-Ryman
+ggplot(df %>% filter(!is.na(relative_bias_jorde)), aes(x = relative_bias_jorde)) +
+  geom_histogram(bins = 30, fill = "orange", color = "black") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Biais relatif - Méthode Jorde-Ryman",
+       x = "(Ne_Jorde - pop_size) / pop_size", y = "Nombre de simulations")
+
+df_selection <- df %>%
+  select(simulation_id, pop_size, census_N, Ne_Jorde, Ne_Nei, Ne_Pollak, relative_bias_jorde, relative_bias_nei, relative_bias_pollak)
+
+ggplot(df_long, aes(x = relative_bias, fill = method)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Distribution du biais relatif (densité)",
+       x = "Biais relatif", fill = "Méthode")
+
+########################################################################################
+
+library(tidyverse)
+
+# Lecture du fichier
+df <- read_csv("summary_table.csv")
+
+# Calcul des biais relatifs si besoin
+df <- df %>%
+  mutate(
+    relative_bias_pollak = (Ne_Pollak - pop_size) / pop_size,
+    relative_bias_nei    = (Ne_Nei    - pop_size) / pop_size,
+    relative_bias_jorde  = (Ne_Jorde  - pop_size) / pop_size
+  )
+
+# Mise en format long + suppression des NA
+df_long <- df %>%
+  select(simulation_id, pop_size,
+         relative_bias_pollak, relative_bias_nei, relative_bias_jorde) %>%
+  pivot_longer(cols = starts_with("relative_bias"),
+               names_to = "method", values_to = "relative_bias") %>%
+  mutate(method = recode(method,
+                         "relative_bias_pollak" = "Pollak",
+                         "relative_bias_nei" = "Nei",
+                         "relative_bias_jorde" = "Jorde")) %>%
+  drop_na(relative_bias)
+df_long <- df_long %>%
+  filter(simulation_id != "sim_20250416_091816_local")%>%
+  filter(simulation_id != "sim_20250416_091919_local")
+
+
+# Scatter plot
+ggplot(df_long, aes(x = pop_size, y = relative_bias, color = method)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_x_log10() +
+  labs(title = "Biais relatif des méthodes temporelles vs pop_size",
+       x = "Taille de population simulée (log scale)",
+       y = "Biais relatif", color = "Méthode")
