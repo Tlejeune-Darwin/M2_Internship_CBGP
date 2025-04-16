@@ -39,17 +39,19 @@ def run_simulation_dos():
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
+    pop_size = int(np.exp(np.random.uniform(np.log(50), np.log(10000))))
     config = {
         "simulation_id" : sim_id,
-        "pop_size" : int(np.random.loguniform(mean=5, sigma=0.3)),
+        "pop_size" : pop_size,
         "num_loci" : 20,
-        "num_generations" : 40,
+        "sample1_generation" : 30,
+        "sample2_generation" : 10,
         "sample_sizes_Ne" : [50,50],
-        "sample_sizes_CMR" : [100,100],
+        "sample_sizes_CMR" : [50,50],
         "low_repeats" : 1,
         "high_repeats" : 200,
         "mutation_rate" : 1e-3,
-        "recap_Ne" : 100,
+        "recap_Ne" : pop_size,
         "output_folder" : sim_folder,
         "timestamp" : timestamp,
         "seed" : random.randint(1, 10**6)
@@ -65,7 +67,8 @@ def run_simulation_dos():
 
     ### 3.3. Create the "info" file (for NeEstimator input) ###
     info_path = os.path.join(sim_folder, "info")
-    num_generations = int(config["num_generations"])
+    sample1_generation = int(config["sample1_generation"])
+    sample2_generation = int(config["sample2_generation"])
 
     with open(info_path, "w") as f:
         f.write("15  0\n")                                      # Calculation methods : by addition (15 means all methods)
@@ -77,7 +80,7 @@ def run_simulation_dos():
         f.write("3\n")                                          # Number of critical values
         f.write("0.05  0.02  0.01\n")                           # Critical values
         f.write("0\n")                                          # Random mating (0) or monogamy (1)
-        f.write(f"0 10 {num_generations}\n")                    # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
+        f.write(f"0 {sample1_generation} {sample2_generation+sample1_generation}\n")                    # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
         f.write("0\n")                                          # 0 must be added here to stop the generations
 
     ### 3.4. Create the "option" file (for NeEstimator input) ###
@@ -405,7 +408,7 @@ def run_simulation_dos():
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
-        write_section("Model Parameters", ["pop_size", "num_loci", "num_generations", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
+        write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
         write_section("Ne Estimates - One Sample", [
@@ -482,19 +485,19 @@ def run_simulation_dos():
 
     ### 14.1. List of files to remove to save space ###
     files_to_remove = [
-        "info",
-        "option",
+        #"info",
+        #"option",
         "simulation_dataBur.txt",
-        "simulation_dataNe.txt",
+        #"simulation_dataNe.txt",
         "simulation_dataNexHt.txt",
         "simulation_dataNexCn.txt",
         "simulation_dataNexLD.txt",
         "simulation_dataNexTp.txt",
-        "simulation_dataLoc.txt",
-        "simulation_data.gen",
+        #"simulation_dataLoc.txt",
+        #"simulation_data.gen",
         "simulation.trees",
-        "slim_config.txt",
-        "slim.log"
+        #"slim_config.txt",
+        #"slim.log"
     ]
 
     ### 14.2. Delete each file if it exists ###

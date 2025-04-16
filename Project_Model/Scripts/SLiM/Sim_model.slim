@@ -38,8 +38,9 @@ initialize() {
 	 defineGlobal("output_folder", params.getValue("output_folder"));
 	 defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
     defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
-    defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
-    defineGlobal("num_generations", asInteger(params.getValue("num_generations")));
+    defineGlobal("num_loci", asInteger(params.getValue("num_loci")) - 1);
+	 defineGlobal("sample1_generation", asInteger(params.getValue("sample1_generation")));
+	 defineGlobal("sample2_generation", asInteger(params.getValue("sample2_generation")));
     defineGlobal("mutation_rate", asFloat(params.getValue("mutation_rate")));
     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
     defineGlobal("output_folder", params.getValue("output_folder"));
@@ -53,7 +54,8 @@ initialize() {
     defineGlobal("sample_size_CMR_0", asInteger(sizes_CMR[0]));
     defineGlobal("sample_size_CMR_1", asInteger(sizes_CMR[1]));
 
-	 defineConstant("NUM_GENERATIONS", num_generations); // Used for ending the simulation
+	 defineConstant("sample1_gen", sample1_generation);
+	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
 }
     // SLiM model initialization
@@ -73,12 +75,14 @@ initialize() {
     sim.addSubpop("p1", pop_size); // Pop creation
 }
 
-1 late() {
+(sample1_gen - 1) late() {
 
 	 // First sample
     // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sample_size_Ne_0) {
         sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
+        catn("[Sample1] Échantillonnage à la génération " + sim.cycle);
+ 
 
         // Mark this individuals as "Remembered"
         for (ind in sampled_first_gen) {
@@ -113,7 +117,7 @@ return (individual.age == 0);
 }
 
 // Generation number is determined by pythono script
-(NUM_GENERATIONS - 1) late() {
+(end_generation - 1) late() {
 
 		//sample1
 	sample1 = sample(p1.individuals, sample_size_CMR_0, replace = F);
@@ -147,6 +151,7 @@ return (individual.age == 0);
     // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sample_size_Ne_1) {
         sampled_last_gen = sample(p1.individuals, sample_size_Ne_1, replace=F);
+        catn("[Sample2] Échantillonnage à la génération " + sim.cycle);
 
         // Mark this individuals as "Retained"
         for (ind in sampled_last_gen) {
