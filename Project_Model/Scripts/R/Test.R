@@ -1,7 +1,7 @@
 library(tidyverse)
 
 # Read the file
-df <- read_csv("summary_table.csv")
+df <- read_csv("Bureau/simulations/summary_table.csv")
 
 # Keep interesting columns only
 df <- df %>%
@@ -81,7 +81,7 @@ print(summary_df)
 library(tidyverse)
 
 # Lecture du fichier
-df <- read_csv("summary_table.csv")
+df <- read_csv("Bureau/simulations/summary_table.csv")
 
 # Calcul du biais
 df <- df %>%
@@ -117,7 +117,7 @@ head(df %>% select(simulation_id, pop_size, census_N, bias, relative_bias), 10)
 library(tidyverse)
 
 # Lecture du fichier
-df <- read_csv("summary_table.csv")
+df <- read_csv("Bureau/simulations/summary_table.csv")
 
 # Calcul des biais en excluant les NA
 df <- df %>%
@@ -176,7 +176,7 @@ df %>%
 library(tidyverse)
 
 # Lecture du fichier CSV
-df <- read_csv("summary_table.csv")
+df <- read_csv("Bureau/simulations/summary_table.csv")
 
 # Calcul des biais
 df <- df %>%
@@ -248,31 +248,40 @@ ggplot(df_long, aes(x = relative_bias, fill = method)) +
 library(tidyverse)
 
 # Lecture du fichier
-df <- read_csv("summary_table.csv")
+df <- read_csv("Bureau/simulations/summary_table.csv")
 
 # Calcul des biais relatifs si besoin
 df <- df %>%
   mutate(
+    bias_pollak = Ne_Pollak - pop_size,
     relative_bias_pollak = (Ne_Pollak - pop_size) / pop_size,
-    relative_bias_nei    = (Ne_Nei    - pop_size) / pop_size,
-    relative_bias_jorde  = (Ne_Jorde  - pop_size) / pop_size
+    
+    bias_nei = Ne_Nei - pop_size,
+    relative_bias_nei = (Ne_Nei - pop_size) / pop_size,
+    
+    bias_jorde = Ne_Jorde - pop_size,
+    relative_bias_jorde = (Ne_Jorde - pop_size) / pop_size
   )
 
 # Mise en format long + suppression des NA
 df_long <- df %>%
   select(simulation_id, pop_size,
-         relative_bias_pollak, relative_bias_nei, relative_bias_jorde) %>%
+         relative_bias_pollak, relative_bias_nei, relative_bias_jorde, bias_pollak, bias_nei, bias_jorde) %>%
   pivot_longer(cols = starts_with("relative_bias"),
                names_to = "method", values_to = "relative_bias") %>%
   mutate(method = recode(method,
                          "relative_bias_pollak" = "Pollak",
                          "relative_bias_nei" = "Nei",
-                         "relative_bias_jorde" = "Jorde")) %>%
-  drop_na(relative_bias)
-df_long <- df_long %>%
-  filter(simulation_id != "sim_20250416_091816_local")%>%
-  filter(simulation_id != "sim_20250416_091919_local")
+                         "relative_bias_jorde" = "Jorde"))
 
+# Scatter plot
+ggplot(df_long, aes(x = pop_size, y = bias, color = method)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_x_log10() +
+  labs(title = "Biais absolu des méthodes temporelles vs pop_size",
+       x = "Taille de population simulée (log scale)",
+       y = "Biais absolu", color = "Méthode")
 
 # Scatter plot
 ggplot(df_long, aes(x = pop_size, y = relative_bias, color = method)) +
