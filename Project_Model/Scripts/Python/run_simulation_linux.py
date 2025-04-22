@@ -512,9 +512,9 @@ def run_simulation_linux():
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1"
                                                  "LD_Ne_Pop2", "LD_r2_Pop2"], f)
         write_section("Heterozygote excess", ["He_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
-                                              "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"])
+                                              "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"], f)
         write_section("Molecular Coancestry", ["Coan_Neb_n_Pop1", "Coan_f1_Pop1",
-                                               "Coan_Neb_n_Pop2", "Coan_f1_Pop2"])
+                                               "Coan_Neb_n_Pop2", "Coan_f1_Pop2"], f)
 
         write_section("Ne Estimates - Temporal - Decreasing critical values (0.050, 0.020, 0.010, 0+)", [], f)
         write_section("Pollak", ["P_Ne", "P_Fk", "P_F'"], f)
