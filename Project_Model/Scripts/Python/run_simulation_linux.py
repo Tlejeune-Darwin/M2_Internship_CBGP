@@ -232,6 +232,15 @@ def run_simulation_linux():
         with open(txt_path, "r") as f:
             content = f.read()
 
+            def clean_value(v):
+                try:
+                    if isinstance(v, str) and v.strip().lower() in ("infinite", "inf", "none", ""):
+                        return None
+                    return float(v)
+                except:
+                    return None
+
+
         results = {}
 
         ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
