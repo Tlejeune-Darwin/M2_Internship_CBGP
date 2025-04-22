@@ -262,12 +262,24 @@ def run_simulation_linux():
                     results[f"r2_{th}_Pop{pop}"] = r2_vals[i]
 
             # HETEROZYGOTE EXCESS
-            he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?Estimated Neb\^  =\s+(\S+)", content, re.DOTALL)
+            # === HETEROZYGOTE EXCESS PARSE ===
+            he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
             if he_block:
-                he_raw = he_block.group(1)
-                he_val = float(he_raw) if "Inf" not in he_raw else None
-            else:
-                he_val = None
+                he_text = he_block.group(0)
+
+                # Extraction similaire à LD
+                def extract_he_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", he_text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in values]
+                    return [None] * 4
+
+                he_vals = extract_he_values("Estimated Neb\\^")
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
+
 
             # COANCESTRY
             coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
@@ -294,7 +306,7 @@ def run_simulation_linux():
             # One-sample methods
             results.update({
                 f"LD_Ne_0.05_Pop{pop}": ne_vals,
-                f"HE_Neb_mean_Pop{pop}": he_val,
+                f"HE_Neb_mean_Pop{pop}": he_vals,
                 f"Coan_Neb_n_Pop{pop}": coan_val
             })
 
