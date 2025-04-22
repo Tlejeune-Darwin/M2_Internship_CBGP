@@ -295,6 +295,8 @@ def run_simulation_linux():
                 coan_val = float(coan_block.group(1)) if "Inf" not in coan_block.group(1) else None
             else:
                 coan_val = None
+                f1_match = re.search(r"OverAll f1\^.*?=\s+(-?\d+\.\d+)", coan_block.group(0)) if coan_block else None
+                f1_val = float(f1_match.group(1)) if f1_match else None
 
             ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
             # Temporal methods (Two-sample methods)
@@ -317,7 +319,8 @@ def run_simulation_linux():
                 f"LD_r2_Pop{pop}": r2_vals,
                 f"HE_Neb_mean_Pop{pop}": he_vals,
                 f"HE_D_mean_Pop{pop}" : d_vals,
-                f"Coan_Neb_n_Pop{pop}": coan_val
+                f"Coan_Neb_n_Pop{pop}": coan_val,
+                f"Coan_f1_Pop{pop}" : f1_val
             })
 
         # Temporal methods
@@ -455,8 +458,8 @@ def run_simulation_linux():
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
-                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_D_mean_Pop1", "Coan_Neb_n_Pop1",
-                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_D_mean_Pop2", "Coan_Neb_n_Pop2" 
+                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_D_mean_Pop1", "Coan_Neb_n_Pop1", "Coan_f1_Pop1",
+                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
             ], f)
         write_section("Ne Estimates - Temporal", ["Ne_Pollak", "Ne_Nei", "Ne_Jorde"], f)
         write_section("Genetic Diversity - Heterozygosity", [
