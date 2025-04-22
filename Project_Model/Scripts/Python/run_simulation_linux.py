@@ -513,14 +513,9 @@ def run_simulation_linux():
                 "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
             ], f)
         write_section("Ne Estimates - Temporal - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
-        f.write("\n[Pollak]\n")
-        write_section("", ["P_Ne", "P_Fk", "P_F'"], f)
-
-        f.write("\n[Nei/Tajima]\n")
-        write_section("", ["N_Ne", "N_Fc", "N_F'"], f)
-
-        f.write("\n[Jorde/Ryman]\n")
-        write_section("", ["J_Ne", "J_Fs", "J_F'"], f)
+        write_section("\n[Pollak]", ["P_Ne", "P_Fk", "P_F'"], f)
+        write_section("\n[Nei/Tajima]", ["N_Ne", "N_Fc", "N_F'"], f)
+        write_section("\n[Jorde/Ryman]", ["J_Ne", "J_Fs", "J_F'"], f)
         
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
