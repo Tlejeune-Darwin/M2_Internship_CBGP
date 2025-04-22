@@ -159,6 +159,17 @@ return (individual.age == 0);
     } else {
         catn("Not enough individuals for the last sample");
     }
+
+if (typeof(estimatePopSize) == "float" | typeof(estimatePopSize) == "integer") {
+    // tout va bien
+} else if (typeof(estimatePopSize) == "string" & estimatePopSize == "Cannot be estimated") {
+    estimatePopSize = 0;
+    catn("⚠️ Warning: estimatePopSize couldn't be estimated, set to 0.");
+} else {
+    estimatePopSize = 0;
+    catn("⚠️ Warning: unexpected value for estimatePopSize, set to 0. Value = ", estimatePopSize);
+}
+
 if (!exists("slimgui")) {
     // Output Folder
     output_folder = paste(strsplit(output_folder, " "), sep="");
