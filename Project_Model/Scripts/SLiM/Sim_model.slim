@@ -145,6 +145,7 @@ return (individual.age == 0);
 		catn(estimatePopSize);
 	} else {
 		catn("Estimated population size: Cannot be estimated (zero matches).");
+		estimatePopSize = 0;
 	}
 
     // Verify that there is enough individuals to sample
@@ -159,6 +160,7 @@ return (individual.age == 0);
     } else {
         catn("Not enough individuals for the last sample");
     }
+
 if (!exists("slimgui")) {
     // Output Folder
     output_folder = paste(strsplit(output_folder, " "), sep="");
@@ -175,6 +177,7 @@ appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
 	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
+	writeFile(config_file, paste("MatchCount=", asInteger(matchCount)), append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
 	writeFile(config_file, "------------------------", append=T);

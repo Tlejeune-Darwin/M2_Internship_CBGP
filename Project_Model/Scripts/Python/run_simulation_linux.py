@@ -91,8 +91,8 @@ def run_simulation_linux():
         "0",                                                    # Maximum individuals/pop, if 0 : no limit
         "-1",                                                   # -1 to ouptut the allelic frequencies
         "-1  1  0  0",                                          # -1 activate Burrows outputs for all pop; second entry shows all critical values
-        "1",                                                    # Parameter Confidence Interval
-        "1",                                                    # Jackknife Confidence Interval
+        "0",                                                    # Parameter Confidence Interval
+        "0",                                                    # Jackknife Confidence Interval
         "0",                                                    # Up to population, or range of population to run (if more than 2), 0 means no restriction
         "0",                                                    # All loci are accepted
         "1",                                                    # Input 1 to create a file that documents missing data from the input file
@@ -232,21 +232,62 @@ def run_simulation_linux():
         with open(txt_path, "r") as f:
             content = f.read()
 
+            def clean_value(v):
+                try:
+                    if isinstance(v, str) and v.strip().lower() in ("infinite", "inf", "none", ""):
+                        return None
+                    return float(v)
+                except:
+                    return None
+
+
         results = {}
 
         ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
         for pop in [1, 2]:
             # LINKAGE DESEQUILIBRIUM
-            ne_values_raw = re.findall(rf"Population\s+{pop}.*?Estimated Ne\^ =\s*(\S+)", content, re.DOTALL)
-            ld_ne_value = float(ne_values_raw[0]) if ne_values_raw and ne_values_raw[0] not in ("Infinite", "None") else None
+            # Cherche le bloc de texte de la section LD pour la population concernée
+            # === LINKAGE DISEQUILIBRIUM PARSE ===
+            ld_block = re.search(rf"Population\s+{pop}.*?LINKAGE DISEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
+            if ld_block:
+                ld_text = ld_block.group(0)
+
+                def extract_four_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", ld_text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in values]
+                    return [None] * 4
+
+                ne_vals = extract_four_values("Estimated Ne\\^")
+                r2_vals = extract_four_values("OverAll r\\^2")
+
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
+                    results[f"r2_overall_{th}_Pop{pop}"] = r2_vals[i]
+
 
             # HETEROZYGOTE EXCESS
-            he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?Estimated Neb\^  =\s+(\S+)", content, re.DOTALL)
+            # === HETEROZYGOTE EXCESS PARSE ===
+            he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
             if he_block:
-                he_raw = he_block.group(1)
-                he_val = float(he_raw) if "Inf" not in he_raw else None
-            else:
-                he_val = None
+                he_text = he_block.group(0)
+
+                # Extraction similaire à LD
+                def extract_he_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", he_text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in values]
+                    return [None] * 4
+
+                he_vals = extract_he_values("Estimated Neb\\^")
+                d_vals = extract_he_values("Weighted Mean D")
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
+
 
             # COANCESTRY
             coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
@@ -254,13 +295,60 @@ def run_simulation_linux():
                 coan_val = float(coan_block.group(1)) if "Inf" not in coan_block.group(1) else None
             else:
                 coan_val = None
-
+            f1_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?OverAll f1\^.*?=\s+(-?\d+\.\d+)", content, re.DOTALL)
+            if f1_block:
+                f1_val = float(f1_block.group(1))
+            else:
+                f1_val = None
+            
             ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
             # Temporal methods (Two-sample methods)
             if pop == 2:  # Only with two samples
-                pollak_ne = re.findall(r"\(Pollak\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
-                nei_ne = re.findall(r"\(Nei/Tajima\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
-                jorde_ne = re.findall(r"\(Jorde/Ryman\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
+                def extract_temporal_values(label, text):
+                    match = re.search(rf"{label}\s*=\s*(.+)", text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [clean_value(v) for v in values]
+                    return [None] * 4
+
+                pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\))", content, re.DOTALL)
+                fk_vals = [None] * 4
+                P_fprime_vals = [None] * 4
+                if pollak_block:
+                    pollak_text = pollak_block.group(1)
+                    fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
+                    if fk_match:
+                        fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
+                        P_fprime_match = re.search(r"F'\s*=\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)", pollak_block.group(0))
+                    if P_fprime_match:
+                        P_fprime_vals = [clean_value(P_fprime_match.group(i)) for i in range(1, 5)]
+                pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
+
+                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\))", content, re.DOTALL)
+                fc_vals = [None] * 4
+                N_fprime_vals = [None] * 4
+                if nei_block:
+                    nei_text = nei_block.group(1)
+                    fc_match = re.search(r"Fc\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    if fc_match:
+                        fc_vals = [clean_value(fc_match.group(i)) for i in range(1, 5)]
+                    N_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    if N_fprime_match:
+                        N_fprime_vals = [clean_value(N_fprime_match.group(i)) for i in range(1, 5)]
+                    nei_vals = extract_temporal_values(r"\* Ne", nei_text)
+
+                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
+                fs_vals = [None] * 4
+                J_fprime_vals = [None] * 4
+                if jorde_block:
+                    jorde_text = jorde_block.group(1)
+                    fs_match = re.search(r"Fs\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    if fs_match:
+                        fs_vals = [clean_value(fs_match.group(i)) for i in range(1, 5)]
+                    J_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    if J_fprime_match:
+                        J_fprime_vals = [clean_value(J_fprime_match.group(i)) for i in range(1, 5)]
+                    jorde_vals = extract_temporal_values(r"\* Ne", jorde_text)
 
             ### 10.3. Use "parse_value" for cleanup and validation ###
             def parse_value(v):
@@ -272,16 +360,25 @@ def run_simulation_linux():
 
             # One-sample methods
             results.update({
-                f"LD_Ne_0.05_Pop{pop}": ld_ne_value,
-                f"HE_Neb_mean_Pop{pop}": he_val,
-                f"Coan_Neb_n_Pop{pop}": coan_val
+                f"LD_Ne_Pop{pop}": ne_vals,
+                f"LD_r2_Pop{pop}": r2_vals,
+                f"HE_Neb_mean_Pop{pop}": he_vals,
+                f"HE_weighted_D_mean_Pop{pop}" : d_vals,
+                f"Coan_Neb_n_Pop{pop}": coan_val,
+                f"Coan_f1_Pop{pop}" : f1_val
             })
 
         # Temporal methods
         results.update({
-            "Ne_Pollak": parse_value(pollak_ne[0]) if pollak_ne else None,
-            "Ne_Nei": parse_value(nei_ne[0]) if nei_ne else None,
-            "Ne_Jorde": parse_value(jorde_ne[0]) if jorde_ne else None,
+            "P_Ne": pollak_vals,
+            "P_Fk" : fk_vals,
+            "P_F'" : P_fprime_vals,
+            "N_Ne": nei_vals,
+            "N_Fc": fc_vals,
+            "N_F'": N_fprime_vals,
+            "J_Ne": jorde_vals,
+            "J_Fs": fs_vals,
+            "J_F'": J_fprime_vals
         })
 
         return results
@@ -410,12 +507,27 @@ def run_simulation_linux():
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
-        write_section("Population Census", ["census_N"], f)
-        write_section("Ne Estimates - One Sample", [
-                "LD_Ne_0.05_Pop1", "HE_Neb_mean_Pop1", "Coan_Neb_n_Pop1",
-                "LD_Ne_0.05_Pop2", "HE_Neb_mean_Pop2", "Coan_Neb_n_Pop2"
-            ], f)
-        write_section("Ne Estimates - Temporal", ["Ne_Pollak", "Ne_Nei", "Ne_Jorde"], f)
+        write_section("Capture-Marquage-Recapture", ["census_N", "MatchCount"], f)
+        census_value = config_dict.get("census_N")
+        try:
+            if census_value is not None and float(census_value) == 0:
+                f.write("# There were no match between sampling of individuals during CMR.\n")
+        except ValueError:
+            pass 
+
+        write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
+        write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
+                                                 "LD_Ne_Pop2", "LD_r2_Pop2"], f)
+        write_section("Heterozygote excess", ["HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
+                                              "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"], f)
+        write_section("Molecular Coancestry", ["Coan_Neb_n_Pop1", "Coan_f1_Pop1",
+                                               "Coan_Neb_n_Pop2", "Coan_f1_Pop2"], f)
+
+        write_section("Ne Estimates - Temporal - Decreasing critical values (0.050, 0.020, 0.010, 0+)", [], f)
+        write_section("Pollak", ["P_Ne", "P_Fk", "P_F'"], f)
+        write_section("Nei/Tajima", ["N_Ne", "N_Fc", "N_F'"], f)
+        write_section("Jorde/Ryman", ["J_Ne", "J_Fs", "J_F'"], f)
+        
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
                 "mean_exp_het_pop2", "mean_obs_het_pop2"
@@ -488,7 +600,7 @@ def run_simulation_linux():
         "info",
         "option",
         "simulation_dataBur.txt",
-        "simulation_dataNe.txt",
+        #"simulation_dataNe.txt",
         "simulation_dataNexHt.txt",
         "simulation_dataNexCn.txt",
         "simulation_dataNexLD.txt",
