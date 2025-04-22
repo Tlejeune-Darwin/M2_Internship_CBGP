@@ -511,9 +511,9 @@ def run_simulation_linux():
         census_value = config_dict.get("census_N")
         try:
             if census_value is not None and float(census_value) == 0:
-                f.write("# Aucun match entre individus détecté lors de l’échantillonnage CMR (Capture-Marquage-Recapture).\n")
+                f.write("# There were no match between sampling of individuals during CMR.\n")
         except ValueError:
-            pass  # au cas où census_value serait une chaîne non convertible
+            pass 
 
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
