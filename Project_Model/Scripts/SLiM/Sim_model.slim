@@ -160,16 +160,17 @@ return (individual.age == 0);
         catn("Not enough individuals for the last sample");
     }
 
-if (typeof(estimatePopSize) == "float" | typeof(estimatePopSize) == "integer") {
-    // tout va bien
-} else if (typeof(estimatePopSize) == "string" & estimatePopSize == "Cannot be estimated") {
-    estimatePopSize = 0;
-    catn("⚠️ Warning: estimatePopSize couldn't be estimated, set to 0.");
-} else {
-    estimatePopSize = 0;
-    catn("⚠️ Warning: unexpected value for estimatePopSize, set to 0. Value = ", estimatePopSize);
-}
+estimatePopSizeVal = 0;
 
+suppress()
+{
+    if (estimatePopSize >= 0) {
+        estimatePopSizeVal = estimatePopSize;
+    } else {
+        // ne devrait pas arriver, mais au cas où
+        estimatePopSizeVal = 0;
+    }
+}
 if (!exists("slimgui")) {
     // Output Folder
     output_folder = paste(strsplit(output_folder, " "), sep="");
@@ -185,7 +186,7 @@ log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
-	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
+	writeFile(config_file, paste("census_N=", asInteger(estimatePopSizeVal)), append=T);
 	writeFile(config_file, paste("MatchCount=", asInteger(matchCount)), append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
