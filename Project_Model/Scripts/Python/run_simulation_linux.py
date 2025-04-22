@@ -453,7 +453,7 @@ def run_simulation_linux():
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
         write_section("Ne Estimates - One Sample", [
-                "LD_Ne_0.05_0.02_0.01_0_Pop1", "HE_Neb_mean_Pop1", "Coan_Neb_n_Pop1", "LD_r2_0.05_0.02_0.01_0_Pop1"
+                "LD_Ne_0.05_0.02_0.01_0_Pop1", "HE_Neb_mean_Pop1", "Coan_Neb_n_Pop1", "LD_r2_0.05_0.02_0.01_0_Pop1",
                 "LD_Ne_0.05_0.02_0.01_0_Pop2", "HE_Neb_mean_Pop2", "Coan_Neb_n_Pop2", "LD_r2_0.05_0.02_0.01_0_Pop2"
             ], f)
         write_section("Ne Estimates - Temporal", ["Ne_Pollak", "Ne_Nei", "Ne_Jorde"], f)
