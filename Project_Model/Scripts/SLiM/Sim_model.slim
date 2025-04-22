@@ -177,7 +177,7 @@ writeFile(config_file, appendLine + "\n", append=T);
 	if (isNumeric(estimatePopSize)) {
 	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
 } else {
-	catn(Error : estimatePopSize doesn't have value)
+	catn("Error : estimatePopSize doesn't have value")
 }
 	writeFile(config_file, paste("MatchCount=", asInteger(matchCount)), append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
