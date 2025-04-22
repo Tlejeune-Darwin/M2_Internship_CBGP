@@ -91,8 +91,8 @@ def run_simulation_linux():
         "0",                                                    # Maximum individuals/pop, if 0 : no limit
         "-1",                                                   # -1 to ouptut the allelic frequencies
         "-1  1  0  0",                                          # -1 activate Burrows outputs for all pop; second entry shows all critical values
-        "1",                                                    # Parameter Confidence Interval
-        "1",                                                    # Jackknife Confidence Interval
+        "0",                                                    # Parameter Confidence Interval
+        "0",                                                    # Jackknife Confidence Interval
         "0",                                                    # Up to population, or range of population to run (if more than 2), 0 means no restriction
         "0",                                                    # All loci are accepted
         "1",                                                    # Input 1 to create a file that documents missing data from the input file
@@ -601,7 +601,7 @@ def run_simulation_linux():
         "simulation_dataLoc.txt",
         "simulation_data.gen",
         "simulation.trees",
-        #"slim_config.txt",
+        "slim_config.txt",
         #"slim.log"
     ]
 
