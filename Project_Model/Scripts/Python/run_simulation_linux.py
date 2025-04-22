@@ -363,7 +363,7 @@ def run_simulation_linux():
                 f"LD_Ne_Pop{pop}": ne_vals,
                 f"LD_r2_Pop{pop}": r2_vals,
                 f"HE_Neb_mean_Pop{pop}": he_vals,
-                f"HE_D_mean_Pop{pop}" : d_vals,
+                f"HE_weighted_D_mean_Pop{pop}" : d_vals,
                 f"Coan_Neb_n_Pop{pop}": coan_val,
                 f"Coan_f1_Pop{pop}" : f1_val
             })
@@ -511,7 +511,7 @@ def run_simulation_linux():
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1"
                                                  "LD_Ne_Pop2", "LD_r2_Pop2"], f)
-        write_section("Heterozygote excess", ["He_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
+        write_section("Heterozygote excess", ["HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
                                               "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"], f)
         write_section("Molecular Coancestry", ["Coan_Neb_n_Pop1", "Coan_f1_Pop1",
                                                "Coan_Neb_n_Pop2", "Coan_f1_Pop2"], f)
