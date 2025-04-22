@@ -295,9 +295,13 @@ def run_simulation_linux():
                 coan_val = float(coan_block.group(1)) if "Inf" not in coan_block.group(1) else None
             else:
                 coan_val = None
-                f1_match = re.search(r"OverAll f1\^.*?=\s+(-?\d+\.\d+)", coan_block.group(0)) if coan_block else None
-                f1_val = float(f1_match.group(1)) if f1_match else None
-
+        
+                f1_match = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?OverAll f1\^ =\s+(\S+)", content, re.DOTALL)
+            if f1_match:
+                fi_val = float(f1_match.group(1)) if "Inf" not in f1_match.group(1) else None
+            else:
+                f1_val = None
+            
             ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
             # Temporal methods (Two-sample methods)
             if pop == 2:  # Only with two samples
