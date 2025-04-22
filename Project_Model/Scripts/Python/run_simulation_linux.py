@@ -237,8 +237,29 @@ def run_simulation_linux():
         ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
         for pop in [1, 2]:
             # LINKAGE DESEQUILIBRIUM
-            ne_values_raw = re.findall(rf"Population\s+{pop}.*?Estimated Ne\^ =\s*(\S+)", content, re.DOTALL)
-            ld_ne_value = float(ne_values_raw[0]) if ne_values_raw and ne_values_raw[0] not in ("Infinite", "None") else None
+            # Cherche le bloc de texte de la section LD pour la population concernée
+            ld_block = re.search(rf"Population\s+{pop}.*?LINKAGE DISEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
+
+            if ld_block:
+                ld_text = ld_block.group(0)
+
+                # Fonction pour extraire une ligne de valeurs
+                def extract_four_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", ld_text)
+                    if match:
+                        raw_vals = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in raw_vals]
+                    return [None] * 4
+
+                # Extraire Ne estimé et r² pour les 4 seuils
+                ne_vals = extract_four_values("Estimated Ne\\^")
+                r2_vals = extract_four_values("OverAll r\\^2")
+
+                # Associer à chaque seuil de fréquence
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
+                    results[f"r2_{th}_Pop{pop}"] = r2_vals[i]
 
             # HETEROZYGOTE EXCESS
             he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?Estimated Neb\^  =\s+(\S+)", content, re.DOTALL)
@@ -272,7 +293,7 @@ def run_simulation_linux():
 
             # One-sample methods
             results.update({
-                f"LD_Ne_0.05_Pop{pop}": ld_ne_value,
+                f"LD_Ne_0.05_Pop{pop}": ne_vals,
                 f"HE_Neb_mean_Pop{pop}": he_val,
                 f"Coan_Neb_n_Pop{pop}": coan_val
             })
