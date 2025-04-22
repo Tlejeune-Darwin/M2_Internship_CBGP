@@ -305,8 +305,11 @@ def run_simulation_linux():
             # Temporal methods (Two-sample methods)
             if pop == 2:  # Only with two samples
                 pollak_ne = re.findall(r"\(Pollak\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
+                pollak_vals = [clean_value(v) for v in pollak_ne[:4]] if len(pollak_ne) >= 4 else [None] * 4
                 nei_ne = re.findall(r"\(Nei/Tajima\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
+                nei_vals = [clean_value(v) for v in nei_ne[:4]] if len(nei_ne) >= 4 else [None] * 4
                 jorde_ne = re.findall(r"\(Jorde/Ryman\).*?\* Ne =\s+([-]?\d+\.\d+)", content, re.DOTALL)
+                jorde_vals = [clean_value(v) for v in jorde_ne[:4]] if len(jorde_ne) >= 4 else [None] * 4
 
             ### 10.3. Use "parse_value" for cleanup and validation ###
             def parse_value(v):
@@ -328,9 +331,9 @@ def run_simulation_linux():
 
         # Temporal methods
         results.update({
-            "Ne_Pollak": parse_value(pollak_ne[0]) if pollak_ne else None,
-            "Ne_Nei": parse_value(nei_ne[0]) if nei_ne else None,
-            "Ne_Jorde": parse_value(jorde_ne[0]) if jorde_ne else None,
+            "Pollak_Ne": pollak_vals,
+            "Nei/Tajima_Ne": nei_vals,
+            "Jorde/Ryman_Ne": jorde_vals,
         })
 
         return results
@@ -461,10 +464,10 @@ def run_simulation_linux():
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
-                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_D_mean_Pop1", "Coan_Neb_n_Pop1", "Coan_f1_Pop1",
-                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
+                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1", "Coan_Neb_n_Pop1", "Coan_f1_Pop1",
+                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
             ], f)
-        write_section("Ne Estimates - Temporal", ["Ne_Pollak", "Ne_Nei", "Ne_Jorde"], f)
+        write_section("Ne Estimates - Temporal - Decreasing critical values [0.050, 0.020, 0.010, 0+]" ["Pollak_Ne", "Nei/Tajima_Ne", "Jorde/Ryman_Ne"], f)
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
                 "mean_exp_het_pop2", "mean_obs_het_pop2"
