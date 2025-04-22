@@ -313,21 +313,41 @@ def run_simulation_linux():
 
                 pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\))", content, re.DOTALL)
                 fk_vals = [None] * 4
+                P_fprime_vals = [None] * 4
                 if pollak_block:
                     pollak_text = pollak_block.group(1)
                     fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
                     if fk_match:
                         fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
+                    P_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
+                    if P_fprime_match:
+                        P_fprime_vals = [clean_value(P_fprime_match.group(i)) for i in range(1, 5)]
                 pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
 
                 nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\))", content, re.DOTALL)
+                fc_vals = [None] * 4
+                N_fprime_vals = [None] * 4
                 if nei_block:
                     nei_text = nei_block.group(1)
+                    fc_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    if fc_match:
+                        fc_vals = [clean_value(fc_match.group(i)) for i in range(1, 5)]
+                    N_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    if N_fprime_match:
+                        N_fprime_vals = [clean_value(N_fprime_match.group(i)) for i in range(1, 5)]
                     nei_vals = extract_temporal_values(r"\* Ne", nei_text)
 
                 jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
+                fs_vals = [None] * 4
+                J_fprime_vals = [None] * 4
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
+                    fs_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    if fs_match:
+                        fs_vals = [clean_value(fs_match.group(i)) for i in range(1, 5)]
+                    J_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    if J_fprime_match:
+                        J_fprime_vals = [clean_value(J_fprime_match.group(i)) for i in range(1, 5)]
                     jorde_vals = extract_temporal_values(r"\* Ne", jorde_text)
 
             ### 10.3. Use "parse_value" for cleanup and validation ###
@@ -350,10 +370,15 @@ def run_simulation_linux():
 
         # Temporal methods
         results.update({
-            "Pollak_Ne": pollak_vals,
-            "Pollak_Fk" : fk_vals,
-            "Nei/Tajima_Ne": nei_vals,
-            "Jorde/Ryman_Ne": jorde_vals,
+            "P_Ne": pollak_vals,
+            "P_Fk" : fk_vals,
+            "P_F'" : P_fprime_vals,
+            "N_Ne": nei_vals,
+            "N_Fc": fc_vals,
+            "N_F'": N_fprime_vals,
+            "J_Ne": jorde_vals,
+            "J_Fs": fs_vals,
+            "J_F'": J_fprime_vals
         })
 
         return results
@@ -488,10 +513,18 @@ def run_simulation_linux():
                 "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
             ], f)
         write_section("Ne Estimates - Temporal - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
-            "Pollak_Ne",
-            "Pollak_Fk", 
-            "Nei/Tajima_Ne", 
-            "Jorde/Ryman_Ne"], f)
+            "[Pollak]",
+            "P_Ne",
+            "P_Fk",
+            "P_F'", 
+            "[Nei/Tajima]",
+            "N_Ne",
+            "N_Fc",
+            "N_F'",
+            "|Jorde/Ryman]",
+            "J_Ne",
+            "J_Fs",
+            "J_F'"], f)
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
                 "mean_exp_het_pop2", "mean_obs_het_pop2"
