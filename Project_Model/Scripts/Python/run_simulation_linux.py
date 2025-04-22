@@ -312,15 +312,19 @@ def run_simulation_linux():
                     return [None] * 4
 
                 pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\))", content, re.DOTALL)
+                fk_vals = [None] * 4
                 if pollak_block:
                     pollak_text = pollak_block.group(1)
+                    fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
+                    if fk_match:
+                        fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
                 pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
 
                 nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\))", content, re.DOTALL)
                 if nei_block:
                     nei_text = nei_block.group(1)
                     nei_vals = extract_temporal_values(r"\* Ne", nei_text)
-                    
+
                 jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
@@ -347,6 +351,7 @@ def run_simulation_linux():
         # Temporal methods
         results.update({
             "Pollak_Ne": pollak_vals,
+            "Pollak_Fk" : fk_vals,
             "Nei/Tajima_Ne": nei_vals,
             "Jorde/Ryman_Ne": jorde_vals,
         })
@@ -482,7 +487,11 @@ def run_simulation_linux():
                 "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1", "Coan_Neb_n_Pop1", "Coan_f1_Pop1",
                 "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
             ], f)
-        write_section("Ne Estimates - Temporal - Decreasing critical values [0.050, 0.020, 0.010, 0+]", ["Pollak_Ne", "Nei/Tajima_Ne", "Jorde/Ryman_Ne"], f)
+        write_section("Ne Estimates - Temporal - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
+            "Pollak_Ne",
+            "Pollak_Fk", 
+            "Nei/Tajima_Ne", 
+            "Jorde/Ryman_Ne"], f)
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
                 "mean_exp_het_pop2", "mean_obs_het_pop2"
