@@ -1,4 +1,4 @@
-def run_simulation_linux():
+def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     # Packages needed to run python script
@@ -32,7 +32,7 @@ def run_simulation_linux():
     
     ### 2.4. Create a folder for each simulation ###
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    sim_id = f"sim_{timestamp}_local" # Give a number to the simulation's name
+    sim_id = f"{sim_prefix}_{timestamp}_N{pop_size if pop_size else 'auto'}"
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
