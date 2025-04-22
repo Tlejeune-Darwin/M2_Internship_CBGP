@@ -508,8 +508,12 @@ def run_simulation_linux():
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Capture-Marquage-Recapture", ["census_N", "MatchCount"], f)
-        if "census_N" in config_dict and str(config_dict["census_N"]) == "0":
-            f.write("# There were no match between sampling of individuals during CMR.\n")
+        census_value = config_dict.get("census_N")
+        try:
+            if census_value is not None and float(census_value) == 0:
+                f.write("# Aucun match entre individus détecté lors de l’échantillonnage CMR (Capture-Marquage-Recapture).\n")
+        except ValueError:
+            pass  # au cas où census_value serait une chaîne non convertible
 
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
