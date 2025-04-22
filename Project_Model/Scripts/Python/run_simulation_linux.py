@@ -509,7 +509,7 @@ def run_simulation_linux():
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
-        write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1"
+        write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
                                                  "LD_Ne_Pop2", "LD_r2_Pop2"], f)
         write_section("Heterozygote excess", ["HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
                                               "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"], f)
