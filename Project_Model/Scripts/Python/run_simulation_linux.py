@@ -39,7 +39,7 @@ def run_simulation_linux():
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
-    pop_size = int(np.exp(np.random.uniform(np.log(50), np.log(10000))))
+    pop_size = int(np.exp(np.random.uniform(np.log(9000), np.log(10000))))
     config = {
         "simulation_id" : sim_id,
         "pop_size" : pop_size,
