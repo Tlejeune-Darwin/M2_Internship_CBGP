@@ -508,10 +508,14 @@ def run_simulation_linux():
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
-        write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
-                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1", "Coan_Neb_n_Pop1", "Coan_f1_Pop1",
-                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2", "Coan_Neb_n_Pop2", "Coan_f1_Pop2" 
-            ], f)
+        write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
+        write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1"
+                                                 "LD_Ne_Pop2", "LD_r2_Pop2"], f)
+        write_section("Heterozygote excess", ["He_Neb_mean_Pop1", "HE_weighted_D_mean_Pop1",
+                                              "HE_Neb_mean_Pop2", "HE_weighted_D_mean_Pop2"])
+        write_section("Molecular Coancestry", ["Coan_Neb_n_Pop1", "Coan_f1_Pop1",
+                                               "Coan_Neb_n_Pop2", "Coan_f1_Pop2"])
+
         write_section("Ne Estimates - Temporal - Decreasing critical values (0.050, 0.020, 0.010, 0+)", [], f)
         write_section("Pollak", ["P_Ne", "P_Fk", "P_F'"], f)
         write_section("Nei/Tajima", ["N_Ne", "N_Fc", "N_F'"], f)
