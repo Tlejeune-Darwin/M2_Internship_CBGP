@@ -319,7 +319,7 @@ def run_simulation_linux():
                     fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
                     if fk_match:
                         fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
-                    P_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
+                        P_fprime_match = re.search(r"F'\s*=\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)", pollak_block.group(0))
                     if P_fprime_match:
                         P_fprime_vals = [clean_value(P_fprime_match.group(i)) for i in range(1, 5)]
                 pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
