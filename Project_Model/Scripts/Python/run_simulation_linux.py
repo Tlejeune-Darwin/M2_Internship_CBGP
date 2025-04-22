@@ -312,14 +312,14 @@ def run_simulation_linux():
                     if len(ne_matches) == 4:
                         pollak_vals = [clean_value(v) for v in ne_matches]
                 nei_vals = [None] * 4
-                nei_block = re.search(r"\(Nei/Tajima\)(.*?)\(Nei/Tajima\)", content, re.DOTALL)
+                nei_block = re.search(r"\(Nei/Tajima\)(.*?)\(Jorde/Ryman\)", content, re.DOTALL)
                 if nei_block:
                     nei_text = nei_block.group(1)
                     ne_matches = re.findall(r"\* Ne =\s+([\d\.]+)", nei_text)
                     if len(ne_matches) == 4:
                         nei_vals = [clean_value(v) for v in ne_matches]
                 jorde_vals = [None] * 4
-                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)\(Nei/Tajima\)", content, re.DOTALL)
+                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)\(Ending\)", content, re.DOTALL)
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
                     ne_matches = re.findall(r"\* Ne =\s+([\d\.]+)", jorde_text)
