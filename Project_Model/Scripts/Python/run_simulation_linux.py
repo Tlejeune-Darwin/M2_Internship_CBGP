@@ -304,27 +304,27 @@ def run_simulation_linux():
             ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
             # Temporal methods (Two-sample methods)
             if pop == 2:  # Only with two samples
-                pollak_vals = [None] * 4
+                def extract_temporal_values(label, text):
+                    match = re.search(rf"{label}\s*=\s*(.+)", text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [clean_value(v) for v in values]
+                    return [None] * 4
+
                 pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\))", content, re.DOTALL)
                 if pollak_block:
                     pollak_text = pollak_block.group(1)
-                    ne_matches = re.findall(r"\* Ne =\s+([\d\.]+)", pollak_text)
-                    if len(ne_matches) == 4:
-                        pollak_vals = [clean_value(v) for v in ne_matches]
-                nei_vals = [None] * 4
-                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\)", content, re.DOTALL)
+                pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
+
+                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\))", content, re.DOTALL)
                 if nei_block:
                     nei_text = nei_block.group(1)
-                    ne_matches = re.findall(r"\* Ne =\s+([\d\.]+)", nei_text)
-                    if len(ne_matches) == 4:
-                        nei_vals = [clean_value(v) for v in ne_matches]
-                jorde_vals = [None] * 4
+                    nei_vals = extract_temporal_values(r"\* Ne", nei_text)
+                    
                 jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
-                    ne_matches = re.findall(r"\* Ne =\s+([\d\.]+)", jorde_text)
-                    if len(ne_matches) == 4:
-                        jorde_vals = [clean_value(v) for v in ne_matches]
+                    jorde_vals = extract_temporal_values(r"\* Ne", jorde_text)
 
             ### 10.3. Use "parse_value" for cleanup and validation ###
             def parse_value(v):
