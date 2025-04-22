@@ -329,7 +329,7 @@ def run_simulation_linux():
                 N_fprime_vals = [None] * 4
                 if nei_block:
                     nei_text = nei_block.group(1)
-                    fc_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    fc_match = re.search(r"Fc\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
                     if fc_match:
                         fc_vals = [clean_value(fc_match.group(i)) for i in range(1, 5)]
                     N_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
@@ -342,7 +342,7 @@ def run_simulation_linux():
                 J_fprime_vals = [None] * 4
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
-                    fs_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    fs_match = re.search(r"Fs\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
                     if fs_match:
                         fs_vals = [clean_value(fs_match.group(i)) for i in range(1, 5)]
                     J_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
