@@ -509,7 +509,7 @@ def run_simulation_linux():
         "info",
         "option",
         "simulation_dataBur.txt",
-        "simulation_dataNe.txt",
+        #"simulation_dataNe.txt",
         "simulation_dataNexHt.txt",
         "simulation_dataNexCn.txt",
         "simulation_dataNexLD.txt",
