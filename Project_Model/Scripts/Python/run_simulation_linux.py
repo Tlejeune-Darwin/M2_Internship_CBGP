@@ -283,6 +283,7 @@ def run_simulation_linux():
                     return [None] * 4
 
                 he_vals = extract_he_values("Estimated Neb\\^")
+                d_vals = extract_he_values("Weighted Mean D")
                 thresholds = ["0.05", "0.02", "0.01", "0.00"]
                 for i, th in enumerate(thresholds):
                     results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
@@ -312,9 +313,10 @@ def run_simulation_linux():
 
             # One-sample methods
             results.update({
-                f"LD_Ne_0.05_0.02_0.01_0_Pop{pop}": ne_vals,
-                f"LD_r2_0.05_0.02_0.01_0_Pop{pop}": r2_vals,
+                f"LD_Ne_Pop{pop}": ne_vals,
+                f"LD_r2_Pop{pop}": r2_vals,
                 f"HE_Neb_mean_Pop{pop}": he_vals,
+                f"HE_D_mean_Pop{pop}" : d_vals,
                 f"Coan_Neb_n_Pop{pop}": coan_val
             })
 
@@ -452,9 +454,9 @@ def run_simulation_linux():
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         write_section("Population Census", ["census_N"], f)
-        write_section("Ne Estimates - One Sample", [
-                "LD_Ne_0.05_0.02_0.01_0_Pop1", "HE_Neb_mean_Pop1", "Coan_Neb_n_Pop1", "LD_r2_0.05_0.02_0.01_0_Pop1",
-                "LD_Ne_0.05_0.02_0.01_0_Pop2", "HE_Neb_mean_Pop2", "Coan_Neb_n_Pop2", "LD_r2_0.05_0.02_0.01_0_Pop2"
+        write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [
+                "LD_Ne_Pop1", "LD_r2_Pop1", "HE_Neb_mean_Pop1", "HE_D_mean_Pop1", "Coan_Neb_n_Pop1",
+                "LD_Ne_Pop2", "LD_r2_Pop2", "HE_Neb_mean_Pop2", "HE_D_mean_Pop2", "Coan_Neb_n_Pop2" 
             ], f)
         write_section("Ne Estimates - Temporal", ["Ne_Pollak", "Ne_Nei", "Ne_Jorde"], f)
         write_section("Genetic Diversity - Heterozygosity", [
