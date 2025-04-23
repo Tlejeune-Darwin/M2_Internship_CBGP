@@ -24,8 +24,6 @@ args.num_simulations = ask_if_missing(args.num_simulations, "Nombre de simulatio
 for i in range(args.num_simulations):
     run_simulation_linux(
         base_dir=os.path.join("simulations", args.batch),
-        pop_size=args.pop_size,
-        num_loci=args.num_loci,
         sim_prefix="sim"
     )
 
