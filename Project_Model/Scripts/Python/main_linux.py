@@ -3,6 +3,11 @@ import argparse
 import time
 import os
 
+def get_desktop_path():
+    desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
+    desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
+    return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
+
 def ask_if_missing(value, label, type_func=str, default=None):
     if value is not None:
         return value
@@ -20,6 +25,9 @@ args = parser.parse_args()
 # --- Complétion interactive si nécessaire --- #
 args.batch = ask_if_missing(args.batch, "Nom du batch (dossier de simulation)", str)
 args.num_simulations = ask_if_missing(args.num_simulations, "Nombre de simulations", int, 1)
+
+sim_base_dir = os.path.join(get_desktop_path(), "simulations", args.batch)
+os.makedirs(sim_base_dir, exist_ok=True)
 
 # --- Exécution du batch de simulations --- #
 for i in range(args.num_simulations):
