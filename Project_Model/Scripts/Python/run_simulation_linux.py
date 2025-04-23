@@ -1,7 +1,7 @@
 def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
-
+    
     # Packages needed to run python script
     import os
     import sys
@@ -67,11 +67,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     os.makedirs(all_simulations, exist_ok=True)
     
     ### 2.5. Create a folder for each simulation ###
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     existing = [d for d in os.listdir(all_simulations) if d.startswith(sim_prefix)]
     numbers = [int(re.search(rf"{sim_prefix}_(\d+)", name).group(1)) for name in existing if re.search(rf"{sim_prefix}_(\d+)", name)]
     next_sim_num = max(numbers, default=0) + 1
 
-    # Format : sim_0000001 up to 1 million
+    # Format : sim_0000001 up to 1 milllion
     sim_id = f"{sim_prefix}_{next_sim_num:07d}"
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
