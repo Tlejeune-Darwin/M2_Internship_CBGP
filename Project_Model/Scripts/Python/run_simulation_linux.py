@@ -1,6 +1,7 @@
 def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
+
     # Packages needed to run python script
     import os
     import sys
@@ -23,6 +24,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     
     # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
 
+    ### 2.1. Create a global config file for later study purpose ###
     def get_global_config(simulations_dir):
         """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
         global_config_path = os.path.join(simulations_dir, "config_global.txt")
@@ -51,24 +53,29 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                     config[key] = value.strip()
         return config
 
-    ### 2.1. Directory script ###
+    ### 2.2. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    ### 2.2. Choose depending on the desktop name ###
+    ### 2.3. Choose depending on the desktop name ###
     def get_desktop_path():
         desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
         desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
         return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
 
-    ### 2.3. Simulations directory placed on the desktop ###
+    ### 2.4. Simulations directory placed on the desktop ###
     all_simulations = os.path.join(get_desktop_path(), "simulations")
     os.makedirs(all_simulations, exist_ok=True)
     
-    ### 2.4. Create a folder for each simulation ###
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    sim_id = f"{sim_prefix}_{timestamp}_N{pop_size if pop_size else 'auto'}"
+    ### 2.5. Create a folder for each simulation ###
+    existing = [d for d in os.listdir(all_simulations) if d.startswith(sim_prefix)]
+    numbers = [int(re.search(rf"{sim_prefix}_(\d+)", name).group(1)) for name in existing if re.search(rf"{sim_prefix}_(\d+)", name)]
+    next_sim_num = max(numbers, default=0) + 1
+
+    # Format : sim_0000001 up to 1 million
+    sim_id = f"{sim_prefix}_{next_sim_num:07d}"
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
+
 
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
