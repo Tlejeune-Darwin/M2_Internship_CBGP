@@ -13,16 +13,12 @@ def ask_if_missing(value, label, type_func=str, default=None):
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch", type=str, help="Nom du sous-dossier regroupant un ensemble de simulations.")
 parser.add_argument("-n", "--num_simulations", type=int, help="Nombre de simulations à lancer")
-parser.add_argument("--pop_size", type=int)
-parser.add_argument("--num_loci", type=int)
 
 args = parser.parse_args()
 
 # Demande interactive si les arguments sont absents
 args.batch = ask_if_missing(args.batch, "Nom du batch (dossier de simulation)")
 args.num_simulations = ask_if_missing(args.num_simulations, "Nombre de simulations", int, 1)
-args.pop_size = ask_if_missing(args.pop_size, "Taille de population (laisser vide pour aléatoire)", int, None)
-args.num_loci = ask_if_missing(args.num_loci, "Nombre de loci", int, 20)
 
 # Exécution
 for i in range(args.num_simulations):
