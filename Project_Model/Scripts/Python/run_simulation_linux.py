@@ -63,7 +63,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
 
     ### 2.4. Simulations directory placed on the desktop ###
-    all_simulations = os.path.abspath(base_dir)
+    all_simulations = base_dir
     os.makedirs(all_simulations, exist_ok=True)
     
     ### 2.5. Create a folder for each simulation ###
