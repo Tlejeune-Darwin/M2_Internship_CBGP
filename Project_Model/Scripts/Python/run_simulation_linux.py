@@ -360,44 +360,56 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                         return [clean_value(v) for v in values]
                     return [None] * 4
 
-                pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\))", content, re.DOTALL)
+                # Pollak Method
+                pollak_vals = [None] * 4
                 fk_vals = [None] * 4
                 P_fprime_vals = [None] * 4
+                pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\)|\Z)", content, re.DOTALL)
                 if pollak_block:
                     pollak_text = pollak_block.group(1)
-                    fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_block.group(0))
+                    pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
+
+                    fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_text)
                     if fk_match:
                         fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
-                        P_fprime_match = re.search(r"F'\s*=\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)\s+([-\d.eE]+)", pollak_block.group(0))
-                    if P_fprime_match:
-                        P_fprime_vals = [clean_value(P_fprime_match.group(i)) for i in range(1, 5)]
-                pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
 
-                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\))", content, re.DOTALL)
+                    fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", pollak_text)
+                    if fprime_match:
+                        P_fprime_vals = [clean_value(fprime_match.group(i)) for i in range(1, 5)]
+
+                # Nei/Tajima Method
+                nei_vals = [None] * 4
                 fc_vals = [None] * 4
                 N_fprime_vals = [None] * 4
+                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\)|\Z)", content, re.DOTALL)
                 if nei_block:
                     nei_text = nei_block.group(1)
-                    fc_match = re.search(r"Fc\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+                    nei_vals = extract_temporal_values(r"\* Ne", nei_text) if nei_text else [None]*4
+
+                    fc_match = re.search(r"Fc\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_text)
                     if fc_match:
                         fc_vals = [clean_value(fc_match.group(i)) for i in range(1, 5)]
-                    N_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_block.group(0))
+
+                    N_fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", nei_text)
                     if N_fprime_match:
                         N_fprime_vals = [clean_value(N_fprime_match.group(i)) for i in range(1, 5)]
-                    nei_vals = extract_temporal_values(r"\* Ne", nei_text)
 
-                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
+                # Jorde/Ryman Method
+                jorde_vals = [None] * 4
                 fs_vals = [None] * 4
                 J_fprime_vals = [None] * 4
+                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
                 if jorde_block:
                     jorde_text = jorde_block.group(1)
-                    fs_match = re.search(r"Fs\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+                    jorde_vals = extract_temporal_values(r"\* Ne", jorde_text) if jorde_text else [None]*4
+
+                    fs_match = re.search(r"Fs\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_text)
                     if fs_match:
                         fs_vals = [clean_value(fs_match.group(i)) for i in range(1, 5)]
-                    J_fprime_match = re.search(r"F'\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_block.group(0))
+
+                    J_fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", jorde_text)
                     if J_fprime_match:
                         J_fprime_vals = [clean_value(J_fprime_match.group(i)) for i in range(1, 5)]
-                    jorde_vals = extract_temporal_values(r"\* Ne", jorde_text)
 
             ### 10.3. Use "parse_value" for cleanup and validation ###
             def parse_value(v):
