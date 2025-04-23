@@ -46,9 +46,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         with open(global_config_path, "r") as f:
             for line in f:
                 if "=" in line and not line.strip().startswith("#"):
-                    raw_key, value = line.strip().split("=", 1)
-                    key = inverse_better_names.get(raw_key.strip(), raw_key.strip())
-                    config[key] = value.strip()
+                    key, value = line.strip().split("=", 1)
+                    config[key.strip()] = value.strip()
         return config
 
     ### 2.1. Directory script ###

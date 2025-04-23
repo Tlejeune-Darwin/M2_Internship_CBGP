@@ -16,6 +16,7 @@ better_names = {
     "high_repeats": "Maximum repeat size (SMM)",
     "mutation_rate": "Mutation rate",
     "recap_Ne": "Ne for recapitation",
+    "pop_size_logrange": "Population size range (log-uniform)",
 
     "sample1_size_Ne": "Sample size (genetic) - First",
     "sample2_size_Ne": "Sample size (genetic) - Second",
