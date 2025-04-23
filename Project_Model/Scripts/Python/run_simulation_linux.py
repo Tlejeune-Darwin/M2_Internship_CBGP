@@ -17,6 +17,33 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
     # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
 
+    def get_global_config(simulations_dir):
+        """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
+        global_config_path = os.path.join(simulations_dir, "config_global.txt")
+
+        # Crée le fichier s'il n'existe pas
+        if not os.path.exists(global_config_path):
+            with open(global_config_path, "w") as f:
+                f.write("# Configuration générale des simulations\n")
+                f.write("num_loci = 20\n")
+                f.write("low_repeats = 1\n")
+                f.write("high_repeats = 200\n")
+                f.write("mutation_rate = 0.001\n")
+                f.write("sample1_generation = 30\n")
+                f.write("sample2_generation = 10\n")
+                f.write("sample_sizes_Ne = 50,50\n")
+                f.write("sample_sizes_CMR = 50,50\n")
+                f.write("pop_size_logrange = 50,10000\n")
+
+        # Lecture du fichier
+        config = {}
+        with open(global_config_path, "r") as f:
+            for line in f:
+                if "=" in line and not line.strip().startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    config[key.strip()] = value.strip()
+        return config
+
     ### 2.1. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,22 +66,28 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
-    pop_size = int(np.exp(np.random.uniform(np.log(50), np.log(10000))))
+    
+    global_config = get_global_config(all_simulations)
+
+    if pop_size is None:
+        low, high = map(float, global_config["pop_size_logrange"].split(","))
+        pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
+
     config = {
-        "simulation_id" : sim_id,                           # Name of this specific simulation
-        "pop_size" : pop_size,                              # Size of the population
-        "num_loci" : 20,                                    # Number of loci used in SLiM   
-        "sample1_generation" : 30,                          # Number n of generations before the first genetic sample is taken
-        "sample2_generation" : 10,                          # Number n of generations between the two genetic samples
-        "sample_sizes_Ne" : [50,50],                        # Size in individuals of the genetic samples   
-        "sample_sizes_CMR" : [50,50],                       # Size in individuals of the dempgraphic samples
-        "low_repeats" : 1,                                  # Lowest number of repeats for simulation of mutation processes
-        "high_repeats" : 200,                               # Highest number of repeats
-        "mutation_rate" : 1e-3,                             # Mutation rate used during mutation simulation
-        "recap_Ne" : pop_size,                              # Effective size attributed for the recapitation
-        "output_folder" : sim_folder,                       # All simulations end up in the main sim_folder
-        "timestamp" : timestamp,                            # Timestamp placed in the name of each simulation
-        "seed" : random.randint(1, 10**6)                   # For analysis purpose
+        "simulation_id" : sim_id,                                                               # Name of this specific simulation
+        "pop_size" : pop_size,                                                                  # Size of the population
+        "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM   
+        "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
+        "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
+        "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
+        "sample_sizes_CMR" : list(map(int, global_config["sample_sizes_CMR"].split(","))),      # Size in individuals of the dempgraphic samples
+        "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
+        "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
+        "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
+        "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
+        "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
+        "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
+        "seed" : random.randint(1, 10**6)                                                       # For analysis purpose
     }
 
     ### 3.2. Write the "slim_config.txt" file (for SLiM input) ###
