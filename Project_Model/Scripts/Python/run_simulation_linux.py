@@ -41,20 +41,20 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
     pop_size = int(np.exp(np.random.uniform(np.log(50), np.log(10000))))
     config = {
-        "simulation_id" : sim_id,
-        "pop_size" : pop_size,
-        "num_loci" : 20,
-        "sample1_generation" : 30,
-        "sample2_generation" : 10,
-        "sample_sizes_Ne" : [50,50],
-        "sample_sizes_CMR" : [50,50],
-        "low_repeats" : 1,
-        "high_repeats" : 200,
-        "mutation_rate" : 1e-3,
-        "recap_Ne" : pop_size,
-        "output_folder" : sim_folder,
-        "timestamp" : timestamp,
-        "seed" : random.randint(1, 10**6)
+        "simulation_id" : sim_id,                           # Name of this specific simulation
+        "pop_size" : pop_size,                              # Size of the population
+        "num_loci" : 20,                                    # Number of loci used in SLiM   
+        "sample1_generation" : 30,                          # Number n of generations before the first genetic sample is taken
+        "sample2_generation" : 10,                          # Number n of generations between the two genetic samples
+        "sample_sizes_Ne" : [50,50],                        # Size in individuals of the genetic samples   
+        "sample_sizes_CMR" : [50,50],                       # Size in individuals of the dempgraphic samples
+        "low_repeats" : 1,                                  # Lowest number of repeats for simulation of mutation processes
+        "high_repeats" : 200,                               # Highest number of repeats
+        "mutation_rate" : 1e-3,                             # Mutation rate used during mutation simulation
+        "recap_Ne" : pop_size,                              # Effective size attributed for the recapitation
+        "output_folder" : sim_folder,                       # All simulations end up in the main sim_folder
+        "timestamp" : timestamp,                            # Timestamp placed in the name of each simulation
+        "seed" : random.randint(1, 10**6)                   # For analysis purpose
     }
 
     ### 3.2. Write the "slim_config.txt" file (for SLiM input) ###
@@ -411,6 +411,18 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     if os.path.exists(ne_data_path):
         ne_stats = extract_ne_stats(ne_data_path)
         config_dict.update(ne_stats)
+    thresholds = ["0.050", "0.020", "0.010", "0.000"]
+    for pop in [1,2]:
+            for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]:
+                key = f"{label}_Pop{pop}"
+                if key in config_dict:
+                    for i, th in enumerate(thresholds):
+                        config_dict[f"{label}_{th}_Pop{pop}"] = config_dict[key][i]
+    
+    for label in ["P_Ne", "P_Fk", "P_F'", "N_Ne", "N_Fc", "N_F'", "J_Ne", "J_Fs", "J_F'"]:
+        if label in config_dict:
+            for i, th in enumerate(thresholds):
+                config_dict[f"{label}_{th}"] = config_dict[label][i]
     else:
         pass
 
