@@ -38,4 +38,4 @@ for i in range(args.num_simulations):
         base_dir=sim_base_dir,  # Pass the absolute path
         sim_prefix=args.name_prefix
     )
-    time.sleep(0.001)  # Short delay to avoid conflicts or overload
+

@@ -20,6 +20,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     if SCRIPT_DIR not in sys.path:
         sys.path.append(SCRIPT_DIR)
     from labels import better_names
+    from parsing_ne import extract_ne_stats
     inverse_better_names = {v: k for k, v in better_names.items()}
     
     # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
@@ -29,7 +30,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
         global_config_path = os.path.join(simulations_dir, "config_global.txt")
         
-        # Crée le fichier s'il n'existe pas
+        # Create the file if not done already
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
                 f.write("# Configuration générale des simulations\n")
@@ -43,7 +44,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 f.write(f"{better_names['sample_sizes_CMR']} = 50,50\n")
                 f.write(f"{better_names['pop_size_logrange']} = 50,10000\n")
 
-        # Lecture du fichier
+        # Reading the file
         config = {}
         with open(global_config_path, "r") as f:
             for line in f:
@@ -81,10 +82,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
-    
-    
     global_config = get_global_config(all_simulations)
-
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
@@ -120,32 +118,32 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     sample2_generation = int(config["sample2_generation"])
 
     with open(info_path, "w") as f:
-        f.write("15  0\n")                                      # Calculation methods : by addition (15 means all methods)
-        f.write("\n")                                           # The line break is important here
-        f.write("simulation_data.gen\n")                        # Input directory
-        f.write("2\n")                                          # Define the format of the file (1 for FSTAT; 2 for GENEPOP)
-        f.write(os.path.join(sim_folder, "") + "\n")            # Output directory
-        f.write("simulation_dataNe.txt\n")                      # Output folder name
-        f.write("3\n")                                          # Number of critical values
-        f.write("0.05  0.02  0.01\n")                           # Critical values
-        f.write("0\n")                                          # Random mating (0) or monogamy (1)
-        f.write(f"0 {sample1_generation} {sample2_generation+sample1_generation}\n")                    # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
-        f.write("0\n")                                          # 0 must be added here to stop the generations
+        f.write("15  0\n")                                                                      # Calculation methods : by addition (15 means all methods)
+        f.write("\n")                                                                           # The line break is important here
+        f.write("simulation_data.gen\n")                                                        # Input directory
+        f.write("2\n")                                                                          # Define the format of the file (1 for FSTAT; 2 for GENEPOP)
+        f.write(os.path.join(sim_folder, "") + "\n")                                            # Output directory
+        f.write("simulation_dataNe.txt\n")                                                      # Output folder name
+        f.write("3\n")                                                                          # Number of critical values
+        f.write("0.05  0.02  0.01\n")                                                           # Critical values
+        f.write("0\n")                                                                          # Random mating (0) or monogamy (1)
+        f.write(f"0 {sample1_generation} {sample2_generation+sample1_generation}\n")            # 3 numbers here : first one represents the population size if we are in Plan I, second one represents the generation of the first sample and last one represents the generation of the second sample
+        f.write("0\n")                                                                          # 0 must be added here to stop the generations
 
     ### 3.4. Create the "option" file (for NeEstimator input) ###
     option_path = os.path.join(sim_folder, "option")
 
     option_lines = [
-        "15  0  1  1",                                          # First number : sum of methods ; second number : sum of temporal methods (7 = all TP methods); third number : number of critical values added (if 0 only the smallest is shown); Fourth entry : tab delimiter (if > 0)
-        "0",                                                    # Maximum individuals/pop, if 0 : no limit
-        "-1",                                                   # -1 to ouptut the allelic frequencies
-        "-1  1  0  0",                                          # -1 activate Burrows outputs for all pop; second entry shows all critical values
-        "0",                                                    # Parameter Confidence Interval
-        "0",                                                    # Jackknife Confidence Interval
-        "0",                                                    # Up to population, or range of population to run (if more than 2), 0 means no restriction
-        "0",                                                    # All loci are accepted
-        "1",                                                    # Input 1 to create a file that documents missing data from the input file
-        "0"                                                     # Line for chromosome/Loci option and file
+        "15  0  1  1",                                                                          # First number : sum of methods ; second number : sum of temporal methods (7 = all TP methods); third number : number of critical values added (if 0 only the smallest is shown); Fourth entry : tab delimiter (if > 0)
+        "0",                                                                                    # Maximum individuals/pop, if 0 : no limit
+        "-1",                                                                                   # -1 to ouptut the allelic frequencies
+        "-1  1  0  0",                                                                          # -1 activate Burrows outputs for all pop; second entry shows all critical values
+        "0",                                                                                    # Parameter Confidence Interval (Deactivated)
+        "0",                                                                                    # Jackknife Confidence Interval (Deactivated)
+        "0",                                                                                    # Up to population, or range of population to run (if more than 2), 0 means no restriction
+        "0",                                                                                    # All loci are accepted
+        "1",                                                                                    # Input 1 to create a file that documents missing data from the input file
+        "0"                                                                                     # Line for chromosome/Loci option and file
     ]
 
     # Alternative method of writing in the file (other than the one used for the "info" file)
@@ -666,8 +664,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         df_combined.to_csv(summary_path, index=False)
     else:
         df_row.to_csv(summary_path, index=False)
-
-        import os
 
     # ---___---___---___--- 14. Cleanup temporary files ---___---___---___--- #
 
