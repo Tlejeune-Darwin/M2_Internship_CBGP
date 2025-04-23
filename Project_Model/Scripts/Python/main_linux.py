@@ -38,8 +38,6 @@ args = parser.parse_args()
 for i in range(args.num_simulations):  # 10 simulations
     run_simulation_linux(        
         base_dir=os.path.join("simulations", args.batch),
-        pop_size=args.pop_size,
-        num_loci=args.num_loci,
         sim_prefix=args.name_prefix
     )
     time.sleep(0.001)  # Latency between every simulation, necessary for RAM purpose
