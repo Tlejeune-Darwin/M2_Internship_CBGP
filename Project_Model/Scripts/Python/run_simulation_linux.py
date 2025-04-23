@@ -3,6 +3,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     # Packages needed to run python script
     import os
+    import sys
     import subprocess
     import tskit                            # type: ignore
     import pyslim                           # type: ignore
@@ -14,26 +15,30 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     import pandas as pd                     # type: ignore
     import re
     from datetime import datetime
-
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    if SCRIPT_DIR not in sys.path:
+        sys.path.append(SCRIPT_DIR)
+    from labels import better_names
+    
     # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
 
     def get_global_config(simulations_dir):
         """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
         global_config_path = os.path.join(simulations_dir, "config_global.txt")
-
+        
         # Crée le fichier s'il n'existe pas
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
                 f.write("# Configuration générale des simulations\n")
-                f.write("num_loci = 20\n")
-                f.write("low_repeats = 1\n")
-                f.write("high_repeats = 200\n")
-                f.write("mutation_rate = 0.001\n")
-                f.write("sample1_generation = 30\n")
-                f.write("sample2_generation = 10\n")
-                f.write("sample_sizes_Ne = 50,50\n")
-                f.write("sample_sizes_CMR = 50,50\n")
-                f.write("pop_size_logrange = 50,10000\n")
+                f.write(f"{better_names['num_loci']} = 20\n")
+                f.write(f"{better_names['low_repeats']} = 1\n")
+                f.write(f"{better_names['high_repeats']} = 200\n")
+                f.write(f"{better_names['mutation_rate']} = 0.001\n")
+                f.write(f"{better_names['sample1_generation']} = 30\n")
+                f.write(f"{better_names['sample2_generation']} = 10\n")
+                f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
+                f.write(f"{better_names['sample_sizes_CMR']} = 50,50\n")
+                f.write(f"{better_names['pop_size_logrange']} = 50,10000\n")
 
         # Lecture du fichier
         config = {}
@@ -46,7 +51,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
     ### 2.1. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
+    
     ### 2.2. Choose depending on the desktop name ###
     def get_desktop_path():
         desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
@@ -66,6 +71,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
+    
     
     global_config = get_global_config(all_simulations)
 
@@ -546,7 +552,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             file_handle.write(f"\n[{header}]\n")
             for key in keys:
                 if key in config_dict:
-                    file_handle.write(f"{key:<24} = {config_dict[key]}\n")
+                    label = better_names.get(key, key)
+                    file_handle.write(f"{label:<32} = {config_dict[key]}\n")
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
