@@ -32,7 +32,7 @@ os.makedirs(sim_base_dir, exist_ok=True)
 # --- Exécution du batch de simulations --- #
 for i in range(args.num_simulations):
     run_simulation_linux(
-        base_dir=os.path.join("simulations", args.batch),
+        base_dir=sim_base_dir,  # ✅ utiliser le vrai chemin absolu
         sim_prefix=args.name_prefix
-    )
+)
     time.sleep(0.001)  # Pause minimale pour éviter collisions et surcharge CPU
