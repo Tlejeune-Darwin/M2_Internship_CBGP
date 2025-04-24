@@ -35,6 +35,8 @@ def parse_ld(content, pop):
             results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
             results[f"r2_overall_{th}_Pop{pop}"] = r2_vals[i]
 
+    return results
+
 def parse_he(content, pop):
     he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
     if he_block:
@@ -53,6 +55,8 @@ def parse_he(content, pop):
         thresholds = ["0.05", "0.02", "0.01", "0.00"]
         for i, th in enumerate(thresholds):
             results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
+
+    return results
 
 def parse_coancestry(content, pop):
     coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
