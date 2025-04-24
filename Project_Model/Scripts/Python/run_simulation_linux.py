@@ -645,6 +645,10 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
+    cols_with_lists = [k for k, v in config_dict.items() if isinstance(v, list)]
+    for k in cols_with_lists:
+        config_dict.pop(k, None)
+
     if os.path.exists(summary_path):
         df_existing = pd.read_csv(summary_path)
         df_combined = pd.concat([df_existing, df_row], ignore_index=True)
