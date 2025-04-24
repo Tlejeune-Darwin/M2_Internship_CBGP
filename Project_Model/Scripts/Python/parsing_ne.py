@@ -39,8 +39,8 @@ def parse_he(content, pop):
         for i, th in enumerate(["0.05", "0.02", "0.01", "0.00"]):
             results[f"HE_Neb_mean_{th}_Pop{pop}"] = he_vals[i]
             results[f"HE_weighted_D_mean_{th}_Pop{pop}"] = d_vals[i]
-        results[f"HE_Neb_mean_Pop{pop}"] = he_vals[i]
-        results[f"HE_Neb_weighted_D_mean_Pop{pop}"] = d_vals[i]
+        results[f"HE_Neb_mean_Pop{pop}"] = he_vals
+        results[f"HE_Neb_weighted_D_mean_Pop{pop}"] = d_vals
     return results
 
 def parse_coancestry(content, pop):
