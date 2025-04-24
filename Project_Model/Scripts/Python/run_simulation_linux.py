@@ -418,13 +418,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         results.update({
             "P_Ne": pollak_vals,
             "P_Fk" : fk_vals,
-            "P_F'" : P_fprime_vals,
+            "P_Fprime" : P_fprime_vals,
             "N_Ne": nei_vals,
             "N_Fc": fc_vals,
-            "N_F'": N_fprime_vals,
+            "N_Fprime": N_fprime_vals,
             "J_Ne": jorde_vals,
             "J_Fs": fs_vals,
-            "J_F'": J_fprime_vals
+            "J_Fprime": J_fprime_vals
         })
 
         return results
@@ -465,7 +465,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                     for i, th in enumerate(thresholds):
                         config_dict[f"{label}_{th}_Pop{pop}"] = config_dict[key][i]
     
-    for label in ["P_Ne", "P_Fk", "P_F'", "N_Ne", "N_Fc", "N_F'", "J_Ne", "J_Fs", "J_F'"]:
+    for label in ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]:
         if label in config_dict:
             for i, th in enumerate(thresholds):
                 config_dict[f"{label}_{th}"] = config_dict[label][i]
@@ -585,9 +585,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                                                "Coan_Neb_n_Pop2", "Coan_f1_Pop2"], f)
 
         write_section("Ne Estimates - Temporal - Decreasing critical values (0.050, 0.020, 0.010, 0+)", [], f)
-        write_section("Pollak", ["P_Ne", "P_Fk", "P_F'"], f)
-        write_section("Nei/Tajima", ["N_Ne", "N_Fc", "N_F'"], f)
-        write_section("Jorde/Ryman", ["J_Ne", "J_Fs", "J_F'"], f)
+        write_section("Pollak", ["P_Ne", "P_Fk", "P_Fprime"], f)
+        write_section("Nei/Tajima", ["N_Ne", "N_Fc", "N_Fprime"], f)
+        write_section("Jorde/Ryman", ["J_Ne", "J_Fs", "J_Fprime"], f)
         
         write_section("Genetic Diversity - Heterozygosity", [
                 "mean_exp_het_pop1", "mean_obs_het_pop1",
@@ -645,9 +645,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
-    cols_with_lists = [k for k, v in config_dict.items() if isinstance(v, list)]
-    for k in cols_with_lists:
-        config_dict.pop(k, None)
+    list_like_keys = [k for k, v in config_dict.items() if isinstance(v, str) and v.strip().startswith("[") and v.strip().endswith("]")]
+    for key in list_like_keys:
+        config_dict.pop(key)
 
     if os.path.exists(summary_path):
         df_existing = pd.read_csv(summary_path)

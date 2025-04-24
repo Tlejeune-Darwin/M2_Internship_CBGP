@@ -43,13 +43,13 @@ better_names = {
 
     "P_Ne": "Pollak Ne",
     "P_Fk": "Pollak Fk",
-    "P_F'": "Pollak F'",
+    "P_Fprime": "Pollak F'",
     "N_Ne": "Nei/Tajima Ne",
     "N_Fc": "Nei/Tajima Fc",
-    "N_F'": "Nei/Tajima F'",
+    "N_Fprime": "Nei/Tajima F'",
     "J_Ne": "Jorde/Ryman Ne",
     "J_Fs": "Jorde/Ryman Fs",
-    "J_F'": "Jorde/Ryman F'",
+    "J_Fprime": "Jorde/Ryman F'",
 
     "mean_exp_het_pop1": "Expected heterozygosity - Population 1",
     "mean_obs_het_pop1": "Observed heterozygosity - Population 1",
