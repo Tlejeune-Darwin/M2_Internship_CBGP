@@ -290,6 +290,26 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
         ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
         for pop in [1, 2]:
+            results[f"LD_Ne_Pop{pop}"] = [None] * 4
+            results[f"LD_r2_Pop{pop}"] = [None] * 4
+            results[f"He_Neb_mean_Pop{pop}"] = [None] * 4
+            results[f"He_weighted_D_mean_Pop{pop}"] = [None] * 4
+            results[f"Coan_Neb_n_Pop{pop}"] = None
+            results[f"Coan_f1_Pop{pop}"] = None
+
+        results.update({
+            "P_Ne": [None] * 4,
+            "P_Fk": [None] * 4,
+            "P_Fprime": [None] * 4,
+            "N_Ne": [None] * 4,
+            "N_Fc": [None] * 4,
+            "N_Fprime": [None] * 4,
+            "J_Ne": [None] * 4,
+            "J_Fs": [None] * 4,
+            "J_Fprime": [None] * 4,
+        })
+            
+        for pop in [1, 2]:
 
             # LINKAGE DESEQUILIBRIUM
             ld_block = re.search(rf"Population\s+{pop}.*?LINKAGE DISEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
