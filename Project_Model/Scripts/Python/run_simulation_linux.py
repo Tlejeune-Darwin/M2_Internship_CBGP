@@ -642,10 +642,15 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
 
-    colums_to_remove = [k for k, v in config_dict.items()
-                        if isinstance(v, str) and v.strip().startswith("[") and v.strip().endswith("]")]
-    for k in colums_to_remove:
-        config_dict.pop(k)
+    # Supprimer les clés contenant des listes de résultats avant d'écrire le CSV
+    clefs_listes = [
+        f"{label}_Pop{pop}"
+        for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]
+        for pop in [1, 2]
+    ] + ["P_Ne", "P_Fk", "P_F'", "N_Ne", "N_Fc", "N_F'", "J_Ne", "J_Fs", "J_F'"]
+
+    for key in clefs_listes:
+        config_dict.pop(key, None)
 
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
