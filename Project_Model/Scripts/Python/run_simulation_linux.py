@@ -400,13 +400,16 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     summary_txt_path = os.path.join(sim_folder, "summary.txt")
     with open(summary_txt_path, "w") as f:
         def write_section(header, keys, file_handle):
-            file_handle.write(f"\n[{header}]\n")
-            if not keys :
+            present_keys = [k for k in keys if k in config_dict]
+            if not present_keys:
+                file_handle.write(f"\n[{header}]\n# Aucune donnée disponible\n")
                 return
-            max_key_len = max(len(k) for k in keys if k in config_dict)
+            file_handle.write(f"\n[{header}]\n")
+            max_key_len = max(len(k) for k in present_keys)
             for key in keys:
                 if key in config_dict:
                     file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
+
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
