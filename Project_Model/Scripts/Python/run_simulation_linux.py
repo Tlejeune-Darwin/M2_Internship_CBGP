@@ -642,13 +642,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
 
-    ### 13.2. Append the current simulation to "summary_table.csv" ###
-    df_row = pd.DataFrame([config_dict])
-
     colums_to_remove = [k for k, v in config_dict.items()
                         if isinstance(v, str) and v.strip().startswith("[") and v.strip().endswith("]")]
     for k in colums_to_remove:
         config_dict.pop(k)
+
+    ### 13.2. Append the current simulation to "summary_table.csv" ###
+    df_row = pd.DataFrame([config_dict])
 
     if os.path.exists(summary_path):
         df_existing = pd.read_csv(summary_path)
