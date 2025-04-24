@@ -306,11 +306,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 ne_vals = extract_four_values("Estimated Ne\\^")
                 r2_vals = extract_four_values("OverAll r\\^2")
 
-                thresholds = ["0.05", "0.02", "0.01", "0.00"]
-                for i, th in enumerate(thresholds):
-                    results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
-                    results[f"r2_overall_{th}_Pop{pop}"] = r2_vals[i]
-
             # HETEROZYGOTE EXCESS
             # === HETEROZYGOTE EXCESS PARSE ===
             he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
@@ -327,9 +322,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
                 he_vals = extract_he_values("Estimated Neb\\^")
                 d_vals = extract_he_values("Weighted Mean D")
-                thresholds = ["0.05", "0.02", "0.01", "0.00"]
-                for i, th in enumerate(thresholds):
-                    results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
 
             # COANCESTRY
             coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
