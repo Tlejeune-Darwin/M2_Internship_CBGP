@@ -647,7 +647,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         f"{label}_Pop{pop}"
         for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]
         for pop in [1, 2]
-    ] + ["P_Ne", "P_Fk", "P_F'", "N_Ne", "N_Fc", "N_F'", "J_Ne", "J_Fs", "J_F'"]
+    ] + ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]
 
     for key in clefs_listes:
         config_dict.pop(key, None)
