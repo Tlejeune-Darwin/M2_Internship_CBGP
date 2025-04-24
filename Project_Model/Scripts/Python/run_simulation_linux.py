@@ -290,6 +290,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
         ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
         for pop in [1, 2]:
+            ne_vals = [None] * 4
+            r2_vals = [None] * 4
+            he_vals = [None] * 4 
+            d_vals = [None] * 4
+            coan_val = None
+            f1_val = None
+            
             results[f"LD_Ne_Pop{pop}"] = [None] * 4
             results[f"LD_r2_Pop{pop}"] = [None] * 4
             results[f"He_Neb_mean_Pop{pop}"] = [None] * 4
