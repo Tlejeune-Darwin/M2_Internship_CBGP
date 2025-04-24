@@ -489,7 +489,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]:
                 key = f"{label}_Pop{pop}"
                 if key in config_dict:
-                    values = config.dict.get(label,[])
+                    values = config_dict.get(label,[])
                     if isinstance(values, list):
                         for i, th in enumerate(thresholds):
                             if i < len(values):
