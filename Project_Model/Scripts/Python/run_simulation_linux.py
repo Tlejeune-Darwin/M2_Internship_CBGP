@@ -1,4 +1,4 @@
-def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
+def run_simulation_linux(base_dir="simulations", sim_prefix="sim"):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     
@@ -642,7 +642,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
 
-    # Supprimer les clés contenant des listes de résultats avant d'écrire le CSV
+    # Delete the key lists for the csv port (for lisibility)
     clefs_listes = [
         f"{label}_Pop{pop}"
         for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]
