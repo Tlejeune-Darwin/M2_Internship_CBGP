@@ -273,22 +273,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
     # ---___---___---___--- 10. Extract NeEstimator results ---___---___---___--- #
 
-    def extract_ne_stats(txt_path):
-        """Extract the main stats from the NeEstimator analysis"""
-
-        with open(txt_path, "r") as f:
-            content = f.read()
-
-            def clean_value(v):
-                try:
-                    if isinstance(v, str) and v.strip().lower() in ("infinite", "inf", "none", ""):
-                        return None
-                    return float(v)
-                except:
-                    return None
-
-        results = {}
-
     ### 10.4. Load config values with "read_config()" ###
     def read_config(path):
         """Read the config file"""
