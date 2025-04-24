@@ -20,7 +20,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     if SCRIPT_DIR not in sys.path:
         sys.path.append(SCRIPT_DIR)
     from labels import better_names
-    from parsing_ne import extract_ne_stats
     inverse_better_names = {v: k for k, v in better_names.items()}
     
     # ---___---___---___--- 2. Initialization and Paths ---___---___---___--- #
@@ -288,6 +287,155 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                     return None
 
         results = {}
+
+        ### 10.1. Parse One-sample estimates : LD, HE, Coancestry ###
+        for pop in [1, 2]:
+
+            # LINKAGE DESEQUILIBRIUM
+            ld_block = re.search(rf"Population\s+{pop}.*?LINKAGE DISEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
+            if ld_block:
+                ld_text = ld_block.group(0)
+
+                def extract_four_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", ld_text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in values]
+                    return [None] * 4
+
+                ne_vals = extract_four_values("Estimated Ne\\^")
+                r2_vals = extract_four_values("OverAll r\\^2")
+
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
+                    results[f"r2_overall_{th}_Pop{pop}"] = r2_vals[i]
+
+            # HETEROZYGOTE EXCESS
+            # === HETEROZYGOTE EXCESS PARSE ===
+            he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
+            if he_block:
+                he_text = he_block.group(0)
+
+                # Extraction similaire à LD
+                def extract_he_values(label):
+                    match = re.search(rf"{label}\s*=\s*(.+)", he_text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [float(v) if v != "Infinite" else None for v in values]
+                    return [None] * 4
+
+                he_vals = extract_he_values("Estimated Neb\\^")
+                d_vals = extract_he_values("Weighted Mean D")
+                thresholds = ["0.05", "0.02", "0.01", "0.00"]
+                for i, th in enumerate(thresholds):
+                    results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
+
+            # COANCESTRY
+            coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
+            if coan_block:
+                coan_val = float(coan_block.group(1)) if "Inf" not in coan_block.group(1) else None
+            else:
+                coan_val = None
+            f1_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?OverAll f1\^.*?=\s+(-?\d+\.\d+)", content, re.DOTALL)
+            if f1_block:
+                f1_val = float(f1_block.group(1))
+            else:
+                f1_val = None
+            
+            ### 10.2. Parse Two-sample estimates : Pollak, Nei, Jorde ###
+            # Temporal methods (Two-sample methods)
+            if pop == 2:  # Only with two samples
+                def extract_temporal_values(label, text):
+                    match = re.search(rf"{label}\s*=\s*(.+)", text)
+                    if match:
+                        values = re.split(r"\s{2,}", match.group(1).strip())
+                        return [clean_value(v) for v in values]
+                    return [None] * 4
+
+                # Pollak Method
+                pollak_vals = [None] * 4
+                fk_vals = [None] * 4
+                P_fprime_vals = [None] * 4
+                pollak_block = re.search(r"\(Pollak\)(.*?)(?=\(Nei/Tajima\)|\Z)", content, re.DOTALL)
+                if pollak_block:
+                    pollak_text = pollak_block.group(1)
+                    pollak_vals = extract_temporal_values(r"\* Ne", pollak_text)
+
+                    fk_match = re.search(r"Fk\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", pollak_text)
+                    if fk_match:
+                        fk_vals = [clean_value(fk_match.group(i)) for i in range(1, 5)]
+
+                    fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", pollak_text)
+                    if fprime_match:
+                        P_fprime_vals = [clean_value(fprime_match.group(i)) for i in range(1, 5)]
+
+                # Nei/Tajima Method
+                nei_vals = [None] * 4
+                fc_vals = [None] * 4
+                N_fprime_vals = [None] * 4
+                nei_block = re.search(r"\(Nei/Tajima\)(.*?)(?=\(Jorde/Ryman\)|\Z)", content, re.DOTALL)
+                if nei_block:
+                    nei_text = nei_block.group(1)
+                    nei_vals = extract_temporal_values(r"\* Ne", nei_text) if nei_text else [None]*4
+
+                    fc_match = re.search(r"Fc\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", nei_text)
+                    if fc_match:
+                        fc_vals = [clean_value(fc_match.group(i)) for i in range(1, 5)]
+
+                    N_fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", nei_text)
+                    if N_fprime_match:
+                        N_fprime_vals = [clean_value(N_fprime_match.group(i)) for i in range(1, 5)]
+
+                # Jorde/Ryman Method
+                jorde_vals = [None] * 4
+                fs_vals = [None] * 4
+                J_fprime_vals = [None] * 4
+                jorde_block = re.search(r"\(Jorde/Ryman\)(.*?)(?=Ending time:|\Z)", content, re.DOTALL)
+                if jorde_block:
+                    jorde_text = jorde_block.group(1)
+                    jorde_vals = extract_temporal_values(r"\* Ne", jorde_text) if jorde_text else [None]*4
+
+                    fs_match = re.search(r"Fs\s*=\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", jorde_text)
+                    if fs_match:
+                        fs_vals = [clean_value(fs_match.group(i)) for i in range(1, 5)]
+
+                    J_fprime_match = re.search(r"F'\s*=\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)", jorde_text)
+                    if J_fprime_match:
+                        J_fprime_vals = [clean_value(J_fprime_match.group(i)) for i in range(1, 5)]
+
+            ### 10.3. Use "parse_value" for cleanup and validation ###
+            def parse_value(v):
+                try:
+                    f = float(v)
+                    return f if f > 0 else None
+                except:
+                    return None
+
+            # One-sample methods
+            results.update({
+                f"LD_Ne_Pop{pop}": ne_vals,
+                f"LD_r2_Pop{pop}": r2_vals,
+                f"HE_Neb_mean_Pop{pop}": he_vals,
+                f"HE_weighted_D_mean_Pop{pop}" : d_vals,
+                f"Coan_Neb_n_Pop{pop}": coan_val,
+                f"Coan_f1_Pop{pop}" : f1_val
+            })
+
+        # Temporal methods
+        results.update({
+            "P_Ne": pollak_vals,
+            "P_Fk" : fk_vals,
+            "P_F'" : P_fprime_vals,
+            "N_Ne": nei_vals,
+            "N_Fc": fc_vals,
+            "N_F'": N_fprime_vals,
+            "J_Ne": jorde_vals,
+            "J_Fs": fs_vals,
+            "J_F'": J_fprime_vals
+        })
+
+        return results
 
     ### 10.4. Load config values with "read_config()" ###
     def read_config(path):
