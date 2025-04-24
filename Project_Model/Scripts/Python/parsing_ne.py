@@ -16,40 +16,55 @@ def extract_values(label, text):
     return [None] * 4
 
 def parse_ld(content, pop):
-    results = {}
-    block = re.search(rf"Population\s+{pop}.*?LINKAGE DESEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
-    if block:
-        text = block.group(0)
-        ne_vals = extract_values("Estimated Ne\\^", text)
-        r2_vals = extract_values("OverAll r\\^2", text)
-        for i, th in enumerate(["0.05", "0.02", "0.01", "0.00"]):
+    ld_block = re.search(rf"Population\s+{pop}.*?LINKAGE DISEQUILIBRIUM METHOD.*?HETEROZYGOTE EXCESS METHOD", content, re.DOTALL)
+    if ld_block:
+        ld_text = ld_block.group(0)
+
+        def extract_four_values(label):
+            match = re.search(rf"{label}\s*=\s*(.+)", ld_text)
+            if match:
+                values = re.split(r"\s{2,}", match.group(1).strip())
+                return [float(v) if v != "Infinite" else None for v in values]
+            return [None] * 4
+
+        ne_vals = extract_four_values("Estimated Ne\\^")
+        r2_vals = extract_four_values("OverAll r\\^2")
+
+        thresholds = ["0.05", "0.02", "0.01", "0.00"]
+        for i, th in enumerate(thresholds):
             results[f"LD_Ne_{th}_Pop{pop}"] = ne_vals[i]
             results[f"r2_overall_{th}_Pop{pop}"] = r2_vals[i]
-        results[f"LD_Ne_Pop{pop}"] = ne_vals
-        results[f"LD_r2_Pop{pop}"] = r2_vals
-    return results
 
 def parse_he(content, pop):
-    results = {}
-    block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
-    if block:
-        text = block.group(0)
-        he_vals = extract_values("Estimated Neb\\^", text)
-        d_vals = extract_values("Weighted Mean D", text)
-        for i, th in enumerate(["0.05", "0.02", "0.01", "0.00"]):
-            results[f"HE_Neb_mean_{th}_Pop{pop}"] = he_vals[i]
-            results[f"HE_weighted_D_mean_{th}_Pop{pop}"] = d_vals[i]
-        results[f"HE_Neb_mean_Pop{pop}"] = he_vals
-        results[f"HE_Neb_weighted_D_mean_Pop{pop}"] = d_vals
-    return results
+    he_block = re.search(rf"Population\s+{pop}.*?HETEROZYGOTE EXCESS METHOD.*?MOLECULAR COANCESTRY METHOD", content, re.DOTALL)
+    if he_block:
+        he_text = he_block.group(0)
+
+                # Extraction similaire à LD
+        def extract_he_values(label):
+            match = re.search(rf"{label}\s*=\s*(.+)", he_text)
+            if match:
+                values = re.split(r"\s{2,}", match.group(1).strip())
+                return [float(v) if v != "Infinite" else None for v in values]
+            return [None] * 4
+
+        he_vals = extract_he_values("Estimated Neb\\^")
+        d_vals = extract_he_values("Weighted Mean D")
+        thresholds = ["0.05", "0.02", "0.01", "0.00"]
+        for i, th in enumerate(thresholds):
+            results[f"HE_Ne_{th}_Pop{pop}"] = he_vals[i]
 
 def parse_coancestry(content, pop):
-    results = {}
-    block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\\^ =\s+(\S+)", content, re.DOTALL)
-    f1_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?OverAll f1\\^.*?=\s+(-?\d+\.\d+)", content, re.DOTALL)
-    results[f"Coan_Neb_n_Pop{pop}"] = clean_value(block.group(1)) if block else None
-    results[f"Coan_f1_Pop{pop}"] = clean_value(f1_block.group(1)) if f1_block else None
-    return results
+    coan_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?Estimated Neb\^ =\s+(\S+)", content, re.DOTALL)
+    if coan_block:
+        coan_val = float(coan_block.group(1)) if "Inf" not in coan_block.group(1) else None
+    else:
+        coan_val = None
+    f1_block = re.search(rf"Population\s+{pop}.*?MOLECULAR COANCESTRY METHOD.*?OverAll f1\^.*?=\s+(-?\d+\.\d+)", content, re.DOTALL)
+    if f1_block:
+        f1_val = float(f1_block.group(1))
+    else:
+        f1_val = None
 
 def parse_pollak(content):
     results = {"P_Ne": [None]*4, "P_Fk": [None]*4, "P_F'": [None]*4}

@@ -273,6 +273,22 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
     # ---___---___---___--- 10. Extract NeEstimator results ---___---___---___--- #
 
+    def extract_ne_stats(txt_path):
+        """Extract the main stats from the NeEstimator analysis"""
+
+        with open(txt_path, "r") as f:
+            content = f.read()
+
+            def clean_value(v):
+                try:
+                    if isinstance(v, str) and v.strip().lower() in ("infinite", "inf", "none", ""):
+                        return None
+                    return float(v)
+                except:
+                    return None
+
+        results = {}
+
     ### 10.4. Load config values with "read_config()" ###
     def read_config(path):
         """Read the config file"""
@@ -400,16 +416,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     summary_txt_path = os.path.join(sim_folder, "summary.txt")
     with open(summary_txt_path, "w") as f:
         def write_section(header, keys, file_handle):
-            present_keys = [k for k in keys if k in config_dict]
-            if not present_keys:
-                file_handle.write(f"\n[{header}]\n# Aucune donnée disponible\n")
-                return
             file_handle.write(f"\n[{header}]\n")
-            max_key_len = max(len(k) for k in present_keys)
+            if not keys :
+                return
+            max_key_len = max(len(k) for k in keys if k in config_dict)
             for key in keys:
                 if key in config_dict:
                     file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
-
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
