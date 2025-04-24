@@ -299,15 +299,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ne_data_path = os.path.join(sim_folder, "simulation_dataNe.txt")
     if os.path.exists(ne_data_path):
         ne_stats = {}
-        with open(ne_data_path, "r") as f:
-            lines = f.readlines()
-        for line in lines:
-            if "=" in line:
-                key, val = map(str.strip, line.split("="))
-                try:
-                    ne_stats[key] = eval(val)
-                except:
-                    ne_stats[key] = val
         config_dict.update(ne_stats)
     thresholds = ["0.050", "0.020", "0.010", "0.000"]
     for pop in [1,2]:
