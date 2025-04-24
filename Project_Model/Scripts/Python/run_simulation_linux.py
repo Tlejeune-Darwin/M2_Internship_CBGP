@@ -296,7 +296,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             d_vals = [None] * 4
             coan_val = None
             f1_val = None
-            
+
             results[f"LD_Ne_Pop{pop}"] = [None] * 4
             results[f"LD_r2_Pop{pop}"] = [None] * 4
             results[f"He_Neb_mean_Pop{pop}"] = [None] * 4
@@ -489,8 +489,11 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]:
                 key = f"{label}_Pop{pop}"
                 if key in config_dict:
-                    for i, th in enumerate(thresholds):
-                        config_dict[f"{label}_{th}_Pop{pop}"] = config_dict[key][i]
+                    values = config.dict.get(label,[])
+                    if isinstance(values, list):
+                        for i, th in enumerate(thresholds):
+                            if i < len(values):
+                                config_dict[f"{label}_{th}_Pop{pop}"] = config_dict[key][i]
     
     for label in ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]:
         if label in config_dict:
