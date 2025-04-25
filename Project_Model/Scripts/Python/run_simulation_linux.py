@@ -496,12 +496,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                                 config_dict[f"{label}_{th}_Pop{pop}"] = config_dict[key][i]
     
     for label in ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]:
-        if label in config_dict:
+        if label in config_dict and isinstance(config_dict[label], list):
             for i, th in enumerate(thresholds):
-		if i < len(config_dict[label]):
-			config_dict[f"{label}_{th}"] = config_dict[label][i]
-		else:
-		        config_dict[f"{label}_{th}"] = None 
+                if i < len(config_dict[label]):
+                    config_dict[f"{label}_{th}"] = config_dict[label][i]
+                else:
+                    config_dict[f"{label}_{th}"] = None
     else:
         pass
 
