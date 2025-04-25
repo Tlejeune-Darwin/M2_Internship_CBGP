@@ -498,7 +498,10 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for label in ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]:
         if label in config_dict:
             for i, th in enumerate(thresholds):
-                config_dict[f"{label}_{th}"] = config_dict[label][i]
+		if i < len(config_dict[label]):
+			config_dict[f"{label}_{th}"] = config_dict[label][i]
+		else:
+		        config_dict[f"{label}_{th}"] = None 
     else:
         pass
 
