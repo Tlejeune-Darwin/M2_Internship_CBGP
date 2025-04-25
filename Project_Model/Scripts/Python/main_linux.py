@@ -1,6 +1,5 @@
 from run_simulation_linux import run_simulation_linux
 import argparse
-import time
 import os
 
 # --- Detects the user desktop directory (cross-platform) --- #
