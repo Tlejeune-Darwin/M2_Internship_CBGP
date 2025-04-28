@@ -674,6 +674,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     UNWANTED_KEYS = ["output_folder", "log_file", "timestamp", "seed", "HE_Neb_mean_Pop1", "HE_Neb_mean_Pop2", "HE_weighted_mean_Pop1", "HE_weighted_mean_Pop2"]
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
+    keys_to_remove = []
+    for key, value in config_dict.items():
+        if isinstance(value, list) and all(v is None for v in value):
+            keys_to_remove.append(key)
+    for key in keys_to_remove:
+        config_dict.pop(key)
 
     # Delete the key lists for the csv port (for lisibility)
     clefs_listes = [
