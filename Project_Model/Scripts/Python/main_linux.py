@@ -1,17 +1,40 @@
-from run_simulation_linux import run_simulation_linux  # Name of the simulation script
+from run_simulation_linux import run_simulation_linux
 import argparse
-import time
+import os
 
-# --- Argparse module ---
-# This part allows the simulation to be run n times
-parser = argparse.ArgumentParser() # Convert to a command line
-parser.add_argument(  # Create the argument that will be converted
-    "-n", "--num_simulations",
-    type=int, 
-    default=10,  # Number of simulations if nothing is specified
-)
+# --- Detects the user desktop directory (cross-platform) --- #
+def get_desktop_path():
+    desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
+    desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
+    return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
+
+# --- Fallback prompt if arguments are missing --- #
+def ask_if_missing(value, label, type_func=str, default=None):
+    if value is not None:
+        return value
+    msg = f"{label} [{'default: ' + str(default) if default is not None else 'required'}]: "
+    inp = input(msg)
+    return type_func(inp) if inp else default
+
+# --- Command-line arguments --- #
+parser = argparse.ArgumentParser(description="Launch a batch of SLiM simulations.")
+parser.add_argument("--batch", type=str, help="Name of the subfolder grouping the batch of simulations.")
+parser.add_argument("-n", "--num_simulations", type=int, help="Number of simulations to run.")
+parser.add_argument("--name_prefix", type=str, default="sim", help="Prefix for simulation folder names (default: sim).")
 args = parser.parse_args()
 
-for i in range(args.num_simulations):  # 10 simulations
-    run_simulation_linux()  # Python script 
-    time.sleep(0.5)  # Latency between every simulation, necessary for RAM purpose
+# --- Fill missing arguments interactively --- #
+args.batch = ask_if_missing(args.batch, "Batch name (simulation folder name)", str)
+args.num_simulations = ask_if_missing(args.num_simulations, "Number of simulations", int, 1)
+
+# --- Create the base simulation folder on the desktop --- #
+sim_base_dir = os.path.join(get_desktop_path(), "simulations", args.batch)
+os.makedirs(sim_base_dir, exist_ok=True)
+
+# --- Run the simulations --- #
+for i in range(args.num_simulations):
+    run_simulation_linux(
+        base_dir=sim_base_dir,  # Pass the absolute path
+        sim_prefix=args.name_prefix
+    )
+
