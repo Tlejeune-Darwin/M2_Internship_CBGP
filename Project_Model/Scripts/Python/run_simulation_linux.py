@@ -671,7 +671,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # ---___---___---___--- 13. Append to global CSV summary ---___---___---___--- #
 
     ### 13.1. Remove unnecessary keys before writing ###
-    UNWANTED_KEYS = ["output_folder", "log_file", "timestamp", "seed"]
+    UNWANTED_KEYS = ["output_folder", "log_file", "timestamp", "seed", "HE_Neb_mean_Pop1", "HE_Neb_mean_Pop2", "HE_weighted_mean_Pop1", "HE_weighted_mean_Pop2"]
     for key in UNWANTED_KEYS:
         config_dict.pop(key, None)
 
