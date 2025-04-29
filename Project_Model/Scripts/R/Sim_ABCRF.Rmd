@@ -57,3 +57,122 @@ In all of R code chunks above the `echo = FALSE` attribute is used. This is to p
 
 
 
+
+
+```{r = Packages generation} 
+
+library(tidyverse)
+library(abcrf)
+library(ggplot2)
+
+```
+
+```{r = Get the data}
+
+# Load the csv file from the "simulations" directory
+data <- read_csv("Bureau/simulations/Ref_table/summary_table.csv")
+
+```
+
+```{r = Hard cleaning (Column removal - Automatic version)}
+
+# Function that will search every column and count the "NA", then remove the columns having too much missing values according to the threshold
+remove_high_na_cols <- function(data, threshold = 0.2) {
+  na_prop <- colSums(is.na(data)) / nrow(data)
+  cols_to_remove <- names(na_prop[na_prop > threshold])
+  data_clean <- data %>% select(-any_of(cols_to_remove))
+  list(data = data_clean, removed = cols_to_remove)
+}
+result <- remove_high_na_cols(data, threshold = 0.2)
+data <- result$data 
+result$removed  # List of removed col
+
+```
+
+```{r = Soft cleaning (Median)}
+
+# Search every column for NA then calculate the median of the existing values and add it to the missing values
+data_imputed <- data %>% mutate(across(everything(), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
+
+```
+
+```{r = Hard cleaning (column removal - Classic version)}
+
+# Hard version of the last method, choose the columns to delete to avoid suppressing too many lines while removing the NAs
+to_remove <- c(
+  "HE_Neb_mean_0.050_Pop2", "HE_Neb_mean_0.020_Pop2", "HE_Neb_mean_0.010_Pop2", "HE_Neb_mean_0.000_Pop2",
+  "HE_Neb_mean_0.050_Pop1", "HE_Neb_mean_0.020_Pop1", "HE_Neb_mean_0.010_Pop1", "HE_Neb_mean_0.000_Pop1",
+  "Coan_Neb_n_Pop1", "Coan_Neb_n_Pop2",
+  "LD_Ne_0.050_Pop1", "LD_Ne_0.020_Pop1", "LD_Ne_0.010_Pop1", "LD_Ne_0.000_Pop1",
+  "LD_Ne_0.050_Pop2", "LD_Ne_0.020_Pop2", "LD_Ne_0.010_Pop2", "LD_Ne_0.000_Pop2"
+)
+
+# Remove the lines that contain at least one "NA"
+data <- data %>% select(-any_of(to_remove)) %>% na.omit()
+
+```
+
+```{r = Set the parameters and resuming statistics tables}
+
+# List of parameters
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample1_size_CMR", "sample2_size_CMR", "mutation_rate", "recap_Ne")
+params <- data %>% select(all_of(param_cols))
+
+# List of resuming statistics
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_", "J_")
+stat_cols <- names(data)[sapply(names(data), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data %>% select(all_of(stat_cols))
+
+```
+
+```{r = ABCRF model}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param <- "pop_size"
+learning_data <- bind_cols(y = params[[target_param]], data_imputed) %>% rename(!!target_param := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf <- regAbcrf(as.formula(paste(target_param, "~ .")), data = learning_data, ntree = 500)
+summary(model_rf)
+
+```
+
+```{r = Stat importance for ABCRF model}
+
+# Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
+importance_df <- model_rf$model.rf$variable.importance %>%
+  sort(decreasing = TRUE) %>%
+  enframe(name = "Statistic", value = "Importance")
+top_n <- 20
+importance_top <- importance_df %>%
+  slice_head(n = top_n) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
+
+# Plotting the barplot showing the order of importance
+ggplot(importance_top, aes(x = Statistic, y = Importance)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = paste("Top", top_n, "variables importantes pour l'estimation de", target_param),
+    x = "Statistique",
+    y = "Importance (abcrf)"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r = Prediction values of the model}
+
+# Use the model to make the predictions according to the "observed data" from the Out-Of-Bag "OOB"
+predictions <- predict(model_rf, training = learning_data, obs = learning_data)$expectation
+
+# Plotting the curve demonstrating the differences of the predictions of the dataframe studied with the target data from the Out-Of-Bag
+plot(learning_data[[target_param]], predictions,
+     xlab = "Vraie pop_size", ylab = "Prédiction pop_size (OOB)",
+     main = "Comparaison vraie vs prédite",
+     pch = 20, col = "blue")
+abline(0, 1, col = "red")
+
+```
+
