@@ -11,6 +11,7 @@ runtime: shiny
 library(tidyverse)
 library(abcrf)
 library(ggplot2)
+library(tinytex)
 
 ```
 
@@ -147,8 +148,8 @@ ggplot(importance_top, aes(x = Statistic, y = Importance)) +
   geom_col(fill = "steelblue") +
   coord_flip() +
   labs(
-    title = paste("Top", top_n, "variables importantes pour l'estimation de", target_param),
-    x = "Statistique",
+    title = paste("Top", top_n, "most important variables", target_param),
+    x = "Statistics",
     y = "Importance (abcrf)"
   ) +
   theme_minimal(base_size = 14)
@@ -162,20 +163,20 @@ predictions <- predict(model_rf, training = learning_data, obs = learning_data)$
 
 # Plotting the curve demonstrating the differences of the predictions of the dataframe studied with the target data from the Out-Of-Bag
 plot(learning_data[[target_param]], predictions,
-     xlab = "Vraie pop_size", ylab = "Prédiction pop_size (OOB)",
-     main = "Comparaison vraie vs prédite",
+     xlab = "Real pop_size", ylab = "Predicted pop_size (OOB)",
+     main = "Real vs prediction",
      pch = 20, col = "blue")
 abline(0, 1, col = "red")
 
 ```
 
 ```{r}
-# ---- Courbe POD vs tolérance ----
+# ---- Curve POD vs Tolerance ----
 
-# Vecteur de tolérances (exprimées en %)
-tolerance_vec <- seq(0.01, 0.2, by = 0.01)  # de 1% à 20%
+# Tolerance vector
+tolerance_vec <- seq(0.01, 0.2, by = 0.01)  # From 1% to 20%
 
-# Calcul de la POD pour chaque tolérance
+# Pod calculation for each tolerance
 pod_df <- data.frame(
   Tolerance = tolerance_vec,
   POD = sapply(tolerance_vec, function(tol) {
@@ -183,18 +184,15 @@ pod_df <- data.frame(
   })
 )
 
-# Affichage du tableau si besoin
+# Print the table and make the plot
 print(pod_df)
-
-# ---- Visualisation avec ggplot2 ----
-library(ggplot2)
 
 ggplot(pod_df, aes(x = Tolerance * 100, y = POD * 100)) +
   geom_line(color = "steelblue", size = 1.2) +
   geom_point(color = "darkblue", size = 2) +
   labs(
-    title = "Courbe de Probability of Detection (POD) selon la tolérance",
-    x = "Tolérance (%)",
+    title = "Probabilty of Detection (POD)",
+    x = "Tolerance (%)",
     y = "POD (%)"
   ) +
   theme_minimal(base_size = 14)
