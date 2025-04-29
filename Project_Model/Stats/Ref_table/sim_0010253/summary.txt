@@ -1,0 +1,119 @@
+
+[Simulation Info]
+simulation_id = sim_0010253
+timestamp     = 20250429_083628
+seed          = 751531
+output_folder = /home/lejeunet/Bureau/simulations/Ref_table/sim_0010253
+
+[Model Parameters]
+pop_size           = 76
+num_loci           = 20
+sample1_generation = 30
+sample2_generation = 10
+low_repeats        = 1
+high_repeats       = 200
+mutation_rate      = 0.001
+recap_Ne           = 76
+
+[Sampling Design]
+sample1_size_Ne  = 50
+sample2_size_Ne  = 50
+sample1_size_CMR = 50
+sample2_size_CMR = 50
+
+[Capture-Marquage-Recapture]
+census_N   =  78
+MatchCount =  33
+
+[Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]]
+
+[Linkage Desequilibrium]
+LD_Ne_Pop1 = [19.7, 7.2, 20.8, 20.8]
+LD_r2_Pop1 = [0.036426, 0.054176, 0.035732, 0.035732]
+LD_Ne_Pop2 = [437.9, None, None, None]
+LD_r2_Pop2 = [0.022034, 0.017584, 0.018146, 0.018146]
+
+[Heterozygote excess]
+HE_Neb_mean_Pop1        = [None, None, None, None]
+HE_weighted_D_mean_Pop1 = [-0.03601, -0.01769, -0.01517, -0.01517]
+HE_Neb_mean_Pop2        = [None, None, None, None]
+HE_weighted_D_mean_Pop2 = [-0.10004, -0.05069, -0.03621, -0.03621]
+
+[Molecular Coancestry]
+Coan_Neb_n_Pop1 = 2.7
+Coan_f1_Pop1    = 0.18845
+Coan_Neb_n_Pop2 = 1.6
+Coan_f1_Pop2    = 0.31063
+
+[Ne Estimates - Temporal - Decreasing critical values (0.050, 0.020, 0.010, 0+)]
+
+[Pollak]
+P_Ne     = [55.3, 62.0, 71.6, 95.4]
+P_Fk     = [0.11037, 0.10059, 0.08987, 0.07243]
+P_Fprime = [0.09037, 0.08059, 0.06987, 0.05243]
+
+[Nei/Tajima]
+N_Ne     = [58.4, 65.7, 73.8, 103.3]
+N_Fc     = [0.10565, 0.09611, 0.08778, 0.06841]
+N_Fprime = [0.08565, 0.07611, 0.06778, 0.04841]
+
+[Jorde/Ryman]
+J_Ne     = [30.3, 31.5, 32.0, 33.0]
+J_Fs     = [0.19233, 0.18518, 0.18283, 0.17759]
+J_Fprime = [0.16516, 0.15857, 0.15641, 0.15155]
+
+[Genetic Diversity - Heterozygosity]
+mean_exp_het_pop1 = 0.1316
+mean_obs_het_pop1 = 0.1273
+mean_exp_het_pop2 = 0.1276
+mean_obs_het_pop2 = 0.115
+
+[Genetic Diversity - Allele Counts]
+mean_alleles_pop1 = 1.93
+var_alleles_pop1  = 0.5
+sum_alleles_pop1  = 29
+mean_alleles_pop2 = 2.13
+var_alleles_pop2  = 0.33
+sum_alleles_pop2  = 64
+
+[Genetic Diversity - Allelic Size Variance]
+var_allele_size_pop1 = 0.0485
+var_allele_size_pop2 = 0.0533
+
+[Per-locus summary - Population 1]
+Locus | Num_Alleles | Alleles        | Frequencies              | Variance | Obs_Het | Exp_Het
+------+-------------+----------------+--------------------------+----------+---------+--------
+1     | 1           | [100]          | [1.0000]                 | 0.0000   | NA      | NA     
+2     | 2           | [100, 101]     | [0.9600, 0.0400]         | 0.0384   | 0.0800  | 0.0776 
+3     | 2           | [99, 100]      | [0.1800, 0.8200]         | 0.1476   | 0.3200  | 0.2982 
+4     | 3           | [99, 100, 101] | [0.0200, 0.9400, 0.0400] | 0.0596   | 0.1200  | 0.1156 
+5     | 1           | [100]          | [1.0000]                 | 0.0000   | NA      | NA     
+6     | 3           | [99, 100, 101] | [0.0300, 0.9600, 0.0100] | 0.0396   | 0.0800  | 0.0782 
+7     | 2           | [100, 101]     | [0.9500, 0.0500]         | 0.0475   | 0.1000  | 0.0960 
+8     | 1           | [100]          | [1.0000]                 | 0.0000   | NA      | NA     
+9     | 2           | [101, 102]     | [0.8800, 0.1200]         | 0.1056   | 0.1600  | 0.2133 
+10    | 3           | [99, 100, 101] | [0.1200, 0.8600, 0.0200] | 0.1300   | 0.2800  | 0.2481 
+11    | 2           | [99, 100]      | [0.0100, 0.9900]         | 0.0099   | 0.0200  | 0.0200 
+12    | 1           | [100]          | [1.0000]                 | 0.0000   | NA      | NA     
+13    | 2           | [100, 101]     | [0.9300, 0.0700]         | 0.0651   | 0.1400  | 0.1315 
+14    | 2           | [99, 100]      | [0.0800, 0.9200]         | 0.0736   | 0.0800  | 0.1487 
+15    | 2           | [100, 101]     | [0.9900, 0.0100]         | 0.0099   | 0.0200  | 0.0200 
+
+[Per-locus summary - Population 2]
+Locus | Num_Alleles | Alleles         | Frequencies              | Variance | Obs_Het | Exp_Het
+------+-------------+-----------------+--------------------------+----------+---------+--------
+1     | 2           | [99, 100]       | [0.0200, 0.9800]         | 0.0196   | 0.0400  | 0.0396 
+2     | 2           | [100, 101]      | [0.9900, 0.0100]         | 0.0099   | 0.0200  | 0.0200 
+3     | 3           | [99, 100, 101]  | [0.1400, 0.8500, 0.0100] | 0.1331   | 0.1800  | 0.2604 
+4     | 2           | [99, 100]       | [0.0400, 0.9600]         | 0.0384   | 0.0800  | 0.0776 
+5     | 2           | [99, 100]       | [0.0100, 0.9900]         | 0.0099   | 0.0200  | 0.0200 
+6     | 1           | [100]           | [1.0000]                 | 0.0000   | NA      | NA     
+7     | 2           | [100, 101]      | [0.8200, 0.1800]         | 0.1476   | 0.2800  | 0.2982 
+8     | 2           | [99, 100]       | [0.0100, 0.9900]         | 0.0099   | 0.0200  | 0.0200 
+9     | 3           | [100, 101, 102] | [0.0300, 0.5500, 0.4200] | 0.2979   | 0.4600  | 0.5254 
+10    | 2           | [100, 101]      | [0.9400, 0.0600]         | 0.0564   | 0.1200  | 0.1139 
+11    | 1           | [100]           | [1.0000]                 | 0.0000   | NA      | NA     
+12    | 2           | [100, 101]      | [0.9900, 0.0100]         | 0.0099   | 0.0200  | 0.0200 
+13    | 2           | [100, 101]      | [0.9600, 0.0400]         | 0.0384   | 0.0800  | 0.0776 
+14    | 2           | [99, 100]       | [0.0300, 0.9700]         | 0.0291   | 0.0600  | 0.0588 
+15    | 1           | [100]           | [1.0000]                 | 0.0000   | NA      | NA     

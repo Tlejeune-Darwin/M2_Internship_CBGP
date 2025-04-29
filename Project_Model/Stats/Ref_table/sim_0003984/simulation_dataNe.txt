@@ -1,0 +1,103 @@
+Output from NeEstimator v.2
+Starting time: Mon Apr 28 08:57:49 2025
+Input File: "simulation_data.gen"
+
+Number of Loci = 21
+
+LD mating model: Random
+
+Population     1 [Indiv_1]  (Number of Individuals = 50)
+****************
+--------------------------------------------------------------------------
+Lowest Allele Frequency Used     0.050       0.020       0.010         0+
+--------------------------------------------------------------------------
+
+LINKAGE DISEQUILIBRIUM METHOD
+
+Harmonic Mean Sample Size =       50.0        50.0        50.0        50.0
+Independent Comparisons =       4287        5424        5735        5735
+OverAll r^2 =                 0.021535    0.021397    0.021477    0.021477
+Expected r^2 Sample =         0.021276    0.021276    0.021276    0.021276
+Estimated Ne^ =                 1284.2      2753.5      1654.3      1654.3
+
+
+HETEROZYGOTE EXCESS METHOD
+
+Harmonic Mean Sample Size =       50.0        50.0        50.0        50.0 
+Independent Alleles =             95         107         110         110  
+Weighted Mean D =              0.01493     0.01452     0.01423     0.01423
+Estimated Neb^  =                 34.0        34.9        35.6        35.6
+
+
+MOLECULAR COANCESTRY METHOD
+
+Harmonic Mean Sample Size =                                           50.0
+OverAll f1^    =                                                   0.00529
+Estimated Neb^ =                                                      94.4
+
+**************************************************************************
+
+Population     2 [Indiv_51]  (Number of Individuals = 50)
+****************
+--------------------------------------------------------------------------
+Lowest Allele Frequency Used     0.050       0.020       0.010         0+
+--------------------------------------------------------------------------
+
+LINKAGE DISEQUILIBRIUM METHOD
+
+Harmonic Mean Sample Size =       50.0        50.0        50.0        50.0
+Independent Comparisons =       4648        5637        5949        5949
+OverAll r^2 =                 0.021519    0.021037    0.021232    0.021232
+Expected r^2 Sample =         0.021276    0.021276    0.021276    0.021276
+Estimated Ne^ =                 1368.5    Infinite    Infinite    Infinite
+
+
+HETEROZYGOTE EXCESS METHOD
+
+Harmonic Mean Sample Size =       50.0        50.0        50.0        50.0 
+Independent Alleles =             99         109         112         112  
+Weighted Mean D =              0.00979     0.00560     0.00535     0.00535
+Estimated Neb^  =                 51.5        89.7        94.0        94.0
+
+
+MOLECULAR COANCESTRY METHOD
+
+Harmonic Mean Sample Size =                                           50.0
+OverAll f1^    =                                                   0.03531
+Estimated Neb^ =                                                      14.2
+
+**************************************************************************
+
+Population: Indiv_1/Indiv_51,	2 Samples,	Sample Sizes: 50/50
+
+TEMPORAL METHODS (Pollak, Nei/Tajima, Jorde/Ryman), Plan II.
+--------------------------------------------------------------------------
+Lowest Allele Frequency Used     0.050       0.020       0.010         0+
+==========================================================================
+Samples  1[Indiv_1] & 2[ndiv_51]
+Generations    30.0 & 40.0   
+
+   Independent Alleles =         102         111         117         118
+   
+  (Pollak)
+   Harmonic Mean Samp Size =      50.0        50.0        50.0        50.0
+                 Fk =          0.01873     0.01924     0.01912     0.01929
+                 F' =         -0.00127    -0.00076    -0.00088    -0.00071
+               * Ne =          -3924.4     -6583.1     -5660.1     -7078.2
+   
+  (Nei/Tajima)
+   Harmonic Mean Samp Size =      50.0        50.0        50.0        50.0
+                 Fc =          0.01879     0.01920     0.01909     0.01924
+                 F' =         -0.00121    -0.00080    -0.00091    -0.00076
+               * Ne =          -4141.8     -6265.9     -5518.0     -6616.1
+   
+  (Jorde/Ryman)
+   Harmonic Mean Samp Size =      50.0        50.0        50.0        50.0
+                 Fs =          0.02024     0.02022     0.02023     0.02024
+                 F' =          0.00014     0.00012     0.00013     0.00014
+               * Ne =          35938.6     41665.2     38341.0     34853.0
+==========================================================================
+
+Ending time: Mon Apr 28 08:57:49 2025
+-------------------------------------
+
