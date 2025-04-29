@@ -6,59 +6,6 @@ output: html_document
 runtime: shiny
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
-
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
-## Inputs and Outputs
-
-You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
-
-```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
-
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
-```
-
-## Embedded Application
-
-It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
-
-```{r tabsets, echo=FALSE}
-shinyAppDir(
-  system.file("examples/06_tabsets", package = "shiny"),
-  options = list(
-    width = "100%", height = 550
-  )
-)
-```
-
-Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
-
-You can also use the `shinyApp` function to define an application inline rather then in an external directory.
-
-In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
-
-
-
-
-
 ```{r = Packages generation} 
 
 library(tidyverse)
@@ -67,27 +14,73 @@ library(ggplot2)
 
 ```
 
-```{r = Get the data}
+```{r = Setting working directory}
+# Desktop detection
+home_path <- Sys.getenv("HOME")
 
-# Load the csv file from the "simulations" directory
-data <- read_csv("Bureau/simulations/Ref_table/summary_table.csv")
+desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
+  file.path(home_path, "Desktop")
+} else if (dir.exists(file.path(home_path, "Bureau"))) {
+  file.path(home_path, "Bureau")
+} else {
+  stop
+}
+
+# Complete path
+file_path <- file.path(desktop_path, "simulations", "Ref_table", "summary_table.csv")
+
+# Reading file
+data <- read_csv(file_path)
 
 ```
 
 ```{r = Hard cleaning (Column removal - Automatic version)}
 
 # Function that will search every column and count the "NA", then remove the columns having too much missing values according to the threshold
-remove_high_na_cols <- function(data, threshold = 0.2) {
-  na_prop <- colSums(is.na(data)) / nrow(data)
-  cols_to_remove <- names(na_prop[na_prop > threshold])
+remove_high_na_cols <- function(data, threshold = 0.05) {
+  total_rows <- nrow(data)
+  na_summary <- data %>%
+    summarise(across(everything(), ~ sum(is.na(.)))) %>%
+    pivot_longer(cols = everything(), names_to = "Variable", values_to = "NA_count") %>%
+    mutate(
+      Total_rows = total_rows,
+      NA_percentage = round((NA_count / Total_rows) * 100, 2)
+    )
+  cols_to_remove <- na_summary %>%
+    filter(NA_percentage > threshold * 100) %>%
+    pull(Variable)
   data_clean <- data %>% select(-any_of(cols_to_remove))
-  list(data = data_clean, removed = cols_to_remove)
+  list(data_clean = data_clean, removed = cols_to_remove, na_summary = na_summary)
 }
-result <- remove_high_na_cols(data, threshold = 0.2)
-data <- result$data 
-result$removed  # List of removed col
+result <- remove_high_na_cols(data, threshold = 0.05)
+data_clean <- result$data 
+result$na_summary  # List of removed col
+
+top_n_display <- 20
+
+ggplot(result$na_summary %>% 
+         filter(NA_percentage > 0) %>% 
+         slice_max(NA_percentage, n = top_n_display),
+       aes(x = reorder(Variable, -NA_percentage), y = NA_percentage)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 30 variables with most NA",
+    x = "Resuming stats",
+    y = "NA percentage (%)"
+  ) +
+  theme_minimal(base_size = 14)
 
 ```
+
+```{r}
+data_clean <- data_clean %>%
+  mutate(census_N = ifelse(census_N == 0, NA, census_N))
+
+data_clean <- data_clean %>%
+  drop_na()
+```
+
 
 ```{r = Soft cleaning (Median)}
 
@@ -117,12 +110,12 @@ data <- data %>% select(-any_of(to_remove)) %>% na.omit()
 # List of parameters
 param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
                 "sample1_size_CMR", "sample2_size_CMR", "mutation_rate", "recap_Ne")
-params <- data %>% select(all_of(param_cols))
+params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
 stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_", "J_")
-stat_cols <- names(data)[sapply(names(data), function(col) any(str_detect(col, stat_keywords)))]
-stats_table <- data %>% select(all_of(stat_cols))
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data_clean %>% select(all_of(stat_cols))
 
 ```
 
@@ -130,7 +123,7 @@ stats_table <- data %>% select(all_of(stat_cols))
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param <- "pop_size"
-learning_data <- bind_cols(y = params[[target_param]], data_imputed) %>% rename(!!target_param := y)
+learning_data <- bind_cols(y = params[[target_param]], stats_table) %>% rename(!!target_param := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
 model_rf <- regAbcrf(as.formula(paste(target_param, "~ .")), data = learning_data, ntree = 500)
@@ -173,6 +166,38 @@ plot(learning_data[[target_param]], predictions,
      main = "Comparaison vraie vs prédite",
      pch = 20, col = "blue")
 abline(0, 1, col = "red")
+
+```
+
+```{r}
+# ---- Courbe POD vs tolérance ----
+
+# Vecteur de tolérances (exprimées en %)
+tolerance_vec <- seq(0.01, 0.2, by = 0.01)  # de 1% à 20%
+
+# Calcul de la POD pour chaque tolérance
+pod_df <- data.frame(
+  Tolerance = tolerance_vec,
+  POD = sapply(tolerance_vec, function(tol) {
+    mean(abs(predictions - learning_data$pop_size) / learning_data$pop_size < tol)
+  })
+)
+
+# Affichage du tableau si besoin
+print(pod_df)
+
+# ---- Visualisation avec ggplot2 ----
+library(ggplot2)
+
+ggplot(pod_df, aes(x = Tolerance * 100, y = POD * 100)) +
+  geom_line(color = "steelblue", size = 1.2) +
+  geom_point(color = "darkblue", size = 2) +
+  labs(
+    title = "Courbe de Probability of Detection (POD) selon la tolérance",
+    x = "Tolérance (%)",
+    y = "POD (%)"
+  ) +
+  theme_minimal(base_size = 14)
 
 ```
 
