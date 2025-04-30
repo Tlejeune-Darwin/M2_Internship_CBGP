@@ -754,6 +754,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
             config_dict.pop(key)
 
+    for key in ["Index", "MatchCount", "census_N"]:
+        config_dict.pop(key, None)
+
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
