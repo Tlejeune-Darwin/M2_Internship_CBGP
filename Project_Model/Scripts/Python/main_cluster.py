@@ -1,4 +1,4 @@
-from run_simulation_linux import run_simulation_linux
+from run_simulation_cluster import run_simulation_cluster
 import argparse
 import os
 
@@ -28,12 +28,13 @@ args.batch = ask_if_missing(args.batch, "Batch name (simulation folder name)", s
 args.num_simulations = ask_if_missing(args.num_simulations, "Number of simulations", int, 1)
 
 # --- Create the base simulation folder on the desktop --- #
-sim_base_dir = os.path.join(get_desktop_path(), "simulations", args.batch)
+base_results_dir = os.path.expanduser("results")
+sim_base_dir = os.path.join(base_results_dir, args.batch)
 os.makedirs(sim_base_dir, exist_ok=True)
 
 # --- Run the simulations --- #
 for i in range(args.num_simulations):
-    run_simulation_linux(
+    run_simulation_cluster(
         base_dir=sim_base_dir,  # Pass the absolute path
         sim_prefix=args.name_prefix
     )

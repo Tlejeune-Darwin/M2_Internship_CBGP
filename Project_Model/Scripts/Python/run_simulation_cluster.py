@@ -56,17 +56,11 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 2.2. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    ### 2.3. Choose depending on the desktop name ###
-    def get_desktop_path():
-        desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
-        desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
-        return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
-
-    ### 2.4. Simulations directory placed on the desktop ###
+    ### 2.3. Simulations directory placed on the desktop ###
     all_simulations = base_dir
     os.makedirs(all_simulations, exist_ok=True)
     
-    ### 2.5. Create a folder for each simulation ###
+    ### 2.4. Create a folder for each simulation ###
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     existing = [d for d in os.listdir(all_simulations) if d.startswith(sim_prefix)]
     numbers = [int(re.search(rf"{sim_prefix}_(\d+)", name).group(1)) for name in existing if re.search(rf"{sim_prefix}_(\d+)", name)]
@@ -77,6 +71,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
+    print("Simulation lancée avec ID :", sim_id)
+    print("Tous les fichiers seront stockés dans :", sim_folder)
 
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
