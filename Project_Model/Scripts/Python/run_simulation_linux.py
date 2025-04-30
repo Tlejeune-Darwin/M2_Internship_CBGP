@@ -593,12 +593,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     with open(summary_txt_path, "w") as f:
         def write_section(header, keys, file_handle):
             file_handle.write(f"\n[{header}]\n")
-            if not keys :
+            filtered_keys = [k for k in keys if k in config_dict]
+            if not filtered_keys :
                 return
-            max_key_len = max(len(k) for k in keys if k in config_dict)
-            for key in keys:
-                if key in config_dict:
-                    file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
+            max_key_len = max(len(k) for k in filtered_keys)
+            for key in filtered_keys:
+                file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
