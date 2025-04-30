@@ -646,12 +646,20 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             for key in filtered_keys:
                 file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
 
+    cmr_data = parse_cmr_blocks(slim_config_file)
+    for idx, vals in cmr_data.items():
+        if isinstance(vals, dict):
+            for key in ["census_N", "matchCount"]:
+                if key in vals:
+                    config_dict[f"{key}_{idx}"] = vals[key]
+
+
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
         cmr_keys = sorted(
-            [k for k in config_dict if re.match(r"(MatchCount | census_N)_\d+$", k)],
+            [k for k in config_dict if re.match(r"(census_N|matchCount)_\d+$", k)],
             key=lambda x: int(x.split("_")[1])
         )
         write_section("Capture-Mark-Recapture", cmr_keys, f)
