@@ -11,7 +11,7 @@
 module purge
 
 # Aller dans le dossier du dépôt GitHub
-cd ~ScriptPython
+cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 
 # Exécuter le script principal
 python main_cluster.py --batch batch_test --num_simulations 5 --name_prefix sim
