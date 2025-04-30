@@ -90,6 +90,28 @@ initialize() {
 
     } else {
         catn("Not enough individuals for the first sample");
+
+	// A inclure dans le bloc late() (ou early() si tu préfères)
+if (sim.cycle >= sample1_generation & sim.cycle <= sample1_generation + sample2_generation) {
+    // Compter la taille de la population
+    community.outputUsage(); // utile pour debug si besoin
+    popSize = p1.individualCount;
+
+    // Compter les individus marqués à cette génération
+    numMarked = length(p1.individuals[sim.tag == 1]);
+
+    // Marquer aléatoirement des individus pour CMR
+    sampleSize_CMR = asInteger(cmrsizes[sim.cycle - sample1_generation]);
+    sampled = sample(p1.individuals, sampleSize_CMR);
+    sampled.tag = 1;
+
+    // Compter combien étaient déjà marqués (match)
+    matchCount = sum(sampled.tag == 1);
+
+    // Stocker les variables dans la structure de simulation
+    sim.setValue("MatchCount_" + (sim.cycle - sample1_generation + 1), matchCount);
+    sim.setValue("Census_N_" + (sim.cycle - sample1_generation + 1), popSize);
+
     }
 }
 
