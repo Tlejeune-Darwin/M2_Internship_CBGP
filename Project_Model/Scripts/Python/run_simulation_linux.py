@@ -755,7 +755,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             config_dict.pop(key)
     
     pattern_gen = re.compile(r"^(MatchCount|census_N|Index)_\d+$")
-    for key in list(config_dict.key()):
+    for key in list(config_dict.keys()):
         if pattern_gen.match(key):
             config_dict.pop(key)
             config_dict.pop("Index", None)
