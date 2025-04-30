@@ -36,7 +36,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
-                f.write(f"{better_names['mutation_rate']} = 0.001\n")
+                f.write(f"{better_names['mutation_rate']} = 0.00001, 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
@@ -85,6 +85,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
+        log_mu_low = np.log(1e-5)
+        log_mu_high = np.log(1e-3)
+        mutation_rate = float(np.exp(np.random.uniform(log_mu_low, log_mu_high)))
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
@@ -96,7 +99,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "sample_sizes_CMR" : list(map(int, global_config["sample_sizes_CMR"].split(","))),      # Size in individuals of the dempgraphic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
+        "mutation_rate" : mutation_rate,                                # Mutation rate used during mutation simulation
         "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
