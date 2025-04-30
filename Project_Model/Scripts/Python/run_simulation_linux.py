@@ -663,7 +663,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
-        write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
+        write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_sizes_CMR"], f)
         write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
 
