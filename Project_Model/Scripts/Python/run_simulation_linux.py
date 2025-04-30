@@ -96,10 +96,10 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
-        "sample_sizes_CMR" : list(map(int, global_config["sample_sizes_CMR"].split(","))),      # Size in individuals of the dempgraphic samples
+        "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the dempgraphic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : mutation_rate,                                # Mutation rate used during mutation simulation
+        "mutation_rate" : mutation_rate,                                                        # Mutation rate used during mutation simulation
         "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
