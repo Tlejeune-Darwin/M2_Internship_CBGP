@@ -1,4 +1,4 @@
-#!binbash
+#!/bin/bash
 #SBATCH --job-name=sim_m2
 #SBATCH --output=logssim_%j.out
 #SBATCH --error=logssim_%j.err
