@@ -171,35 +171,35 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    def parse_cmr_blocks(config_path):
+    def parse_cmr_from_config_file(config_path):
+        """
+        Lit les lignes contenant 'census_N = ...' et 'matchCount = ...' dans slim_config.txt
+        et retourne un dictionnaire avec des clés numérotées (ex: census_N_1, matchCount_1).
+        """
         cmr_data = {}
-        current_index = None
+        census_index = 1
+        match_index = 1
+
         with open(config_path, "r") as f:
             for line in f:
                 line = line.strip()
-                if line == "[Index]":
+                if line.startswith("census_N"):
                     try:
-                        current_index = int(line.split("=")[1].strip())
-                        cmr_data[current_index] = {}
+                        value = float(line.split("=")[1].strip())
                     except ValueError:
-                        current_index = None
-                elif current_index is not None and line.startswith("census_N"):
+                        value = None
+                    cmr_data[f"census_N_{census_index}"] = value
+                    census_index += 1
+
+                elif line.startswith("matchCount"):
                     try:
-                        cmr_data[current_index]["census_N"] = float(line.split("=")[1].strip())
+                        value = float(line.split("=")[1].strip())
                     except ValueError:
-                        cmr_data[current_index]["census_N"] = None
-                elif current_index is not None and line.startswith("matchCount"):
-                    try:
-                        cmr_data[current_index]["matchCount"] = float(line.split("=")[1].strip())
-                    except ValueError:
-                        cmr_data[current_index]["matchCount"] = None
+                        value = None
+                    cmr_data[f"matchCount_{match_index}"] = value
+                    match_index += 1
+
         return cmr_data
-
-    match_census_path = os.path.join(sim_folder, "census_match_output.txt")
-    if os.path.exists(match_census_path):
-        cmr_data = parse_cmr_blocks(match_census_path)
-        config_dict.update(cmr_data)
-
 
     # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
 
@@ -646,13 +646,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             for key in filtered_keys:
                 file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
 
-    cmr_data = parse_cmr_blocks(slim_config_file)
-    for idx, vals in cmr_data.items():
-        if isinstance(vals, dict):
-            for key in ["census_N", "matchCount"]:
-                if key in vals:
-                    config_dict[f"{key}_{idx}"] = vals[key]
-
+    cmr_data = parse_cmr_from_config_file(slim_config_file)
+    config_dict.update(cmr_data)
+    # Extraire les clés CMR dans l’ordre (triées par numéro)
+    cmr_keys = sorted(
+        [k for k in config_dict if re.match(r"(census_N|matchCount)_\d+$", k)],
+        key=lambda x: int(x.split("_")[1])
+    )
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
@@ -663,12 +663,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             key=lambda x: int(x.split("_")[1])
         )
         write_section("Capture-Mark-Recapture", cmr_keys, f)
-        census_value = config_dict.get("census_N")
-        try:
-            if census_value is not None and float(census_value) == 0:
-                f.write("# There were no match between sampling of individuals during CMR.\n")
-        except ValueError:
-            pass 
+
 
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
