@@ -135,7 +135,7 @@ line = line + "MatchCount=" + matchCount + "\n";
 line = line + "EstimatedPopSize=" + estimatePopSize + "\n";
 line = line + "\n";
 
-writeFile(outputPath + "/census_match_output.txt", line, append = T);
+writeFile(config_file + "/census_match_output.txt", line, append = T);
 
 	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", EstimatedPopSize = " + estimatePopSize);
 
