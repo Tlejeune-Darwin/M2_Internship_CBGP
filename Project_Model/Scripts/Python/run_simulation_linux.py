@@ -494,7 +494,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict["sample_size_CMR"] = int(value)
                         except ValueError:
                             config_dict["sample_size_CMR"] = value
-                    elif re.match(r"(MatchCount | census_N)_\d+$", key):
+                    elif re.match(r"(MatchCount|census_N)_\d+$", key):
                         try:
                             config_dict[key] = int(float(value))
                         except ValueError:
@@ -507,6 +507,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                                 config_dict[key] = float(value)
                             except ValueError:
                                 config_dict[key] = value
+        return config_dict
 
     # Merge the new data
     summary_path = os.path.join(all_simulations, "summary_table.csv")
