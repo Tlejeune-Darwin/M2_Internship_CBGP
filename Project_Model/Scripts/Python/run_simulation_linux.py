@@ -649,10 +649,17 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     cmr_data = parse_cmr_from_config_file(slim_config_file)
     config_dict.update(cmr_data)
     # Extraire les clés CMR dans l’ordre (triées par numéro)
-    cmr_keys = sorted(
-        [k for k in config_dict if re.match(r"(census_N|matchCount)_\d+$", k)],
-        key=lambda x: int(x.split("_")[1])
-    )
+    cmr_keys = []
+    pattern = re.compile(r"^(census_N|matchCount)_(\d+)$")
+
+    for k in config_dict:
+        match = pattern.match(k)
+        if match:
+            index = int(match.group(2))
+            cmr_keys.append((index, k))
+
+    cmr_keys_sorted = [k for _, k in sorted(cmr_keys)]
+    write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
