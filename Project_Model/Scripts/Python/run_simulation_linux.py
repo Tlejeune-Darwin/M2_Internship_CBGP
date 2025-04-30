@@ -41,7 +41,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
-                f.write(f"{better_names['pop_size_logrange']} = 50,10000\n")
+                f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
 
         # Reading the file
         config = {}
@@ -179,9 +179,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 if "=" in line:
                     key, val = line.strip().split("=")
                     try:
-                        config[key] = int(val)
+                        config_dict[key] = int(val)
                     except ValueError:
-                        config[key] = val
+                        config_dict[key] = val
 
 
     # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
