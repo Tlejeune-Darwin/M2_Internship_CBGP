@@ -40,7 +40,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 f.write(f"{better_names['sample1_generation']} = 30\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
-                f.write(f"{better_names['sample_sizes_CMR']} = 50,50\n")
+                f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
                 f.write(f"{better_names['pop_size_logrange']} = 50,10000\n")
 
         # Reading the file
@@ -96,7 +96,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
-        "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the dempgraphic samples
+        "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
         "mutation_rate" : mutation_rate,                                                        # Mutation rate used during mutation simulation
