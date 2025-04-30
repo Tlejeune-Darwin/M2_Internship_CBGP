@@ -481,15 +481,19 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 if "=" in line:
                     key, value = map(str.strip, line.strip().split("=", 1))
 
-                    if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
+                    if key in ["sample_sizes_Ne"]:
                         try:
                             s1, s2 = map(int, value.split(","))
                             suffix = key.replace("sample_sizes_", "")
                             config_dict[f"sample1_size_{suffix}"] = s1
                             config_dict[f"sample2_size_{suffix}"] = s2
-                            config_dict[f"sample_sizes_CMR"]
                         except ValueError:
                             pass
+                    elif key == "sample_sizes_CMR":
+                        try:
+                            config_dict["sample_size_CMR"] = int(value)
+                        except ValueError:
+                            config_dict["sample_size_CMR"] = value
                     elif re.match(r"(MatchCount | census_N)_\d+$", key):
                         try:
                             config_dict[key] = int(float(value))
