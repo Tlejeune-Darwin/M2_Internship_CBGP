@@ -195,18 +195,6 @@ appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
 if (sim.cycle == sample1_generation + sample2_generation) {
-    // Exporter toutes les valeurs MatchCount_i et Census_N_i dans un fichier txt
-    out = "";
-    for (i in 1:sample2_gen) {
-        out = out + "Index=" + i + "\n";
-        out = out + "MatchCount=" + sim.getValue("MatchCount_" + i) + "\n";
-        out = out + "Census_N=" + sim.getValue("Census_N_" + i) + "\n";
-        out = out + "EstimatedPopSize=" + sim.getValue("EstimatedPopSize_" + i) + "\n";
-        out = out + "\n";  // saut de ligne pour lisibilité
-    }
-    writeFile(outputPath + "/census_match_output.txt", out);
-
-}
 
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
