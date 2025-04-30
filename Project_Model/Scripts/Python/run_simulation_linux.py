@@ -171,6 +171,19 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
+    # 4.4. Lire les valeurs de MatchCount_i et Census_N_i
+    match_census_path = os.path.join(sim_folder, "census_match_output.txt")
+    if os.path.exists(match_census_path):
+        with open(match_census_path, "r") as f:
+            for line in f:
+                if "=" in line:
+                    key, val = line.strip().split("=")
+                    try:
+                        config[key] = int(val)
+                    except ValueError:
+                        config[key] = val
+
+
     # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
 
     ### 5.1. Load the ".trees" file ###

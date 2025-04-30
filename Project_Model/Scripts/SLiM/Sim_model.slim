@@ -198,6 +198,21 @@ log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
+if (sim.cycle == sample1_generation + sample2_generation) {
+    // Exporter toutes les valeurs MatchCount_i et Census_N_i dans un fichier txt
+    mcounts = "";
+    censuses = "";
+
+    for (i in 1:(sample2_generation+1)) {
+        m = sim.getValue("MatchCount_" + i);
+        c = sim.getValue("Census_N_" + i);
+        mcounts = mcounts + "MatchCount_" + i + "=" + m + "\n";
+        censuses = censuses + "Census_N_" + i + "=" + c + "\n";
+    }
+
+    writeFile(outputPath + "/census_match_output.txt", mcounts + censuses);
+}
+
 	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
 	writeFile(config_file, paste("MatchCount=", asInteger(matchCount)), append=T);
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
