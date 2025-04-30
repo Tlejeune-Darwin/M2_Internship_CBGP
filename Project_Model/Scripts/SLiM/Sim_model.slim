@@ -132,10 +132,9 @@ late() {
 
 writeFile(config_file, paste("Index =", i), append=T);
 writeFile(config_file, paste("census_N =", matchCount), append=T);
-writeFile(config_file, paste("EstimatedPopSize =", estimatePopSize), append=T);
 writeFile(config_file, "", append=T); // saut de ligne
 
-	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", EstimatedPopSize = " + estimatePopSize);
+	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", census_N = " + estimatePopSize);
 
 }
 
