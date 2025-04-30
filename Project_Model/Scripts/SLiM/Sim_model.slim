@@ -136,6 +136,9 @@ late() {
     // Stockage des résultats dans sim
     sim.setValue("MatchCount_" + i, matchCount);
     sim.setValue("EstimatedPopSize_" + i, estimatePopSize);
+
+	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", EstimatedPopSize = " + estimatePopSize);
+
 }
 
 reproduction() {
