@@ -476,6 +476,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     def read_config(path):
         """Read the config file"""
         config_dict = {}
+        current_index = None
         with open(path, "r") as f:
             for line in f:
                 if "=" in line:
@@ -494,11 +495,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict["sample_size_CMR"] = int(value)
                         except ValueError:
                             config_dict["sample_size_CMR"] = value
-                    elif re.match(r"(MatchCount|census_N)_\d+$", key):
-                        try:
-                            config_dict[key] = int(float(value))
-                        except ValueError:
-                            config_dict[key] = value
+                    elif key in ["matchCount", "census_N"] and current_index is not None:
+                        config_dict[f"{key}_{current_index}"] = float(value)
                     else:
                         try:
                             config_dict[key] = int(value)
