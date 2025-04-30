@@ -51,8 +51,7 @@ initialize() {
     defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
 
     sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); // samples 
-    defineGlobal("sample_size_CMR_0", asInteger(sizes_CMR[0]));
-    defineGlobal("sample_size_CMR_1", asInteger(sizes_CMR[1]));
+    defineGlobal("sample_size_CMR", asInteger(sizes_CMR));
 
 	  defineConstant("sample1_gen", sample1_generation);
 	  defineConstant("end_generation", sample1_generation + sample2_generation);
@@ -90,7 +89,54 @@ initialize() {
 
     } else {
         catn("Not enough individuals for the first sample");
+
+// Premier échantillon génétique déjà fait à sample1_gen - 1
+		}
+}
+
+// Capture-Marquage-Recapture à chaque génération suivante jusqu'au second sample
+
+late() {
+    // Numéro relatif de génération depuis t1
+    i = sim.cycle - sample1_gen + 2;
+
+    // Si on n’est pas dans l’intervalle, on sort
+    if (i < 1 | i > end_generation)
+        return;
+
+    // Taille de la population
+    N = p1.individualCount;
+
+    // Premier échantillon (à la génération i-1)
+    sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
+
+    // Deuxième échantillon (à la même génération ici, simplification)
+    sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
+
+    // Comptage des recaptures
+    matchCount = 0;
+    for (ind1 in sample1) {
+        for (ind2 in sample2) {
+            if (ind1 == ind2) {
+                matchCount = matchCount + 1;
+            }
+        }
     }
+
+    // Estimation de la taille de population avec estimateur de Lincoln-Petersen modifié
+    if (matchCount > 0) {
+        census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
+    } else {
+        census_N = "Infinite";
+    }
+
+writeFile(config_file, paste("Index =", i), append=T);
+writeFile(config_file, paste("census_N =", census_N), append=T);
+writeFile(config_file, paste("MatchCount =", matchCount), append=T);
+writeFile(config_file, "", append=T); // saut de ligne
+
+	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", census_N = " + census_N);
+
 }
 
 reproduction() {
@@ -117,36 +163,6 @@ return (individual.age == 0);
 
 // Generation number is determined by pythono script
 (end_generation - 1) late() {
-
-		//sample1
-	sample1 = sample(p1.individuals, sample_size_CMR_0, replace = F);
-	//sample2
-	sample2 = sample(p1.individuals, sample_size_CMR_1, replace = F);
-
-	//Add a matchcount that gains a point for each match
-	matchCount = 0;
-
-	//For loop that analyse the two samples then compare the matches
-	for (ind1 in sample1) {
-		for (ind2 in sample2) {
-			if (ind1 == ind2) {
-				matchCount = matchCount + 1;
-				}
-			}
-		}
-	if(matchCount > 0) {
-		estimatePopSize = ((sample_size_CMR_0 + 1) * (sample_size_CMR_1 + 1) / ((matchCount + 1) - 1));
-	} else {
-		estimatePopSize = "undefined"; 
-	}
-
-	if(matchCount > 0) {
-		catn("Estimated population size: ");
-		catn(estimatePopSize);
-	} else {
-		catn("Estimated population size: Cannot be estimated (zero matches).");
-		estimatePopSize = 0;
-	}
 
     // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sample_size_Ne_1) {
@@ -176,8 +192,9 @@ log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
-	writeFile(config_file, paste("census_N=", asInteger(estimatePopSize)), append=T);
-	writeFile(config_file, paste("MatchCount=", asInteger(matchCount)), append=T);
+if (sim.cycle == sample1_generation + sample2_generation) {
+}
+
 	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
 	writeFile(config_file, "------------------------", append=T);

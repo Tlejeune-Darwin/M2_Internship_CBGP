@@ -36,12 +36,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                 f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
-                f.write(f"{better_names['mutation_rate']} = 0.001\n")
+                f.write(f"{better_names['mutation_rate']} = 0.00001, 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
-                f.write(f"{better_names['sample_sizes_CMR']} = 50,50\n")
-                f.write(f"{better_names['pop_size_logrange']} = 50,10000\n")
+                f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
+                f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
 
         # Reading the file
         config = {}
@@ -85,6 +85,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
+        log_mu_low = np.log(1e-5)
+        log_mu_high = np.log(1e-3)
+        mutation_rate = float(np.exp(np.random.uniform(log_mu_low, log_mu_high)))
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
@@ -93,10 +96,10 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
-        "sample_sizes_CMR" : list(map(int, global_config["sample_sizes_CMR"].split(","))),      # Size in individuals of the dempgraphic samples
+        "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
+        "mutation_rate" : mutation_rate,                                                        # Mutation rate used during mutation simulation
         "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
@@ -167,6 +170,36 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
 
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
+
+    def parse_cmr_from_config_file(config_path):
+        """
+        Lit les lignes contenant 'census_N = ...' et 'matchCount = ...' dans slim_config.txt
+        et retourne un dictionnaire avec des clés numérotées (ex: census_N_1, matchCount_1).
+        """
+        cmr_data = {}
+        census_index = 1
+        match_index = 1
+
+        with open(config_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("census_N"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"census_N_{census_index}"] = value
+                    census_index += 1
+
+                elif line.startswith("MatchCount"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"MatchCount_{match_index}"] = value
+                    match_index += 1
+
+        return cmr_data
 
     # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
 
@@ -460,12 +493,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     def read_config(path):
         """Read the config file"""
         config_dict = {}
+        current_index = None
         with open(path, "r") as f:
             for line in f:
                 if "=" in line:
-                    key, value = line.strip().split("=", 1)
+                    key, value = map(str.strip, line.strip().split("=", 1))
 
-                    if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
+                    if key in ["sample_sizes_Ne"]:
                         try:
                             s1, s2 = map(int, value.split(","))
                             suffix = key.replace("sample_sizes_", "")
@@ -473,8 +507,24 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict[f"sample2_size_{suffix}"] = s2
                         except ValueError:
                             pass
+                        config_dict.pop(key, None)
+                    elif key == "sample_sizes_CMR":
+                        try:
+                            config_dict["sample_size_CMR"] = int(value)
+                        except ValueError:
+                            config_dict["sample_size_CMR"] = value
+                    if key.lower() == "Index":
+                        current_index = int(value)
+                    elif key in ["MatchCount", "census_N"] and current_index is not None:
+                        config_dict[f"{key}_{current_index}"] = float(value)
                     else:
-                        config_dict[key] = value
+                        try:
+                            config_dict[key] = int(value)
+                        except ValueError:
+                            try:
+                                config_dict[key] = float(value)
+                            except ValueError:
+                                config_dict[key] = value
         return config_dict
 
     # Merge the new data
@@ -590,24 +640,33 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     with open(summary_txt_path, "w") as f:
         def write_section(header, keys, file_handle):
             file_handle.write(f"\n[{header}]\n")
-            if not keys :
+            filtered_keys = [k for k in keys if k in config_dict]
+            if not filtered_keys :
                 return
-            max_key_len = max(len(k) for k in keys if k in config_dict)
-            for key in keys:
-                if key in config_dict:
-                    file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
+            max_key_len = max(len(k) for k in filtered_keys)
+            for key in filtered_keys:
+                file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
+
+    cmr_data = parse_cmr_from_config_file(slim_config_file)
+    config_dict.update(cmr_data)
+    # Extraire les clés CMR dans l’ordre (triées par numéro)
+    cmr_keys = []
+    pattern = re.compile(r"^(census_N|MatchCount)_(\d+)$")
+
+    for k in config_dict:
+        match = pattern.match(k)
+        if match:
+            index = int(match.group(2))
+            cmr_keys.append((index, k))
+
+    cmr_keys_sorted = [k for _, k in sorted(cmr_keys)]
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
-        write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
-        write_section("Capture-Marquage-Recapture", ["census_N", "MatchCount"], f)
-        census_value = config_dict.get("census_N")
-        try:
-            if census_value is not None and float(census_value) == 0:
-                f.write("# There were no match between sampling of individuals during CMR.\n")
-        except ValueError:
-            pass 
+        write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample_sizes_CMR"], f)
+        write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
+
 
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
         write_section("Linkage Desequilibrium", ["LD_Ne_Pop1", "LD_r2_Pop1",
@@ -691,6 +750,13 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for key in clefs_listes:
         config_dict.pop(key, None)
 
+    for key in list(config_dict):
+        if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
+            config_dict.pop(key)
+
+    for key in ["Index", "MatchCount", "census_N"]:
+        config_dict.pop(key, None)
+
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
@@ -716,7 +782,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "simulation_dataLoc.txt",
         "simulation_data.gen",
         "simulation.trees",
-        "slim_config.txt",
+        #"slim_config.txt",
         #"slim.log"
     ]
 
