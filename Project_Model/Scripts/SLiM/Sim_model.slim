@@ -125,14 +125,14 @@ late() {
 
     // Estimation de la taille de population avec estimateur de Lincoln-Petersen modifié
     if (matchCount > 0) {
-        estimatePopSize = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
+        census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
     } else {
-        estimatePopSize = 0;
+        census_N = "Infinite";
     }
 
-writeFile(config_file, paste("Index=", i), append=T);
-writeFile(config_file, paste("MatchCount=", matchCount), append=T);
-writeFile(config_file, paste("EstimatedPopSize=", estimatePopSize), append=T);
+writeFile(config_file, paste("Index =", i), append=T);
+writeFile(config_file, paste("census_N =", matchCount), append=T);
+writeFile(config_file, paste("EstimatedPopSize =", estimatePopSize), append=T);
 writeFile(config_file, "", append=T); // saut de ligne
 
 	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", EstimatedPopSize = " + estimatePopSize);

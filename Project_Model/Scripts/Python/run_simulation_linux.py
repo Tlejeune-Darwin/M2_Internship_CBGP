@@ -479,7 +479,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         with open(path, "r") as f:
             for line in f:
                 if "=" in line:
-                    key, value = line.strip().split("=", 1)
+                    key, value = map(str.strip, line.strip().split("=", 1))
 
                     if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
                         try:
@@ -487,11 +487,22 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             suffix = key.replace("sample_sizes_", "")
                             config_dict[f"sample1_size_{suffix}"] = s1
                             config_dict[f"sample2_size_{suffix}"] = s2
+                            config_dict[f"sample_sizes_CMR"]
                         except ValueError:
                             pass
+                    elif re.match(r"(MatchCount | census_N)_\d+$", key):
+                        try:
+                            config_dict[key] = int(float(value))
+                        except ValueError:
+                            config_dict[key] = value
                     else:
-                        config_dict[key] = value
-        return config_dict
+                        try:
+                            config_dict[key] = int(value)
+                        except ValueError:
+                            try:
+                                config_dict[key] = float(value)
+                            except ValueError:
+                                config_dict[key] = value
 
     # Merge the new data
     summary_path = os.path.join(all_simulations, "summary_table.csv")
@@ -617,7 +628,11 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
         write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample1_size_CMR", "sample2_size_CMR"], f)
-        write_section("Capture-Marquage-Recapture", ["census_N", "MatchCount"], f)
+        cmr_keys = sorted(
+            [k for k in config_dict if re.match(r"(MatchCount | census_N)_\d+$", k)],
+            key=lambda x: int(x.split("_")[1])
+        )
+        write_section("Capture-Mark-Recapture", cmr_keys, f)
         census_value = config_dict.get("census_N")
         try:
             if census_value is not None and float(census_value) == 0:
