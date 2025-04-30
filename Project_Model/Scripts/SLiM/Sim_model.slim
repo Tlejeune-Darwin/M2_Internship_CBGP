@@ -110,9 +110,6 @@ late() {
     // Premier échantillon (à la génération i-1)
     sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // On marque les individus
-    sample1.tag = 1;
-
     // Deuxième échantillon (à la même génération ici, simplification)
     sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
 
@@ -194,7 +191,6 @@ log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 appendLine = "log_file=" + log_file;
 writeFile(config_file, appendLine + "\n", append=T);
 
-if (sim.cycle == sample1_generation + sample2_generation) {
     // Exporter toutes les valeurs MatchCount_i et Census_N_i dans un fichier txt
     mcounts = "";
     censuses = "";
