@@ -191,12 +191,12 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                     cmr_data[f"census_N_{census_index}"] = value
                     census_index += 1
 
-                elif line.startswith("matchCount"):
+                elif line.startswith("MatchCount"):
                     try:
                         value = float(line.split("=")[1].strip())
                     except ValueError:
                         value = None
-                    cmr_data[f"matchCount_{match_index}"] = value
+                    cmr_data[f"MatchCount_{match_index}"] = value
                     match_index += 1
 
         return cmr_data
@@ -514,7 +514,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict["sample_size_CMR"] = value
                     if key.lower() == "Index":
                         current_index = int(value)
-                    elif key in ["matchCount", "census_N"] and current_index is not None:
+                    elif key in ["MatchCount", "census_N"] and current_index is not None:
                         config_dict[f"{key}_{current_index}"] = float(value)
                     else:
                         try:
@@ -650,7 +650,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     config_dict.update(cmr_data)
     # Extraire les clés CMR dans l’ordre (triées par numéro)
     cmr_keys = []
-    pattern = re.compile(r"^(census_N|matchCount)_(\d+)$")
+    pattern = re.compile(r"^(census_N|MatchCount)_(\d+)$")
 
     for k in config_dict:
         match = pattern.match(k)
