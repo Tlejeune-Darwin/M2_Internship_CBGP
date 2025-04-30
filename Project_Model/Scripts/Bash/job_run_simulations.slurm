@@ -11,7 +11,7 @@
 module purge
 
 # Aller dans le dossier du dépôt GitHub
-cd ~projets_stage_m2stage_m2_code
+cd ~ScriptPython
 
 # Exécuter le script principal
 python main_cluster.py --batch batch_test --num_simulations 5 --name_prefix sim
