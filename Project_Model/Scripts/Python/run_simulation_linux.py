@@ -659,7 +659,6 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             cmr_keys.append((index, k))
 
     cmr_keys_sorted = [k for _, k in sorted(cmr_keys)]
-    write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
@@ -669,7 +668,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
             [k for k in config_dict if re.match(r"(census_N|matchCount)_\d+$", k)],
             key=lambda x: int(x.split("_")[1])
         )
-        write_section("Capture-Mark-Recapture", cmr_keys, f)
+        write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
 
         write_section("Ne Estimates - One Sample - Decreasing critical values [0.050, 0.020, 0.010, 0+]", [], f)
