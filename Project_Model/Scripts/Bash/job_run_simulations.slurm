@@ -5,7 +5,7 @@
 #SBATCH --time=020000
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=short
+#SBATCH --partition=long
 
 # Optionnel  purge et chargement de modules si nécessaire
 module purge
