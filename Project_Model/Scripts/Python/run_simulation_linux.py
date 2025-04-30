@@ -171,30 +171,28 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    def parse_cmr_blocks(path):
+    def parse_cmr_blocks(config_path):
         cmr_data = {}
-        inside = False
-        gen = None
-        with open(path, "r") as f:
+        current_index = None
+        with open(config_path, "r") as f:
             for line in f:
                 line = line.strip()
-                if line == "[CMR]":
-                    inside = True
-                    continue
-                if line == "[/CMR]":
-                    break
-                if inside:
-                    match_gen = re.match(r"Index\s+(\d+)", line)
-                    if match_gen:
-                        gen = int(match_gen.group(1))
-                        continue
-                    if "=" in line and gen is not None:
-                        key, val = map(str.strip, line.split("="))
-                        full_key = f"{key}_{gen}"
-                        try:
-                            cmr_data[full_key] = float(val)
-                        except ValueError:
-                            cmr_data[full_key] = val
+                if line == "[Index]":
+                    try:
+                        current_index = int(line.split("=")[1].strip())
+                        cmr_data[current_index] = {}
+                    except ValueError:
+                        current_index = None
+                elif current_index is not None and line.startswith("census_N"):
+                    try:
+                        cmr_data[current_index]["census_N"] = float(line.split("=")[1].strip())
+                    except ValueError:
+                        cmr_data[current_index]["census_N"] = None
+                elif current_index is not None and line.startswith("matchCount"):
+                    try:
+                        cmr_data[current_index]["matchCount"] = float(line.split("=")[1].strip())
+                    except ValueError:
+                        cmr_data[current_index]["matchCount"] = None
         return cmr_data
 
     match_census_path = os.path.join(sim_folder, "census_match_output.txt")
