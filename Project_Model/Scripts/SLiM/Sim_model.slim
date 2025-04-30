@@ -98,7 +98,7 @@ initialize() {
 
 late() {
     // Numéro relatif de génération depuis t1
-    i = sim.cycle - sample1_gen;
+    i = sim.cycle - sample1_gen + 2;
 
     // Si on n’est pas dans l’intervalle, on sort
     if (i < 1 | i > end_generation)
