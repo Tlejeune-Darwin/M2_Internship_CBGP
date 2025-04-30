@@ -130,9 +130,13 @@ late() {
         estimatePopSize = 0;
     }
 
-    // Stockage des résultats dans sim
-    sim.setValue("MatchCount_" + i, matchCount);
-    sim.setValue("EstimatedPopSize_" + i, estimatePopSize);
+line = "Index=" + i + "\n";
+line = line + "MatchCount=" + matchCount + "\n";
+line = line + "Census_N=" + census_N + "\n";
+line = line + "EstimatedPopSize=" + estimatedPopSize + "\n";
+line = line + "\n";
+
+writeFile(outputPath + "/census_match_output.txt", line, append = T);
 
 	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", EstimatedPopSize = " + estimatePopSize);
 
