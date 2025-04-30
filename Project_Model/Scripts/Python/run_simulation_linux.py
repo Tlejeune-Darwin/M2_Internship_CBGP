@@ -171,17 +171,36 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    # 4.4. Lire les valeurs de MatchCount_i et Census_N_i
+    def parse_cmr_blocks(path):
+        cmr_data = {}
+        inside = False
+        gen = None
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line == "[CMR]":
+                    inside = True
+                    continue
+                if line == "[/CMR]":
+                    break
+                if inside:
+                    match_gen = re.match(r"Index\s+(\d+)", line)
+                    if match_gen:
+                        gen = int(match_gen.group(1))
+                        continue
+                    if "=" in line and gen is not None:
+                        key, val = map(str.strip, line.split("="))
+                        full_key = f"{key}_{gen}"
+                        try:
+                            cmr_data[full_key] = float(val)
+                        except ValueError:
+                            cmr_data[full_key] = val
+        return cmr_data
+
     match_census_path = os.path.join(sim_folder, "census_match_output.txt")
     if os.path.exists(match_census_path):
-        with open(match_census_path, "r") as f:
-            for line in f:
-                if "=" in line:
-                    key, val = line.strip().split("=")
-                    try:
-                        config_dict[key] = int(val)
-                    except ValueError:
-                        config_dict[key] = val
+        cmr_data = parse_cmr_blocks(match_census_path)
+        config_dict.update(cmr_data)
 
 
     # ---___---___---___--- 5. Tree Sequence Processing ---___---___---___--- #
