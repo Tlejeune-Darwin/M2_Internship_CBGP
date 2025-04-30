@@ -507,6 +507,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict[f"sample2_size_{suffix}"] = s2
                         except ValueError:
                             pass
+                        config_dict.pop(key, None)
                     elif key == "sample_sizes_CMR":
                         try:
                             config_dict["sample_size_CMR"] = int(value)
@@ -749,6 +750,9 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     for key in clefs_listes:
         config_dict.pop(key, None)
 
+    for key in list(config_dict):
+        if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
+            config_dict.pop(key)
     ### 13.2. Append the current simulation to "summary_table.csv" ###
     df_row = pd.DataFrame([config_dict])
 
