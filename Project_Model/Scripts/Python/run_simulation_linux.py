@@ -514,6 +514,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
                             config_dict["sample_size_CMR"] = int(value)
                         except ValueError:
                             config_dict["sample_size_CMR"] = value
+                    if key.lower() == "Index":
+                        current_index = int(value)
                     elif key in ["matchCount", "census_N"] and current_index is not None:
                         config_dict[f"{key}_{current_index}"] = float(value)
                     else:
