@@ -2,13 +2,17 @@
 #SBATCH --job-name=sim_m2
 #SBATCH --output=~/M2_Internship_CBGP/Project_Model/logs/sim_%j.out
 #SBATCH --error=~/M2_Internship_CBGP/Project_Model/logs/sim_%j.err
-#SBATCH --time=020000
+#SBATCH --time=01:00:00
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=long
+#SBATCH --partition=short
 
-# Aller dans le dossier du dépôt GitHub
-cd ~M2_Internship_CBGP/Project_Model/Scripts/Python
+# Aller dans le dossier contenant le script
+cd ~/M2_Internship_CBGP/Project_Model/Scripts
 
-# Exécuter le script principal
-python main_cluster.py --batch batch_test --num_simulations 5 --name_prefix sim
+# Activer conda
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate stage_m2_env
+
+# Exécuter ton script
+python main_cluster.py --batch test --num_simulations 3 --name_prefix sim
