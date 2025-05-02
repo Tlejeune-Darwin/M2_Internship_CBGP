@@ -122,7 +122,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         f.write("\n")                                                                           # The line break is important here
         f.write("simulation_data.gen\n")                                                        # Input directory
         f.write("2\n")                                                                          # Define the format of the file (1 for FSTAT; 2 for GENEPOP)
-        f.write(os.path.join(sim_folder, "") + "\n")                                            # Output directory
+        f.write("./\n")                                                                         # Output directory
         f.write("simulation_dataNe.txt\n")                                                      # Output folder name
         f.write("3\n")                                                                          # Number of critical values
         f.write("0.05  0.02  0.01\n")                                                           # Critical values
