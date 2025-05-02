@@ -726,49 +726,9 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
             for row in rows:
                 f.write(" | ".join(f"{row[key]:<{column_widths[key]}}" for key in header_labels) + "\n")
 
-    # ---___---___---___--- 13. Append to global CSV summary ---___---___---___--- #
+    # ---___---___---___--- 13. Cleanup temporary files ---___---___---___--- #
 
-    ### 13.1. Remove unnecessary keys before writing ###
-    UNWANTED_KEYS = ["output_folder", "log_file", "timestamp", "seed", "HE_Neb_mean_Pop1", "HE_Neb_mean_Pop2", "HE_weighted_mean_Pop1", "HE_weighted_mean_Pop2"]
-    for key in UNWANTED_KEYS:
-        config_dict.pop(key, None)
-    keys_to_remove = []
-    for key, value in config_dict.items():
-        if isinstance(value, list) and all(v is None for v in value):
-            keys_to_remove.append(key)
-    for key in keys_to_remove:
-        config_dict.pop(key)
-
-    # Delete the key lists for the csv port (for lisibility)
-    clefs_listes = [
-        f"{label}_Pop{pop}"
-        for label in ["LD_Ne", "LD_r2", "HE_Neb_mean", "HE_weighted_D_mean"]
-        for pop in [1, 2]
-    ] + ["P_Ne", "P_Fk", "P_Fprime", "N_Ne", "N_Fc", "N_Fprime", "J_Ne", "J_Fs", "J_Fprime"]
-
-    for key in clefs_listes:
-        config_dict.pop(key, None)
-
-    for key in list(config_dict):
-        if key in ["sample_sizes_Ne", "sample_sizes_CMR"]:
-            config_dict.pop(key)
-
-    for key in ["Index", "MatchCount", "census_N"]:
-        config_dict.pop(key, None)
-
-    ### 13.2. Append the current simulation to "summary_table.csv" ###
-    df_row = pd.DataFrame([config_dict])
-
-    if os.path.exists(summary_path):
-        df_existing = pd.read_csv(summary_path)
-        df_combined = pd.concat([df_existing, df_row], ignore_index=True)
-        df_combined.to_csv(summary_path, index=False)
-    else:
-        df_row.to_csv(summary_path, index=False)
-
-    # ---___---___---___--- 14. Cleanup temporary files ---___---___---___--- #
-
-    ### 14.1. List of files to remove to save space ###
+    ### 13.1. List of files to remove to save space ###
     files_to_remove = [
         #"info",
         #"option",
@@ -785,7 +745,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         #"slim.log"
     ]
 
-    ### 14.2. Delete each file if it exists ###
+    ### 13.2. Delete each file if it exists ###
     for filename in files_to_remove:
         filepath = os.path.join(sim_folder, filename)
         if os.path.exists(filepath):
