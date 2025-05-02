@@ -15,4 +15,4 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
 # Exécuter ton script
-python main_cluster.py --batch test --num_simulations 3 --name_prefix sim
+python main_cluster.py --batch test --num_simulations 3 --name_prefix
