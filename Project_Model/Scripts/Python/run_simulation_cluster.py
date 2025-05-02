@@ -731,8 +731,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     ### 13.1. List of files to remove to save space ###
     files_to_remove = [
-        #"info",
-        #"option",
+        "info",
+        "option",
         "simulation_dataBur.txt",
         #"simulation_dataNe.txt",
         "simulation_dataNexHt.txt",
@@ -740,9 +740,9 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "simulation_dataNexLD.txt",
         "simulation_dataNexTp.txt",
         "simulation_dataLoc.txt",
-        #"simulation_data.gen",
+        "simulation_data.gen",
         "simulation.trees",
-        #"slim_config.txt",
+        "slim_config.txt",
         #"slim.log"
     ]
 
