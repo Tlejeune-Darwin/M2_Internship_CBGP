@@ -13,7 +13,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
 # Aller dans le dossier du script
-cd ~/M2_Internship_CBGP/Project_Model/Scripts
+cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 
 # Lancer 1 simulation avec l'indice du tableau comme offset
 python main_cluster.py --batch batch_array --num_simulations 1 --name_prefix sim --offset ${SLURM_ARRAY_TASK_ID}
