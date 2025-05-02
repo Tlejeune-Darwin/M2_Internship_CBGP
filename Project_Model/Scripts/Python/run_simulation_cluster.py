@@ -202,6 +202,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     ### 5.1. Load the ".trees" file ###
     tree_file = os.path.join(config["output_folder"], "simulation.trees")
     tree_sequence = tskit.load(tree_file)
+    tree_sequence = pyslim.update(tree_sequence)
 
     ### 5.2. Filter for "REMEMBERED" and "RETAINED" individuals ###
     kept_individuals = [ind.id for ind in tree_sequence.individuals() if 
