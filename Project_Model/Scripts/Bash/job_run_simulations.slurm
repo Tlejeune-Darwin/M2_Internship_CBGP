@@ -8,7 +8,7 @@
 #SBATCH --partition=long
 
 # Aller dans le dossier contenant le script
-cd ~/M2_Internship_CBGP/Project_Model/Scripts
+cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 
 # Activer conda
 source ~/miniconda3/etc/profile.d/conda.sh
