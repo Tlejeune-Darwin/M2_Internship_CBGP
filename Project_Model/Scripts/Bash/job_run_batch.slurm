@@ -1,9 +1,12 @@
 #!/bin/bash -l
 
-# Calcul manuel de l’intervalle d’array
-ARRAY_MAX=$(($SIMS - 1))
+# Sécurités : arrêt immédiat si une variable est absente
+: "${OFFSET:?OFFSET non défini}"
+: "${SLURM_ARRAY_TASK_ID:?SLURM_ARRAY_TASK_ID non défini}"
+: "${BATCH:?Nom du batch manquant}"
 
-#SBATCH --job-name=batch_run
+# Job SLURM
+#SBATCH --job-name=${BATCH}
 #SBATCH --output=sim_%A_%a.out
 #SBATCH --error=sim_%A_%a.err
 #SBATCH --time=01:00:00
@@ -12,11 +15,12 @@ ARRAY_MAX=$(($SIMS - 1))
 #SBATCH --partition=short
 #SBATCH --array=0-9999%10
 
-cd $HOME/M2_Internship_CBGP/Project_Model/Scripts/Bash/
+# Aller dans le bon dossier
+cd "$HOME/M2_Internship_CBGP/Project_Model/Scripts/Python"
 
-# Lancer une simulation unique avec offset correct
+# Lancer la simulation
 python main_cluster.py \
-  --batch ${BATCH} \
+  --batch "${BATCH}" \
   --num_simulations 1 \
   --name_prefix sim \
-  --offset $((${OFFSET:=0} + ${SLURM_ARRAY_TASK_ID}))
+  --offset $((${OFFSET} + ${SLURM_ARRAY_TASK_ID}))

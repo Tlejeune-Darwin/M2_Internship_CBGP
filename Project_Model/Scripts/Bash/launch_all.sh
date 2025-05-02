@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Nombre de batchs de 10 000 simulations chacun
-NB_BATCHES=100
-SIMS_PER_BATCH=10000
+NB_BATCHES=2
+SIMS_PER_BATCH=10
 MAX_CONCURRENT=10   # Nombre max de jobs en simultané
 
 # Dossier contenant le script SLURM
