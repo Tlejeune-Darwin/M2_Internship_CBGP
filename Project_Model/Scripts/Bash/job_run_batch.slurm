@@ -13,7 +13,7 @@ ARRAY_MAX=$(($SIMS - 1))
 #SBATCH --array=0-9999%10
 
 # Activer conda
-source ~/miniconda3/etc/profile.d/conda.sh
+source $HOME/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python/
