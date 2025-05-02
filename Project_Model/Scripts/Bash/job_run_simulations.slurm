@@ -5,7 +5,7 @@
 #SBATCH --time=020000
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=short
+#SBATCH --partition=long
 
 # Aller dans le dossier du dépôt GitHub
 cd ~M2_Internship_CBGP/Project_Model/Scripts/Python
