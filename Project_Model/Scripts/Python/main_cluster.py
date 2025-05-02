@@ -20,6 +20,7 @@ def ask_if_missing(value, label, type_func=str, default=None):
 parser = argparse.ArgumentParser(description="Launch a batch of SLiM simulations.")
 parser.add_argument("--batch", type=str, help="Name of the subfolder grouping the batch of simulations.")
 parser.add_argument("-n", "--num_simulations", type=int, help="Number of simulations to run.")
+parser.add_argument("--offset", type=int, default=0, help="Starting index offset for sim numbering")
 parser.add_argument("--name_prefix", type=str, default="sim", help="Prefix for simulation folder names (default: sim).")
 args = parser.parse_args()
 
@@ -36,6 +37,7 @@ os.makedirs(sim_base_dir, exist_ok=True)
 for i in range(args.num_simulations):
     run_simulation_cluster(
         base_dir=sim_base_dir,  # Pass the absolute path
-        sim_prefix=args.name_prefix
+        sim_prefix=args.name_prefix,
+        offset=args.offset
     )
 

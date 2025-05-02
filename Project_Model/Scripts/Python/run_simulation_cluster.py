@@ -1,4 +1,4 @@
-def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
+def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim", offset=0):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     
@@ -69,6 +69,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     next_sim_num = max(numbers, default=0) + 1
 
     # Format : sim_0000001 up to 1 milllion
+    next_sim_num = i + offset
     sim_id = f"{sim_prefix}_{next_sim_num:07d}"
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
