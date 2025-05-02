@@ -1,4 +1,4 @@
-def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
+def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     
