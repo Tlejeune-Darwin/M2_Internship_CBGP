@@ -16,11 +16,11 @@ ARRAY_MAX=$(($SIMS - 1))
 source $HOME/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
-cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python/
+cd $HOME/M2_Internship_CBGP/Project_Model/Scripts/Python/
 
 # Lancer une simulation unique avec offset correct
 python main_cluster.py \
   --batch ${BATCH} \
   --num_simulations 1 \
   --name_prefix sim \
-  --offset $((${OFFSET} + ${SLURM_ARRAY_TASK_ID}))
+  --offset $((${OFFSET:=0} + ${SLURM_ARRAY_TASK_ID}))
