@@ -12,11 +12,7 @@ ARRAY_MAX=$(($SIMS - 1))
 #SBATCH --partition=short
 #SBATCH --array=0-9999%10
 
-# Activer conda
-source $HOME/miniconda3/etc/profile.d/conda.sh
-conda activate stage_m2_env
-
-cd $HOME/M2_Internship_CBGP/Project_Model/Scripts/Python/
+cd $HOME/M2_Internship_CBGP/Project_Model/Scripts/Bash/
 
 # Lancer une simulation unique avec offset correct
 python main_cluster.py \
