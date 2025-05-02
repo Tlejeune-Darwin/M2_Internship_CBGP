@@ -9,6 +9,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     import tskit                            # type: ignore
     import pyslim                           # type: ignore
     import msprime                          # type: ignore
+    from msprime.models import SMM
     import numpy as np                      # type: ignore
     import random
     import warnings
