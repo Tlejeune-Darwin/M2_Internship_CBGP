@@ -13,7 +13,7 @@
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=short
-#SBATCH --array=0-9999%10
+#SBATCH --array=0-9%10
 
 # Aller dans le bon dossier
 cd "$HOME/M2_Internship_CBGP/Project_Model/Scripts/Python"
