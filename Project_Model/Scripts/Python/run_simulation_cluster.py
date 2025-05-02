@@ -16,6 +16,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     import pandas as pd                     # type: ignore
     import re
     from datetime import datetime
+    import warnings
+    warnings.filterwarnings("ignore", message="This is a version .* SLiM tree sequence.*", category=UserWarning)
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     if SCRIPT_DIR not in sys.path:
         sys.path.append(SCRIPT_DIR)
