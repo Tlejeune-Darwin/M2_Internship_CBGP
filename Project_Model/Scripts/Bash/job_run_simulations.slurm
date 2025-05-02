@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=sim_m2
-#SBATCH --output=~/M2_Internship_CBGP/Project_Model/logs/sim_%j.out
-#SBATCH --error=~/M2_Internship_CBGP/Project_Model/logs/sim_%j.err
+#SBATCH --output=~sim_%j.out
+#SBATCH --error=~sim_%j.err
 #SBATCH --time=01:00:00
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
