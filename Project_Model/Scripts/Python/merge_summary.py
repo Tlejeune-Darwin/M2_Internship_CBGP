@@ -1,25 +1,24 @@
-import os, glob
-import pandas as pd #type: ignore
+import os
+import pandas as pd # type: ignore
 
 base_results_dir = os.path.expanduser("~/results")
 batch_dirs = sorted([d for d in os.listdir(base_results_dir) if d.startswith("batch_")])
 
-all_data = []
+all_df = []
+
 for batch in batch_dirs:
-    batch_path = os.path.join(base_results_dir, batch)
-    summary_files = glob.glob(os.path.join(batch_path, "sim_*/summary.txt"))
+    path = os.path.join(base_results_dir, batch, "summary_table.csv")
+    if os.path.exists(path):
+        df = pd.read_csv(path)
+        df["batch"] = batch  # Ajoute l’identifiant du batch
+        all_df.append(df)
+    else:
+        print(f"⚠️ Aucun fichier trouvé pour {batch}")
 
-    for filepath in summary_files:
-        data = {}
-        sim_id = os.path.basename(os.path.dirname(filepath))
-        data["batch"] = batch
-        data["sim_id"] = sim_id
-        with open(filepath) as f:
-            for line in f:
-                if "=" in line:
-                    key, value = line.strip().split("=")
-                    data[key.strip()] = value.strip()
-        all_data.append(data)
-
-df = pd.DataFrame(all_data)
-df.to_csv(os.path.join(base_results_dir, "summary_table_all_batches.csv"), index=False)
+if all_df:
+    merged = pd.concat(all_df, ignore_index=True)
+    output_file = os.path.join(base_results_dir, "summary_table_all_batches.csv")
+    merged.to_csv(output_file, index=False)
+    print(f"✅ Fusion réussie : {len(merged)} lignes écrites dans {output_file}")
+else:
+    print("❌ Aucun fichier summary_table.csv trouvé.")
