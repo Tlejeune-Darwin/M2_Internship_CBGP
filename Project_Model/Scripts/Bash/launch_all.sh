@@ -5,7 +5,6 @@ NB_BATCHES=2
 SIMS_PER_BATCH=10
 MAX_CONCURRENT=10   # Nombre max de jobs en simultané
 
-
 # Dossier contenant le script SLURM
 SCRIPT_DIR="$HOME/M2_Internship_CBGP/Project_Model/Scripts/Bash"
 
