@@ -1,9 +1,5 @@
 #!/bin/bash -l
 
-: "${BATCH_NAME:?BATCH_NAME manquant}"
-: "${NUM_SIMS:?NUM_SIMS manquant}"
-: "${OFFSET:?OFFSET manquant}"
-
 echo "BATCH=$BATCH_NAME, NUM_SIMS=$NUM_SIMS, OFFSET=$OFFSET"
 
 #SBATCH --job-name=${BATCH_NAME}
@@ -18,7 +14,7 @@ cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
-# Boucle sur les simulations
+# Simulation loop
 for i in $(seq 0 $((NUM_SIMS - 1))); do
     global_offset=$((OFFSET + i))
     echo "Simulation $global_offset dans $BATCH_NAME"
