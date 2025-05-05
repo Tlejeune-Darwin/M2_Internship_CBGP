@@ -12,5 +12,5 @@ for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
     sbatch \
       --export=ALL,BATCH_NAME=$BATCH_NAME,NUM_SIMS=$SIMS_PER_BATCH,OFFSET=$OFFSET \
       --job-name=$BATCH_NAME \
-      job_batch_offset.slurm
+      job_run_batch.slurm
 done
