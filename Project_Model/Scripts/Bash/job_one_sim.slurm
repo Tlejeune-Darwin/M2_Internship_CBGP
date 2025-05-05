@@ -6,7 +6,7 @@
 #SBATCH --mem=4G
 #SBATCH --partition=long
 
-cd ~/M2_Internship_CBGP/Project_Model/Scripts
+cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
