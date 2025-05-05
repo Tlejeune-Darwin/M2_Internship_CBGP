@@ -26,3 +26,7 @@ __pycache__/
 
 # 📂 Ignorer les fichiers de notebook non nettoyés
 notebooks/.ipynb_checkpoints/
+
+Project_Model/Bin/slim
+Project_Model/Bin/Ne2x
+

@@ -1,4 +1,4 @@
-def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim"):
+def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None, sim_prefix="sim", offset=0):
 
     # ---___---___---___--- 1. Imports ---___---___---___--- #
     
@@ -16,6 +16,8 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     import pandas as pd                     # type: ignore
     import re
     from datetime import datetime
+    import warnings
+    warnings.filterwarnings("ignore", message="This is a version .* SLiM tree sequence.*", category=UserWarning)
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     if SCRIPT_DIR not in sys.path:
         sys.path.append(SCRIPT_DIR)
@@ -56,27 +58,24 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 2.2. Directory script ###
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    ### 2.3. Choose depending on the desktop name ###
-    def get_desktop_path():
-        desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
-        desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
-        return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
-
-    ### 2.4. Simulations directory placed on the desktop ###
+    ### 2.3. Simulations directory placed on the desktop ###
     all_simulations = base_dir
     os.makedirs(all_simulations, exist_ok=True)
     
-    ### 2.5. Create a folder for each simulation ###
+    ### 2.4. Create a folder for each simulation ###
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     existing = [d for d in os.listdir(all_simulations) if d.startswith(sim_prefix)]
     numbers = [int(re.search(rf"{sim_prefix}_(\d+)", name).group(1)) for name in existing if re.search(rf"{sim_prefix}_(\d+)", name)]
     next_sim_num = max(numbers, default=0) + 1
 
     # Format : sim_0000001 up to 1 milllion
-    sim_id = f"{sim_prefix}_{next_sim_num:07d}"
+    sim_id = f"{sim_prefix}_{offset:07d}"
+    sim_folder = os.path.join(all_simulations, sim_id)
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
+    print("Simulation lancée avec ID :", sim_id)
+    print("Tous les fichiers seront stockés dans :", sim_folder)
 
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
@@ -124,7 +123,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         f.write("\n")                                                                           # The line break is important here
         f.write("simulation_data.gen\n")                                                        # Input directory
         f.write("2\n")                                                                          # Define the format of the file (1 for FSTAT; 2 for GENEPOP)
-        f.write(os.path.join(sim_folder, "") + "\n")                                            # Output directory
+        f.write("./\n")                                                                         # Output directory
         f.write("simulation_dataNe.txt\n")                                                      # Output folder name
         f.write("3\n")                                                                          # Number of critical values
         f.write("0.05  0.02  0.01\n")                                                           # Critical values
@@ -206,6 +205,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
     ### 5.1. Load the ".trees" file ###
     tree_file = os.path.join(config["output_folder"], "simulation.trees")
     tree_sequence = tskit.load(tree_file)
+    tree_sequence = pyslim.update(tree_sequence)
 
     ### 5.2. Filter for "REMEMBERED" and "RETAINED" individuals ###
     kept_individuals = [ind.id for ind in tree_sequence.individuals() if 
@@ -782,7 +782,7 @@ def run_simulation_linux(base_dir="simulations", pop_size=None, num_loci=None, s
         "simulation_dataLoc.txt",
         "simulation_data.gen",
         "simulation.trees",
-        #"slim_config.txt",
+        "slim_config.txt",
         #"slim.log"
     ]
 
