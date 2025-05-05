@@ -1,8 +1,14 @@
 #!/bin/bash -l
 
+: "${BATCH_NAME:?BATCH_NAME manquant}"
+: "${NUM_SIMS:?NUM_SIMS manquant}"
+: "${OFFSET:?OFFSET manquant}"
+
+echo "BATCH=$BATCH_NAME, NUM_SIMS=$NUM_SIMS, OFFSET=$OFFSET"
+
 #SBATCH --job-name=${BATCH_NAME}
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+#SBATCH --output=$HOME/GitHub/M2_Internship_CBGP/Project_Model/logs/%x_%j.out
+#SBATCH --error=$HOME/GitHub/M2_Internship_CBGP/Project_Model/logs/%x_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=1

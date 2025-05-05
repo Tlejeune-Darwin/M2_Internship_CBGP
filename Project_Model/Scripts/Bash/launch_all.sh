@@ -9,8 +9,9 @@ for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
     BATCH_NAME="batch_${i}"
     OFFSET=$((i * SIMS_PER_BATCH))
 
+    echo "Lancement de $BATCH_NAME avec OFFSET=$OFFSET"
+
     sbatch \
       --export=ALL,BATCH_NAME=$BATCH_NAME,NUM_SIMS=$SIMS_PER_BATCH,OFFSET=$OFFSET \
-      --job-name=$BATCH_NAME \
       job_run_batch.slurm
 done
