@@ -1,20 +1,16 @@
 #!/bin/bash
 
-# Nombre de batchs de 10 000 simulations chacun
-NB_BATCHES=2
-SIMS_PER_BATCH=10
-MAX_CONCURRENT=10   # Nombre max de jobs en simultané
+# Nombre de batchs
+TOTAL_BATCHES=4
+SIMS_PER_BATCH=10000
+MAX_JOBS=4
 
-# Dossier contenant le script SLURM
-SCRIPT_DIR="$HOME/M2_Internship_CBGP/Project_Model/Scripts/Bash"
+for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
+    BATCH_NAME="batch_${i}"
+    OFFSET=$((i * SIMS_PER_BATCH))
 
-for i in $(seq -w 0 $((NB_BATCHES - 1))); do
-    BATCH_NAME="batch_$i"
-    OFFSET=$((10#$i * SIMS_PER_BATCH))
-    
-    ARRAY_MAX=$((SIMS_PER_BATCH - 1))
-    sbatch --array=0-${ARRAY_MAX}%${MAX_CONCURRENT} \
-        --export=BATCH=$BATCH_NAME,OFFSET=$OFFSET \
-        "$SCRIPT_DIR/job_run_batch.slurm"
-
+    sbatch \
+      --export=ALL,BATCH_NAME=$BATCH_NAME,NUM_SIMS=$SIMS_PER_BATCH,OFFSET=$OFFSET \
+      --job-name=$BATCH_NAME \
+      job_batch_offset.slurm
 done
