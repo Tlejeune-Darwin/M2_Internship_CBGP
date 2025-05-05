@@ -11,7 +11,7 @@ for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
 
         # Tant qu'on a déjà trop de jobs en attente ou en cours...
     while true; do
-        active_jobs=$(squeue -u lejeunet -h -o "%j" | grep -c "^batch_ref_")
+        active_jobs=$(squeue -u lejeunet -h -o "%j" | grep -c "^job_run_")
         if [ "$active_jobs" -lt "$MAX_JOBS" ]; then
             break
         fi
