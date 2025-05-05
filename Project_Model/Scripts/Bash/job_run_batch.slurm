@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-# Sécurités
+# --- Sécurités ---
 : "${OFFSET:?OFFSET non défini}"
 : "${SLURM_ARRAY_TASK_ID:?SLURM_ARRAY_TASK_ID non défini}"
 : "${BATCH:?Nom du batch manquant}"
@@ -11,19 +11,18 @@
 #SBATCH --time=01:00:00
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=long
+#SBATCH --partition=short
 
-# Initialiser conda dans SLURM
-source $HOME/miniconda3/etc/profile.d/conda.sh
+# --- Active conda (modifie ce chemin si besoin) ---
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate stage_m2_env
 
-# Aller dans le bon dossier GitHub
+# --- Aller dans le bon répertoire ---
 cd "$HOME/M2_Internship_CBGP/Project_Model/Scripts/Python"
 
-# Lancer la simulation
+# --- Lancer le script ---
 python main_cluster.py \
   --batch "${BATCH}" \
   --num_simulations 1 \
   --name_prefix sim \
   --offset $((OFFSET + SLURM_ARRAY_TASK_ID))
-
