@@ -2,7 +2,7 @@
 
 # Nombre de batchs
 TOTAL_BATCHES=4
-SIMS_PER_BATCH=10000
+SIMS_PER_BATCH=10
 MAX_JOBS=4
 
 for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
