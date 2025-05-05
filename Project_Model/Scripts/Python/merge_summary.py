@@ -2,7 +2,7 @@ import os
 import glob
 import pandas as pd #type: ignore
 
-batch_name = "batch_array"
+batch_name = "batch_100"
 base_results_dir = os.path.expanduser("~/results")
 batch_path = os.path.join(base_results_dir, batch_name)
 
