@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Nombre de batchs
-TOTAL_BATCHES=5
-SIMS_PER_BATCH=10
-MAX_JOBS=5
+TOTAL_BATCHES=100
+SIMS_PER_BATCH=10000
+MAX_JOBS=10
 
 for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
     BATCH_NAME="batch_${i}"
