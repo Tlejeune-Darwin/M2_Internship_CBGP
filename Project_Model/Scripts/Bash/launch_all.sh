@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Nombre de batchs
-TOTAL_BATCHES=2
+TOTAL_BATCHES=4
 SIMS_PER_BATCH=10
 MAX_JOBS=1
 
