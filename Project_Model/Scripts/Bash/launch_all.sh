@@ -10,10 +10,15 @@ for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
     OFFSET=$((i * SIMS_PER_BATCH))
 
         # Tant qu'on a déjà trop de jobs en attente ou en cours...
-    while [ $(squeue -u lejeunet -h -o "%j" | grep -c "^batch_ref_") -ge $MAX_JOBS ]; do
-        echo "⏳ $MAX_JOBS jobs déjà en cours. Attente..."
+    while true; do
+        active_jobs=$(squeue -u lejeunet -h -o "%j" | grep -c "^batch_ref_")
+        if [ "$active_jobs" -lt "$MAX_JOBS" ]; then
+            break
+        fi
+        echo "⏳ $active_jobs jobs déjà en cours. Attente (MAX = $MAX_JOBS)..."
         sleep 20
     done
+
 
     echo "Lancement de $BATCH_NAME avec OFFSET=$OFFSET"
 
