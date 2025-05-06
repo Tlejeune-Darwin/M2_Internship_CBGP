@@ -1,5 +1,4 @@
 # 📂 Ignorer les fichiers volumineux et temporaires
-*.csv
 *.tsv
 *.log
 *.tmp
