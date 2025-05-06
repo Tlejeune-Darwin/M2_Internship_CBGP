@@ -5,7 +5,7 @@ TOTAL_BATCHES=100
 SIMS_PER_BATCH=10000
 
 for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
-    BATCH_NAME="batch_ref_${i}"
+    BATCH_NAME="batch_table_ref_${i}"
     OFFSET=$((i * SIMS_PER_BATCH))
 
     sbatch \
