@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Batch number
-TOTAL_BATCHES=100
-SIMS_PER_BATCH=10000
+TOTAL_BATCHES=10
+SIMS_PER_BATCH=1000
 
 for i in $(seq 0 $((TOTAL_BATCHES - 1))); do
     BATCH_NAME="batch_table_ref_${i}"
