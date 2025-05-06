@@ -28,7 +28,7 @@ desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
 }
 
 # Complete path
-file_path <- file.path(desktop_path, "simulations", "Ref_table", "summary_table.csv")
+file_path <- file.path(desktop_path, "simulations", "Test", "summary_table.csv")
 
 # Reading file
 data <- read_csv(file_path)
@@ -38,7 +38,7 @@ data <- read_csv(file_path)
 ```{r = Hard cleaning (Column removal - Automatic version)}
 
 # Function that will search every column and count the "NA", then remove the columns having too much missing values according to the threshold
-remove_high_na_cols <- function(data, threshold = 0.05) {
+remove_high_na_cols <- function(data, threshold = 0.01) {
   total_rows <- nrow(data)
   na_summary <- data %>%
     summarise(across(everything(), ~ sum(is.na(.)))) %>%
@@ -76,10 +76,35 @@ ggplot(result$na_summary %>%
 
 ```{r}
 data_clean <- data_clean %>%
-  mutate(census_N = ifelse(census_N == 0, NA, census_N))
-
-data_clean <- data_clean %>%
   drop_na()
+```
+
+```{r = Delete all Ne stats}
+
+to_remove <- c(
+  "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
+  "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
+  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000"
+)
+
+# Remove the lines that contain at least one "NA"
+data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
+
+```
+
+```{r = Delete the historic genetic stats}
+
+to_remove <- c(
+  "mean_alleles_pop1", "mean_alleles_pop2",
+  "sum_alleles_pop1", "sum_alleles_pop2",
+  "mean_exp_het_pop1", "mean_exp_het_pop2",
+  "mean_obs_het_pop1", "mean_obs_het_pop2",
+  "var_alleles_pop1", "var_alleles_pop2"
+)
+
+# Remove the lines that contain at least one "NA"
+data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
+
 ```
 
 
@@ -110,7 +135,7 @@ data <- data %>% select(-any_of(to_remove)) %>% na.omit()
 
 # List of parameters
 param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample1_size_CMR", "sample2_size_CMR", "mutation_rate", "recap_Ne")
+                "sample_size_CMR", "mutation_rate", "recap_Ne")
 params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
@@ -167,35 +192,6 @@ plot(learning_data[[target_param]], predictions,
      main = "Real vs prediction",
      pch = 20, col = "blue")
 abline(0, 1, col = "red")
-
-```
-
-```{r}
-# ---- Curve POD vs Tolerance ----
-
-# Tolerance vector
-tolerance_vec <- seq(0.01, 0.2, by = 0.01)  # From 1% to 20%
-
-# Pod calculation for each tolerance
-pod_df <- data.frame(
-  Tolerance = tolerance_vec,
-  POD = sapply(tolerance_vec, function(tol) {
-    mean(abs(predictions - learning_data$pop_size) / learning_data$pop_size < tol)
-  })
-)
-
-# Print the table and make the plot
-print(pod_df)
-
-ggplot(pod_df, aes(x = Tolerance * 100, y = POD * 100)) +
-  geom_line(color = "steelblue", size = 1.2) +
-  geom_point(color = "darkblue", size = 2) +
-  labs(
-    title = "Probabilty of Detection (POD)",
-    x = "Tolerance (%)",
-    y = "POD (%)"
-  ) +
-  theme_minimal(base_size = 14)
 
 ```
 
