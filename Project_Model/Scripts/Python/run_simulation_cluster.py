@@ -13,10 +13,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     import random
     import warnings
     import shutil
-<<<<<<< Updated upstream
-=======
     import math
->>>>>>> Stashed changes
     import pandas as pd                     # type: ignore
     import re
     from datetime import datetime
@@ -42,20 +39,13 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
-<<<<<<< Updated upstream
-                f.write(f"{better_names['mutation_rate']} = 0.00001, 0.001\n")
-=======
                 f.write(f"{better_names['mutation_rate']} = 0.001\n")
->>>>>>> Stashed changes
                 f.write(f"{better_names['sample1_generation']} = 30\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
                 f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
-<<<<<<< Updated upstream
-=======
                 f.write(f"{better_names['recap_Ne']} = 5000\n")
->>>>>>> Stashed changes
 
         # Reading the file
         config = {}
@@ -96,13 +86,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
-<<<<<<< Updated upstream
-        log_mu_low = np.log(1e-5)
-=======
-        log_mu_low = np.log(1e-4)
->>>>>>> Stashed changes
-        log_mu_high = np.log(1e-3)
-        mutation_rate = float(np.exp(np.random.uniform(log_mu_low, log_mu_high)))
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
@@ -114,13 +97,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-<<<<<<< Updated upstream
-        "mutation_rate" : mutation_rate,                                                        # Mutation rate used during mutation simulation
-        "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
-=======
         "mutation_rate" : int(global_config["mutation_rate"]),                                                                # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                                                     # Effective size attributed for the recapitation
->>>>>>> Stashed changes
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
         "seed" : random.randint(1, 10**6)                                                       # For analysis purpose
@@ -244,11 +222,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     demography.add_population(name="p1", initial_size=config["recap_Ne"])
     
     ### 6.2. Recapitate ###
-<<<<<<< Updated upstream
-    recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=1e-8, demography=demography)
-=======
     recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=math.log(2), demography=demography)
->>>>>>> Stashed changes
 
     # ---___---___---___--- 7. Simulate Mutations ---___---___---___--- #
 
