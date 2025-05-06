@@ -28,7 +28,11 @@ desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
 }
 
 # Complete path
+<<<<<<< Updated upstream
 file_path <- file.path(desktop_path, "simulations", "Ref_table", "summary_table.csv")
+=======
+file_path <- file.path("C:/Users/poupe/OneDrive/Documents/simulations/summary_table_all_batches.csv")
+>>>>>>> Stashed changes
 
 # Reading file
 data <- read_csv(file_path)
@@ -82,6 +86,37 @@ data_clean <- data_clean %>%
   drop_na()
 ```
 
+<<<<<<< Updated upstream
+=======
+```{r = Delete all Ne stats}
+
+to_remove <- c(
+  "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
+  "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
+  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000", "census_N_1", "census_N_2","census_N_3", "census_N_4", "census_N_5", "census_N_6", "census_N_7", "census_N_8", "census_N_9", "census_N_10", "census_N_11"
+)
+
+# Remove the lines that contain at least one "NA"
+data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
+
+```
+
+```{r = Delete the historic genetic stats}
+
+to_remove <- c(
+  "mean_alleles_pop1", "mean_alleles_pop2",
+  "sum_alleles_pop1", "sum_alleles_pop2",
+  "mean_exp_het_pop1", "mean_exp_het_pop2",
+  "mean_obs_het_pop1", "mean_obs_het_pop2",
+  "var_alleles_pop1", "var_alleles_pop2"
+)
+
+# Remove the lines that contain at least one "NA"
+data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
+
+```
+
+>>>>>>> Stashed changes
 
 ```{r = Soft cleaning (Median)}
 
@@ -171,6 +206,7 @@ abline(0, 1, col = "red")
 ```
 
 ```{r}
+<<<<<<< Updated upstream
 # ---- Curve POD vs Tolerance ----
 
 # Tolerance vector
@@ -199,3 +235,48 @@ ggplot(pod_df, aes(x = Tolerance * 100, y = POD * 100)) +
 
 ```
 
+=======
+num_of_sims <- 10000
+ref_table <- data_clean[seq_len(num_of_sims)]
+
+RFmodel_theta <- regAbcrf(formula = log10(theta)~.,
+                          data = ref_table,
+                          ntree = 1000,
+                          paral = T)
+
+# out-of-bag estimates (equivalent to cross-validation)
+plot(log10(ref_table$theta),
+     RFmodel_theta$model.rf$predictions,
+     xlab=expression(log[10]*theta),
+     ylab=expression("out-of-bag "*log[10]*hat(theta)))
+abline(a=0,b=1,col="red")
+# can the error be lowered by increasing the number of trees?
+err.regAbcrf(RFmodel_theta,training=ref_table,paral=T)
+
+posterior_theta_RF <- predict(object = RFmodel_theta,
+                              obs = target[1,],
+                              training = ref_table,
+                              paral = T,
+                              rf.weights = T) # this option so weights are in the output
+
+cat("theta point estimate for octomanati")
+10^posterior_theta_RF$med
+cat("theta 95%CI for octomanati")
+10^posterior_theta_RF$quantiles
+
+hist(log10(ref_table$theta),
+     breaks = seq(-1,2,0.05),
+     col = "grey",
+     freq = FALSE,
+     ylim = c(0,5),
+     main = "",
+     xlab = expression(log[10]*theta),
+     ylab = "probability density")
+wtd.hist(log10(ref_table$theta),
+         breaks = seq(-1,2,0.05),
+         col = "yellow", freq=FALSE, add=TRUE,
+         weight = posterior_theta_RF$weights)
+```
+
+
+>>>>>>> Stashed changes
