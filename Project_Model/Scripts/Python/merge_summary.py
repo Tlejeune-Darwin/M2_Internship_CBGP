@@ -9,7 +9,13 @@ all_df = []
 for batch in batch_dirs:
     path = os.path.join(base_results_dir, batch, "summary_table.csv")
     if os.path.exists(path):
-        df = pd.read_csv(path)
+        if os.path.getsize(path) > 0:
+            df = pd.read_csv(path)
+            df["batch"] = batch
+            all_df.append(df)
+        else:
+            print(f"⚠️ Fichier vide ignoré : {path}")
+
         df["batch"] = batch 
         all_df.append(df)
     else:
