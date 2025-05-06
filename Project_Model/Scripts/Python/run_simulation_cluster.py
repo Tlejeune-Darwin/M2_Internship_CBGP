@@ -97,7 +97,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : int(global_config["mutation_rate"]),                                  # Mutation rate used during mutation simulation
+        "mutation_rate" : float(global_config["mutation_rate"]),                                  # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
