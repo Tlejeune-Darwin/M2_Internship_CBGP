@@ -15,9 +15,6 @@ for batch in batch_dirs:
             all_df.append(df)
         else:
             print(f"⚠️ Fichier vide ignoré : {path}")
-
-        df["batch"] = batch 
-        all_df.append(df)
     else:
         pass
 
