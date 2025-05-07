@@ -28,11 +28,7 @@ desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
 }
 
 # Complete path
-<<<<<<< Updated upstream
-file_path <- file.path(desktop_path, "simulations", "Ref_table", "summary_table.csv")
-=======
-file_path <- file.path("C:/Users/poupe/OneDrive/Documents/simulations/summary_table_all_batches.csv")
->>>>>>> Stashed changes
+file_path <- file.path("C:/Users/poupe/simulations/summary_table_all_batches.csv")
 
 # Reading file
 data <- read_csv(file_path)
@@ -42,7 +38,7 @@ data <- read_csv(file_path)
 ```{r = Hard cleaning (Column removal - Automatic version)}
 
 # Function that will search every column and count the "NA", then remove the columns having too much missing values according to the threshold
-remove_high_na_cols <- function(data, threshold = 0.05) {
+remove_high_na_cols <- function(data, threshold = 0.01) {
   total_rows <- nrow(data)
   na_summary <- data %>%
     summarise(across(everything(), ~ sum(is.na(.)))) %>%
@@ -80,20 +76,36 @@ ggplot(result$na_summary %>%
 
 ```{r}
 data_clean <- data_clean %>%
-  mutate(census_N = ifelse(census_N == 0, NA, census_N))
-
-data_clean <- data_clean %>%
   drop_na()
 ```
 
-<<<<<<< Updated upstream
-=======
+```{r}
+
+# 1. Sélectionner les colonnes MatchCount
+matchcount_cols <- grep("MatchCount", names(data_clean), value = TRUE)
+
+# 2. Calculer la moyenne et la variance ligne par ligne
+data_clean$MatchCount_mean <- rowMeans(data_clean[, matchcount_cols], na.rm = TRUE)
+data_clean$MatchCount_var  <- apply(data_clean[, matchcount_cols], 1, var, na.rm = TRUE)
+
+# Conserver uniquement la première et la dernière
+#cols_to_keep <- c(matchcount_cols[1], tail(matchcount_cols, 1))
+
+# Conserver aussi toutes les autres colonnes ne contenant pas "MatchCount"
+other_cols <- setdiff(names(data_clean), matchcount_cols)
+
+# Créer le nouveau dataframe avec les bonnes colonnes
+data_clean <- data_clean[,other_cols]
+#data_clean <- data_clean[, c(other_cols, cols_to_keep)]
+```
+
+
 ```{r = Delete all Ne stats}
 
 to_remove <- c(
   "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
   "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
-  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000", "census_N_1", "census_N_2","census_N_3", "census_N_4", "census_N_5", "census_N_6", "census_N_7", "census_N_8", "census_N_9", "census_N_10", "census_N_11"
+  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000", "census_N_1", "census_N_2","census_N_3", "census_N_4", "census_N_5", "census_N_6", "census_N_7", "census_N_8", "census_N_9", "census_N_10", "census_N_11", "batch"
 )
 
 # Remove the lines that contain at least one "NA"
@@ -116,7 +128,6 @@ data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
 
 ```
 
->>>>>>> Stashed changes
 
 ```{r = Soft cleaning (Median)}
 
@@ -145,11 +156,11 @@ data <- data %>% select(-any_of(to_remove)) %>% na.omit()
 
 # List of parameters
 param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample1_size_CMR", "sample2_size_CMR", "mutation_rate", "recap_Ne")
+                "sample_size_CMR", "mutation_rate", "recap_Ne")
 params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_", "J_")
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_", "J_", "MatchCount_")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table <- data_clean %>% select(all_of(stat_cols))
 
@@ -162,7 +173,7 @@ target_param <- "pop_size"
 learning_data <- bind_cols(y = params[[target_param]], stats_table) %>% rename(!!target_param := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf <- regAbcrf(as.formula(paste(target_param, "~ .")), data = learning_data, ntree = 500)
+model_rf <- regAbcrf(as.formula(paste(target_param, "~ .")), data = learning_data, ntree = 1000)
 summary(model_rf)
 
 ```
@@ -173,21 +184,30 @@ summary(model_rf)
 importance_df <- model_rf$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
-top_n <- 20
-importance_top <- importance_df %>%
-  slice_head(n = top_n) %>%
-  mutate(Statistic = fct_reorder(Statistic, Importance))
 
-# Plotting the barplot showing the order of importance
-ggplot(importance_top, aes(x = Statistic, y = Importance)) +
-  geom_col(fill = "steelblue") +
+# 2. Ne garder que les 20 premières variables
+top_n <- 20
+# Créer une variable de couleur
+importance_top <- importance_df %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
+  slice_max(order_by = Importance, n = top_n)
+
+importance_top <- importance_top %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
+
+# Graphique
+ggplot(importance_top, aes(x = Statistic, y = Importance, fill = color)) +
+  geom_col() +
   coord_flip() +
+  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
   labs(
-    title = paste("Top", top_n, "most important variables", target_param),
+    title = paste("Top", top_n, "most important variables for", target_param),
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
 
 ```
 
@@ -206,77 +226,27 @@ abline(0, 1, col = "red")
 ```
 
 ```{r}
-<<<<<<< Updated upstream
-# ---- Curve POD vs Tolerance ----
+plot(learning_data$pop_size, learning_data$MatchCount_var)
+```
 
-# Tolerance vector
-tolerance_vec <- seq(0.01, 0.2, by = 0.01)  # From 1% to 20%
+```{r}
 
-# Pod calculation for each tolerance
-pod_df <- data.frame(
-  Tolerance = tolerance_vec,
-  POD = sapply(tolerance_vec, function(tol) {
-    mean(abs(predictions - learning_data$pop_size) / learning_data$pop_size < tol)
-  })
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df <- data.frame(
+  pop_size = learning_data$pop_size,
+  prediction = model_rf$model.rf$predictions
 )
 
-# Print the table and make the plot
-print(pod_df)
-
-ggplot(pod_df, aes(x = Tolerance * 100, y = POD * 100)) +
-  geom_line(color = "steelblue", size = 1.2) +
-  geom_point(color = "darkblue", size = 2) +
+# Graphique ggplot
+ggplot(prediction_df, aes(x = pop_size, y = prediction)) +
+  geom_point(shape = 1, alpha = 0.6) +  # cercles ouverts et transparence
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # ligne identité
   labs(
-    title = "Probabilty of Detection (POD)",
-    x = "Tolerance (%)",
-    y = "POD (%)"
+    x = "True value (pop_size)",
+    y = "Predicted value",
+    title = "Prediction vs True values (abcrf)"
   ) +
-  theme_minimal(base_size = 14)
+  theme_minimal()
 
 ```
 
-=======
-num_of_sims <- 10000
-ref_table <- data_clean[seq_len(num_of_sims)]
-
-RFmodel_theta <- regAbcrf(formula = log10(theta)~.,
-                          data = ref_table,
-                          ntree = 1000,
-                          paral = T)
-
-# out-of-bag estimates (equivalent to cross-validation)
-plot(log10(ref_table$theta),
-     RFmodel_theta$model.rf$predictions,
-     xlab=expression(log[10]*theta),
-     ylab=expression("out-of-bag "*log[10]*hat(theta)))
-abline(a=0,b=1,col="red")
-# can the error be lowered by increasing the number of trees?
-err.regAbcrf(RFmodel_theta,training=ref_table,paral=T)
-
-posterior_theta_RF <- predict(object = RFmodel_theta,
-                              obs = target[1,],
-                              training = ref_table,
-                              paral = T,
-                              rf.weights = T) # this option so weights are in the output
-
-cat("theta point estimate for octomanati")
-10^posterior_theta_RF$med
-cat("theta 95%CI for octomanati")
-10^posterior_theta_RF$quantiles
-
-hist(log10(ref_table$theta),
-     breaks = seq(-1,2,0.05),
-     col = "grey",
-     freq = FALSE,
-     ylim = c(0,5),
-     main = "",
-     xlab = expression(log[10]*theta),
-     ylab = "probability density")
-wtd.hist(log10(ref_table$theta),
-         breaks = seq(-1,2,0.05),
-         col = "yellow", freq=FALSE, add=TRUE,
-         weight = posterior_theta_RF$weights)
-```
-
-
->>>>>>> Stashed changes

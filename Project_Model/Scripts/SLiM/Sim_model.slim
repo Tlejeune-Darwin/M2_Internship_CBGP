@@ -13,11 +13,9 @@ initialize() {
      defineGlobal("sample_size_Ne_1", 50);
      defineGlobal("sample_size_CMR_0", 50);
      defineGlobal("sample_size_CMR_1", 50);
-     
-
-
   }else{
-// your code to read the file
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Read the config file made by python
     config_data = paste(readFile(config_file), sep="/n");
@@ -57,6 +55,9 @@ initialize() {
 	  defineConstant("end_generation", sample1_generation + sample2_generation);
 
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
     initializeMutationRate(0);
@@ -69,10 +70,14 @@ initialize() {
     initializeTreeSeq(retainCoalescentOnly=F);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 1 early() {
 
     sim.addSubpop("p1", pop_size); // Pop creation
 }
+
+///////////////////
 
 (sample1_gen - 1) late() {
 
@@ -80,7 +85,7 @@ initialize() {
     // Verify that there is enough individuals to sample
     if (size(p1.individuals) >= sample_size_Ne_0) {
         sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
-		  catn("[Sample 1] Echantillonnage à la génération " + sim.cycle);
+		  catn("[Sample 1] Sampling at generation " + sim.cycle);
 
         // Mark this individuals as "Remembered"
         for (ind in sampled_first_gen) {
@@ -89,12 +94,10 @@ initialize() {
 
     } else {
         catn("Not enough individuals for the first sample");
-
-// Premier échantillon génétique déjà fait à sample1_gen - 1
 		}
 }
 
-// Capture-Marquage-Recapture à chaque génération suivante jusqu'au second sample
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 late() {
     // Numéro relatif de génération depuis t1
@@ -128,7 +131,9 @@ late() {
         census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
     } else {
         census_N = "Infinite";
-    }
+}
+
+///////////////////
 
 writeFile(config_file, paste("Index =", i), append=T);
 writeFile(config_file, paste("census_N =", census_N), append=T);
@@ -139,10 +144,18 @@ writeFile(config_file, "", append=T); // saut de ligne
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 reproduction() {
     K = pop_size;
-    parents1 = p1.sampleIndividuals(K, replace=T);
-    parents2 = p1.sampleIndividuals(K, replace=T);
+
+	 inds = p1.individuals;
+	 fecundity = 10^(runif(p1.individualsCount, 0,0));
+	 parents1 = sample(inds, K, replace = T, weights = fecundity);
+	 parents2 = sample(inds, K, replace = T, weights = fecundity);
+
+    //parents1 = p1.sampleIndividuals(K, replace=T);
+    //parents2 = p1.sampleIndividuals(K, replace=T);
 
     for (i in seqLen(K))
         p1.addCrossed(parents1[i], parents2[i]);
@@ -156,10 +169,14 @@ reproduction() {
     //inds[inds.age > 0].fitnessScaling = 0.0;
 //}
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 survival() { 
 // survival is independent of fitness; parents die, offspring live 
 return (individual.age == 0); 
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Generation number is determined by pythono script
 (end_generation - 1) late() {
@@ -175,31 +192,32 @@ return (individual.age == 0);
         }
     } else {
         catn("Not enough individuals for the last sample");
-    }
-
-if (!exists("slimgui")) {
-    // Output Folder
-    output_folder = paste(strsplit(output_folder, " "), sep="");
-
-    // Creating .trees file 
-tree_file = output_folder + "/simulation.trees";
-sim.treeSeqOutput(tree_file);
-
-// Making of the path to the log file
-log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
-
-// Merge the new file with the old one containing the parameters
-appendLine = "log_file=" + log_file;
-writeFile(config_file, appendLine + "\n", append=T);
-
-if (sim.cycle == sample1_generation + sample2_generation) {
 }
 
-	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
-	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
-	writeFile(config_file, "------------------------", append=T);
-}else{
-	sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
-}
+	if (!exists("slimgui")) {
+      // Output Folder
+   	output_folder = paste(strsplit(output_folder, " "), sep="");
+
+      // Creating .trees file 
+		tree_file = output_folder + "/simulation.trees";
+		sim.treeSeqOutput(tree_file);
+
+      // Making of the path to the log file
+		log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
+
+		// Merge the new file with the old one containing the parameters
+		appendLine = "log_file=" + log_file;
+		writeFile(config_file, appendLine + "\n", append=T);
+
+		if (sim.cycle == sample1_generation + sample2_generation) {
+		}
+
+		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
+		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
+		writeFile(config_file, "------------------------", append=T);
+	}else{
+		sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
+	}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
