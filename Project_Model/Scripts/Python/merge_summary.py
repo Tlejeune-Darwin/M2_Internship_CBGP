@@ -1,7 +1,7 @@
 import os
 import pandas as pd # type: ignore
 
-base_results_dir = os.path.expanduser("~/results")
+base_results_dir = os.path.expanduser("~/results/table_ref_2")
 batch_dirs = sorted([d for d in os.listdir(base_results_dir) if d.startswith("batch_table_ref_")])
 
 all_df = []
