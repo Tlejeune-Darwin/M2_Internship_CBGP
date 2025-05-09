@@ -60,8 +60,8 @@ initialize() {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // SLiM model initialization
-	 initializeSLiMOptions(keepPedigrees = T);
     initializeSLiMModelType("nonWF");
+	 initializeSLiMOptions(keepPedigrees = T);
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
     initializeGenomicElementType("g1", m1, 1);
