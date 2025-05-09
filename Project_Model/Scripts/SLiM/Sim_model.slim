@@ -170,7 +170,7 @@ late() {
 	 var_k = var(p1.lifetimeReproductiveOutput);
 	 
 	 Ne_realized = (2.0 * N - 1.0) / (1.0+ (var_k / 2.0));
-	 catn("Generation " + sim.cycle + ": Realized Ne = " + Ne_formula + " (var_k = " + var_k + ")");
+	 catn("Generation " + sim.cycle + ": Realized Ne = " + Ne_realized + " (var_k = " + var_k + ")");
 	 Ne_values = c(Ne_values, Ne_realized);
 
 	 if (sim.cycle == sample1_generation + sample2_generation) {
