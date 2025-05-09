@@ -72,13 +72,15 @@ initialize() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Pop Creation //
 1 early() {
 
-    sim.addSubpop("p1", pop_size); // Pop creation
+    sim.addSubpop("p1", pop_size);
 }
 
 ///////////////////
 
+// Gen sample 1 //
 (sample1_gen - 1) late() {
 
 	 // First sample
@@ -95,10 +97,20 @@ initialize() {
     } else {
         catn("Not enough individuals for the first sample");
 		}
+
+    // Breeder count
+    unique_parents = unique(c(p1.individuals.mother, p1.individuals.father));
+    unique_parents = unique_parents[unique_parents != NULL];
+    n_repro = size(unique_parents);
+    catn("[Sample 1] Reproducers at gen " + sim.cycle + ": " + n_repro + " / K = " + K);
+
 }
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// CMR //
 late() {
     // Numéro relatif de génération depuis t1
     i = sim.cycle - sample1_gen + 2;
@@ -135,6 +147,7 @@ late() {
 
 ///////////////////
 
+// Writing in log file //
 writeFile(config_file, paste("Index =", i), append=T);
 writeFile(config_file, paste("census_N =", census_N), append=T);
 writeFile(config_file, paste("MatchCount =", matchCount), append=T);
@@ -146,6 +159,7 @@ writeFile(config_file, "", append=T); // saut de ligne
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Reproduction assets //
 reproduction() {
     K = pop_size;
 
@@ -171,6 +185,7 @@ reproduction() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Death of individuals //
 survival() { 
 // survival is independent of fitness; parents die, offspring live 
 return (individual.age == 0); 
@@ -178,7 +193,7 @@ return (individual.age == 0);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-// Generation number is determined by pythono script
+// Gen sample 2 //
 (end_generation - 1) late() {
 
     // Verify that there is enough individuals to sample
@@ -192,6 +207,13 @@ return (individual.age == 0);
         }
     } else {
         catn("Not enough individuals for the last sample");
+
+	 // Breeder count
+    unique_parents = unique(c(p1.individuals.mother, p1.individuals.father));
+    unique_parents = unique_parents[unique_parents != NULL];
+    n_repro = size(unique_parents);
+    catn("[Sample 1] Reproducers at gen " + sim.cycle + ": " + n_repro + " / K = " + K);
+
 }
 
 	if (!exists("slimgui")) {
