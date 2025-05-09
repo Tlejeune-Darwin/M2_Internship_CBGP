@@ -1,5 +1,17 @@
 import os
+import sys
 import pandas as pd # type: ignore
+
+if len(sys.argv) < 2:
+    print("❌ Utilisation : python merge_summary.py NOM_DOSSIER (ex: Batch_test)")
+    sys.exit(1)
+
+# Dossier passé en argument
+folder_name = sys.argv[1]
+base_results_dir = os.path.expanduser(f"~/results/{folder_name}")
+
+# Récupère les sous-dossiers "batch_..."
+batch_dirs = sorted([d for d in os.listdir(base_results_dir) if d.startswith("batch_")])
 
 base_results_dir = os.path.expanduser("~/results/table_test")
 batch_dirs = sorted([d for d in os.listdir(base_results_dir) if d.startswith("batch_test_")])
