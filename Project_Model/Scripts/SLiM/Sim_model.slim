@@ -167,7 +167,7 @@ reproduction() {
 	 parents2 = sample(inds, K, replace = T, weights = fecundity);
 
     // Réinitialiser la liste des parents
-    parent_ids = integer();
+    parent_ids = c();
 
     for (i in seqLen(K)) {
     offspring = p1.addCrossed(parents1[i], parents2[i]);
