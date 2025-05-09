@@ -87,7 +87,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
-        max_value = np.random.uniform(50, 50)
+        max_value = np.random.uniform(75, 75)
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
