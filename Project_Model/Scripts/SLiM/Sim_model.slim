@@ -184,6 +184,12 @@ late() {
     	catn("Realized Ne/N (harmonic mean over 10 generations): " + harmonic_mean);
 	 }
 
+appendLine = "Index = " + i + "\n" +
+             "Ne_realized = " + Ne_realized + "\n" +
+             "var_k = " + var_k + "\n";
+
+writeFile(slim_config_file, appendLine, append=T);
+
 }  
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,15 +259,8 @@ return (individual.age == 0);
 		if (sim.cycle == sample1_generation + sample2_generation) {
 		}
 
-			if (exists("realized_Ne")) {
-    			Ne_mean = mean(realized_Ne);
-    			var_k_mean = mean(var_k_all);
-
-    			writeFile(config_file, paste("Ne_realized_all =", realized_Ne), append=T);
-    			writeFile(config_file, paste("var_k_all =", var_k_all), append=T);
-    			writeFile(config_file, paste("Ne_realized_mean =", Ne_mean), append=T);
-    			writeFile(config_file, paste("var_k_mean =", var_k_mean), append=T);
-			}
+		appendLine = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
+		writeFile(slim_config_file, appendLine, append=T);
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
