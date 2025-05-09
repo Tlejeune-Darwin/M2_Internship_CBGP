@@ -178,18 +178,15 @@ late() {
 
 	 realized_Ne = c(realized_Ne, Ne_realized);
 	 var_k_all = c(var_k_all, var_k);
+	 harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
 
-	 if (sim.cycle == sample1_generation + sample2_generation) {
-		harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
-		appendLine_1 = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
-		writeFile(config_file, appendLine_1, append=T);
-	 }
-
-appendLine_2 = "Index = " + i + "\n" +
+appendLine_1 = "Index = " + i + "\n" +
              "Ne_realized = " + Ne_realized + "\n" +
-             "var_k = " + var_k + "\n";
+             "var_k = " + var_k + "\n" +
+				 "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
 
-writeFile(config_file, appendLine_2, append=T);
+
+writeFile(config_file, appendLine_1, append=T);
 
 }  
 
