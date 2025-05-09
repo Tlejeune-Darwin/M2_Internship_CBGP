@@ -783,7 +783,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "simulation_dataLoc.txt",
         "simulation_data.gen",
         "simulation.trees",
-        "slim_config.txt",
+        #"slim_config.txt",
         #"slim.log"
     ]
 
