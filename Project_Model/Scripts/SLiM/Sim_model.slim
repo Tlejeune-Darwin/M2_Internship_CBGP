@@ -180,8 +180,8 @@ late() {
 	 var_k_all = c(var_k_all, var_k);
 
 	 if (sim.cycle == sample1_generation + sample2_generation) {
-    	harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
-    	catn("Realized Ne/N (harmonic mean over 10 generations): " + harmonic_mean);
+		appendLine = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
+		writeFile(config_file, appendLine, append=T);
 	 }
 
 appendLine = "Index = " + i + "\n" +
@@ -258,9 +258,6 @@ return (individual.age == 0);
 
 		if (sim.cycle == sample1_generation + sample2_generation) {
 		}
-
-		appendLine = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
-		writeFile(config_file, appendLine, append=T);
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);

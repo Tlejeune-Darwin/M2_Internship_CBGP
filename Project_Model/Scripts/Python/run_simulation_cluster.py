@@ -172,7 +172,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    def parse_cmr_from_config_file(config_path):
+    def parse_data_from_config_file(config_path):
         """
         Lit les lignes contenant 'census_N = ...' et 'matchCount = ...' dans slim_config.txt
         et retourne un dictionnaire avec des clés numérotées (ex: census_N_1, matchCount_1).
@@ -180,6 +180,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         cmr_data = {}
         census_index = 1
         match_index = 1
+        ne_index = 1
+        var_index = 1
 
         with open(config_path, "r") as f:
             for line in f:
@@ -199,6 +201,26 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                         value = None
                     cmr_data[f"MatchCount_{match_index}"] = value
                     match_index += 1
+
+        
+        with open(config_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("Ne_realized"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"Ne_realized_{ne_index}"] = value
+                    ne_index += 1
+
+                elif line.startswith("var_k"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"var_k_{var_index}"] = value
+                    var_index += 1
 
         return cmr_data
 
@@ -649,7 +671,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
             for key in filtered_keys:
                 file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
 
-    cmr_data = parse_cmr_from_config_file(slim_config_file)
+    cmr_data = parse_data_from_config_file(slim_config_file)
     config_dict.update(cmr_data)
     # Extraire les clés CMR dans l’ordre (triées par numéro)
     cmr_keys = []
