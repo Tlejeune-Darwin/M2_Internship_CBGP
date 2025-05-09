@@ -173,7 +173,7 @@ reproduction() {
     offspring = p1.addCrossed(parents1[i], parents2[i]);
 
     // Enregistrer l'ID des deux parents
-    parent_ids = c(parent_ids, parents1[i].id, parents2[i].id);
+    parent_ids = c(parent_ids, parents1[i].uniqueID, parents2[i].uniqueID);
 	 }
     self.active = 0;
 }
