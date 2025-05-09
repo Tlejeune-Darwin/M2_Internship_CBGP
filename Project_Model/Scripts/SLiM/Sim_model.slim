@@ -168,12 +168,6 @@ late() {
     if (generation_index < 1 | generation_index > end_generation)
         return;
 
-    // Initialisation des listes cumulatives si elles n'existent pas encore
-    if (!exists("realized_Ne_list")) {
-        realized_Ne_list = c();     // Stocke les Ne réalisés à chaque génération
-        var_k_list = c();           // Stocke les variances de succès reproducteur
-    }
-
     // Calcul des statistiques pour la génération courante
     census_size = p1.individualCount;
     reproductive_variance = var(p1.lifetimeReproductiveOutput);
