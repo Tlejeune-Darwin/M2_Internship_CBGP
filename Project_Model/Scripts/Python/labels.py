@@ -8,6 +8,7 @@ better_names = {
 
     "pop_size": "Population size",
     "num_loci": "Number of loci",
+    "fecundity_max": "max_value",
     "sample1_generation": "Generation of first sample",
     "sample2_generation": "Interval before second sample",
     "sample_sizes_Ne": "Genetic sample sizes",

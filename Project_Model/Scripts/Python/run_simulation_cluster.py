@@ -41,6 +41,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['high_repeats']} = 200\n")
                 f.write(f"{better_names['mutation_rate']} = 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
+                f.write(f"{better_names['fecundity_max']} = 10\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
@@ -90,7 +91,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
         "pop_size" : pop_size,                                                                  # Size of the population
-        "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM   
+        "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM
+        "max_value" : float(global_config["fecundity_max"]),   
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
