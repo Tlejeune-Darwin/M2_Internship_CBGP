@@ -186,6 +186,8 @@ late() {
         realized_Ne_list = c(realized_Ne_list, realized_Ne);
     }
 
+
+
     // Préparation de la ligne à écrire dans le fichier de configuration
     log_line = "Index = " + generation_index + "\n" +
                "Realized_Ne = " + realized_Ne + "\n" +
@@ -268,9 +270,6 @@ return (individual.age == 0);
 		// Merge the new file with the old one containing the parameters
 		appendLine = "log_file=" + log_file;
 		writeFile(config_file, appendLine + "\n", append=T);
-
-		harmonic_mean_Ne = size(realized_Ne_list) / sum(1.0 / realized_Ne_list);
-		writeFile(config_file, "Harmonic_Mean_Ne = " + harmonic_mean_Ne + "\n", append=T);
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
