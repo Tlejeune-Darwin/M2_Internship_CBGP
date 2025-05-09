@@ -222,14 +222,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                         value = None
                     cmr_data[f"var_k_{var_index}"] = value
                     var_index += 1
-                
-                elif line.startswith("Harmonic_Mean_Ne"):
-                    try:
-                        value = float(line.split("=")[1].strip())
-                    except ValueError:
-                        value = None
-                    cmr_data[f"Harmonic_Mean_Ne_{HMNe_index}"] = value
-                    HMNe_index += 1
 
         return cmr_data
 
@@ -684,7 +676,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     config_dict.update(cmr_data)
     # Extraire les clés CMR dans l’ordre (triées par numéro)
     cmr_keys = []
-    pattern = re.compile(r"^(census_N|MatchCount|Ne_realized|var_k|Harmonic_Mean_Ne)_(\d+)$")
+    pattern = re.compile(r"^(census_N|MatchCount|Ne_realized|var_k)_(\d+)$")
 
     for k in config_dict:
         match = pattern.match(k)
