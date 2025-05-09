@@ -150,7 +150,7 @@ reproduction() {
     K = pop_size;
 
 	 inds = p1.individuals;
-	 fecundity = 10^(runif(p1.individualCount, 0,0));
+	 fecundity = 10^(runif(p1.individualCount, 0,1));
 	 parents1 = sample(inds, K, replace = T, weights = fecundity);
 	 parents2 = sample(inds, K, replace = T, weights = fecundity);
 
