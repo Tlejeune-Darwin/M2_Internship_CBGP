@@ -41,7 +41,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['high_repeats']} = 200\n")
                 f.write(f"{better_names['mutation_rate']} = 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
-                f.write(f"{better_names['fecundity_max']} = 10\n")
+                f.write(f"{better_names['fecundity_max']} = 0,10\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
@@ -87,12 +87,13 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
+        max_value = np.random.uniform(0, 10)
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
         "pop_size" : pop_size,                                                                  # Size of the population
         "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM
-        "max_value" : float(global_config["fecundity_max"]),   
+        "max_value" : max_value,   
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
@@ -664,7 +665,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
-        write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
+        write_section("Model Parameters", ["pop_size", "num_loci", "max_value", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample_sizes_CMR"], f)
         write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
