@@ -87,6 +87,7 @@ initialize() {
 
 	 // First sample
     // Verify that there is enough individuals to sample
+	 K = pop_size;
     if (size(p1.individuals) >= sample_size_Ne_0) {
         sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
 		  catn("[Sample 1] Sampling at generation " + sim.cycle);
@@ -199,6 +200,7 @@ return (individual.age == 0);
 (end_generation - 1) late() {
 
     // Verify that there is enough individuals to sample
+	 K = pop_size;
     if (size(p1.individuals) >= sample_size_Ne_1) {
         sampled_last_gen = sample(p1.individuals, sample_size_Ne_1, replace=F);
         catn("[Sample 2] Echantillonnage à la génération " + sim.cycle);
