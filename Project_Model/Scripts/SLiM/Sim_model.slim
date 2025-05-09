@@ -44,8 +44,6 @@ initialize() {
     defineGlobal("output_folder", params.getValue("output_folder"));
 	 defineGlobal("max_value", asFloat(params.getValue("max_value")));
 	 defineGlobal("Ne_values", c());
-	 defineGlobal("realized_Ne_list", c());
-	 defineGlobal("var_k_list", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
@@ -177,34 +175,12 @@ late() {
     catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne + 
          " (var_k = " + reproductive_variance + ")");
 
-    // Ajout aux listes
-    realized_Ne_list = c(realized_Ne_list, realized_Ne);
-    var_k_list = c(var_k_list, reproductive_variance);
-
-    // Ajout si la valeur est valide
-    if (!isNULL(realized_Ne) & realized_Ne > 0) {
-        realized_Ne_list = c(realized_Ne_list, realized_Ne);
-    }
-
-
-
     // Préparation de la ligne à écrire dans le fichier de configuration
     log_line = "Index = " + generation_index + "\n" +
                "Realized_Ne = " + realized_Ne + "\n" +
                "Reproductive_Variance = " + reproductive_variance + "\n";
 
     writeFile(config_file, log_line, append=T);
-}
- 
-late() {
-    if (sim.cycle == sample1_generation + sample2_generation) {
-        if (size(realized_Ne_list) > 0) {
-            harmonic_mean = size(realized_Ne_list) / sum(1.0 / realized_Ne_list);
-            catn("Moyenne harmonique de Ne réalisé : " + harmonic_mean);
-        } else {
-            catn("⚠️  Aucun Ne réalisé n’a été stocké.");
-        }
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
