@@ -168,13 +168,15 @@ late() {
     if (generation_index < 1 | generation_index > end_generation)
         return;
 
-	 realized_Ne_list = c(realized_Ne_list, realized_Ne);
-	 var_k_list = c(var_k_list, var_k);
-
     // Calcul des statistiques pour la génération courante
     census_size = p1.individualCount;
     reproductive_variance = var(p1.lifetimeReproductiveOutput);
     realized_Ne = (2.0 * census_size - 1.0) / (1.0 + (reproductive_variance / 2.0));
+
+    // Ajout si la valeur est valide
+    if (!isNULL(Ne_realized) & Ne_realized > 0) {
+        realized_Ne_list = c(realized_Ne_list, Ne_realized);
+    }
 
     // Affichage console
     catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne + 
@@ -192,6 +194,16 @@ late() {
     writeFile(config_file, log_line, append=T);
 }
  
+late() {
+    if (sim.cycle == sample1_generation + sample2_generation) {
+        if (size(realized_Ne_list) > 0) {
+            harmonic_mean = size(realized_Ne_list) / sum(1.0 / realized_Ne_list);
+            catn("Moyenne harmonique de Ne réalisé : " + harmonic_mean);
+        } else {
+            catn("⚠️  Aucun Ne réalisé n’a été stocké.");
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
