@@ -182,7 +182,7 @@ late() {
     var_k_list = c(var_k_list, reproductive_variance);
 
     // Ajout si la valeur est valide
-    if (!isNULL(Ne_realized) & Ne_realized > 0) {
+    if (!isNULL(realized_Ne) & realized_Ne > 0) {
         realized_Ne_list = c(realized_Ne_list, Ne_realized);
     }
 
