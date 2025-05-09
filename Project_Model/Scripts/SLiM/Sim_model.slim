@@ -43,7 +43,7 @@ initialize() {
     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
     defineGlobal("output_folder", params.getValue("output_folder"));
     defineGlobal("seed", asInteger(params.getValue("seed")));
-	 defineGlobal("parent_ids", integer());
+	 defineGlobal("parent_ids", c());
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
     defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
