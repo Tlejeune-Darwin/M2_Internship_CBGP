@@ -676,7 +676,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     config_dict.update(cmr_data)
     # Extraire les clés CMR dans l’ordre (triées par numéro)
     cmr_keys = []
-    pattern = re.compile(r"^(census_N|MatchCount|Ne_realized|var_k)_(\d+)$")
+    pattern = re.compile(r"^(census_N|MatchCount|Realized_Ne|Reproductive_Variance)_(\d+)$")
 
     for k in config_dict:
         match = pattern.match(k)
