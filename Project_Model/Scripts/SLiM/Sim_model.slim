@@ -180,6 +180,7 @@ late() {
 	 var_k_all = c(var_k_all, var_k);
 
 	 if (sim.cycle == sample1_generation + sample2_generation) {
+		harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
 		appendLine_1 = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
 		writeFile(config_file, appendLine_1, append=T);
 	 }
