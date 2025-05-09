@@ -260,7 +260,7 @@ return (individual.age == 0);
 		}
 
 		appendLine = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
-		writeFile(slim_config_file, appendLine, append=T);
+		writeFile(config_file, appendLine, append=T);
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
