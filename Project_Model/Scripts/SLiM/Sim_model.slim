@@ -163,9 +163,12 @@ late() {
     // Si on n’est pas dans l’intervalle, on sort
     if (i < 1 | i > end_generation)
         return;
-    real var_k = var(p1.lifetimeReproductiveOutput);
-    real ratio_Ne_N = 2.0 / (1.0 + (var_k / 2.0));
-    catn("Realized Ne/N ratio at gen " + sim.cycle + " = " + ratio_Ne_N + " (var_k = " + var_k + ")");
+
+    real reproductive_var = var(p1.lifetimeReproductiveOutput);
+    real ratio_Ne_N = 2.0 / (1.0 + (reproductive_var / 2.0));
+
+    catn("Realized Ne/N ratio at gen " + sim.cycle + " = " + ratio_Ne_N + 
+         " (var_k = " + reproductive_var + ")");
 
 }  
 
