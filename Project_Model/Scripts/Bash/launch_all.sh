@@ -23,7 +23,7 @@ fi
 
 # Lancer les batchs
 for i in $(seq $START_BATCH $((START_BATCH + TOTAL_BATCHES - 1))); do
-    BATCH_NAME="batch_${SIM_DIR}_${i}"
+    BATCH_NAME="${SIM_DIR}/batch_${SIM_DIR}_${i}"
     OFFSET=$((i * SIMS_PER_BATCH))
 
     echo "Launching $BATCH_NAME with OFFSET=$OFFSET"

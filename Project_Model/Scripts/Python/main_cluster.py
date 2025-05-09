@@ -29,9 +29,12 @@ args.batch = ask_if_missing(args.batch, "Batch name (simulation folder name)", s
 args.num_simulations = ask_if_missing(args.num_simulations, "Number of simulations", int, 1)
 
 # --- Create the base simulation folder on the desktop --- #
-base_results_dir = os.path.expanduser(f"~/results/{args.batch}")
+# Extraire le dossier parent (nom global) et le sous-dossier batch
+global_dir, batch_dir = args.batch.split("/", 1)
+base_results_dir = os.path.expanduser(f"~/results/{global_dir}/{batch_dir}")
 os.makedirs(base_results_dir, exist_ok=True)
-sim_base_dir = base_results_dir  # Utilisé comme base_dir pour toutes les simulations
+sim_base_dir = base_results_dir
+
 
 # --- Run the simulations --- #
 for i in range(args.num_simulations):
