@@ -43,7 +43,6 @@ initialize() {
     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
     defineGlobal("output_folder", params.getValue("output_folder"));
     defineGlobal("seed", asInteger(params.getValue("seed")));
-	 defineGlobal("parent_ids", c());
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
     defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
@@ -61,7 +60,6 @@ initialize() {
 
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
-	 initializeSLiMOptions(keepPedigrees = T);
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
     initializeGenomicElementType("g1", m1, 1);
@@ -164,23 +162,8 @@ reproduction() {
 	 parents1 = sample(inds, K, replace = T, weights = fecundity);
 	 parents2 = sample(inds, K, replace = T, weights = fecundity);
 
-    // Réinitialiser la liste des parents
-    parent_ids = c();
-
     for (i in seqLen(K)) {
     offspring = p1.addCrossed(parents1[i], parents2[i]);
-
-	     parent_ids = c();
-		  for (j in seqLen(K)) {
-    		  offspring = p1.addCrossed(parents1[j], parents2[j]);
-   		  parent_ids = c(parent_ids, parents1[j].pedigreeID, parents2[j].pedigreeID);
-		  }
-
-    // 🔴 Compte des reproducteurs ici !
-    unique_reproducers = size(unique(parent_ids));
-    catn("📦 Nb reproducteurs : " + unique_reproducers + " / K = " + pop_size);
-    
-	 }
 
     self.active = 0;
 }
