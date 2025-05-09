@@ -253,10 +253,8 @@ return (individual.age == 0);
 		appendLine = "log_file=" + log_file;
 		writeFile(config_file, appendLine + "\n", append=T);
 
-    if (size(realized_Ne) > 0) {
-        harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
-        writeFile(config_file, "Harmonic_Mean_Ne = " + harmonic_mean + "\n", append=T);
-    }
+      harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
+      writeFile(config_file, "Harmonic_Mean_Ne = " + harmonic_mean + "\n", append=T);
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
