@@ -182,7 +182,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         match_index = 1
         ne_index = 1
         var_index = 1
-        HMNe_index = 1
 
         with open(config_path, "r") as f:
             for line in f:
@@ -207,20 +206,20 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         with open(config_path, "r") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("Ne_realized"):
+                if line.startswith("Realized_Ne"):
                     try:
                         value = float(line.split("=")[1].strip())
                     except ValueError:
                         value = None
-                    cmr_data[f"Ne_realized_{ne_index}"] = value
+                    cmr_data[f"Realized_Ne_{ne_index}"] = value
                     ne_index += 1
 
-                elif line.startswith("var_k"):
+                elif line.startswith("Reproductive_Variance"):
                     try:
                         value = float(line.split("=")[1].strip())
                     except ValueError:
                         value = None
-                    cmr_data[f"var_k_{var_index}"] = value
+                    cmr_data[f"Reproductive_Variance_{var_index}"] = value
                     var_index += 1
 
         return cmr_data
