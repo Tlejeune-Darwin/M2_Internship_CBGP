@@ -173,11 +173,6 @@ late() {
     reproductive_variance = var(p1.lifetimeReproductiveOutput);
     realized_Ne = (2.0 * census_size - 1.0) / (1.0 + (reproductive_variance / 2.0));
 
-    // Ajout si la valeur est valide
-    if (!isNULL(Ne_realized) & Ne_realized > 0) {
-        realized_Ne_list = c(realized_Ne_list, Ne_realized);
-    }
-
     // Affichage console
     catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne + 
          " (var_k = " + reproductive_variance + ")");
@@ -185,6 +180,11 @@ late() {
     // Ajout aux listes
     realized_Ne_list = c(realized_Ne_list, realized_Ne);
     var_k_list = c(var_k_list, reproductive_variance);
+
+    // Ajout si la valeur est valide
+    if (!isNULL(Ne_realized) & Ne_realized > 0) {
+        realized_Ne_list = c(realized_Ne_list, Ne_realized);
+    }
 
     // Préparation de la ligne à écrire dans le fichier de configuration
     log_line = "Index = " + generation_index + "\n" +
