@@ -44,6 +44,8 @@ initialize() {
     defineGlobal("output_folder", params.getValue("output_folder"));
 	 defineGlobal("max_value", asFloat(params.getValue("max_value")));
 	 defineGlobal("Ne_values", c());
+	 defineGlobal("realized_Ne", c());
+	 defineGlobal("var_k_all", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
@@ -183,13 +185,6 @@ appendLine_1 = "Index = " + i + "\n" +
              "Ne_realized = " + Ne_realized + "\n" +
              "var_k = " + var_k + "\n";
 
-if (sim.cycle == sample1_generation + sample2_generation) {
-    harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
-    appendLine_2 = "Harmonic_Mean_Ne = " + harmonic_mean + "\n";
-    writeFile(config_file, appendLine_2, append=T);
-}
-
-
 writeFile(config_file, appendLine_1, append=T);
 
 }  
@@ -258,8 +253,10 @@ return (individual.age == 0);
 		appendLine = "log_file=" + log_file;
 		writeFile(config_file, appendLine + "\n", append=T);
 
-		if (sim.cycle == sample1_generation + sample2_generation) {
-		}
+    if (size(realized_Ne) > 0) {
+        harmonic_mean = size(realized_Ne) / sum(1.0 / realized_Ne);
+        writeFile(config_file, "Harmonic_Mean_Ne = " + harmonic_mean + "\n", append=T);
+    }
 
 		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
 		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
