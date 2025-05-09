@@ -254,8 +254,8 @@ return (individual.age == 0);
 		}
 
 			if (exists("realized_Ne")) {
-    			real Ne_mean = mean(realized_Ne);
-    			real var_k_mean = mean(var_k_all);
+    			Ne_mean = mean(realized_Ne);
+    			var_k_mean = mean(var_k_all);
 
     			writeFile(config_file, paste("Ne_realized_all =", realized_Ne), append=T);
     			writeFile(config_file, paste("var_k_all =", var_k_all), append=T);
