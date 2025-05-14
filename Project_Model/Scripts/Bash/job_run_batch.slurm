@@ -4,12 +4,12 @@
 echo "BATCH=$BATCH_NAME, NUM_SIMS=$NUM_SIMS, OFFSET=$OFFSET"
 
 #SBATCH --job-name=${BATCH_NAME}
-#SBATCH --output=$HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.out
-#SBATCH --error=$HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.err
-#SBATCH --time=24:00:00
-#SBATCH --mem=8G
+SBATCH --output=$HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.out
+SBATCH --error=$HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.err
+SBATCH --time=24:00:00
+SBATCH --mem=8G
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=long
+SBATCH --partition=long
 
 # Activation de l'environnement conda
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
