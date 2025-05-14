@@ -12,6 +12,8 @@ library(tidyverse)
 library(abcrf)
 library(ggplot2)
 library(tinytex)
+library(dplyr)
+library(openxlsx)
 
 ```
 
@@ -28,10 +30,10 @@ desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
 }
 
 # Complete path
-file_path <- file.path("C:/Users/poupe/simulations/summary_table_all_batches.csv")
+file_path_data <- file.path("C:/Users/poupe/simulations/data_model.csv")
 
 # Reading file
-data <- read_csv(file_path)
+data <- read_csv(file_path_data)
 
 ```
 
@@ -75,12 +77,35 @@ ggplot(result$na_summary %>%
 ```
 
 ```{r}
-data_clean <- data_clean %>%
-  drop_na()
+# Fusionner les colonnes à retirer
+cols_to_remove <- c(
+  # Ne stats
+  "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
+  "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
+  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000",
+
+  # census_N et batch
+  "census_N_1", "census_N_2", "census_N_3", "census_N_4", 
+  "census_N_5", "census_N_6", "census_N_7", "census_N_8",
+  "census_N_9", "census_N_10", "census_N_11",
+  "batch",
+
+  # Historic genetic stats
+  "mean_alleles_pop1", "mean_alleles_pop2",
+  "sum_alleles_pop1", "sum_alleles_pop2",
+  "mean_exp_het_pop1", "mean_exp_het_pop2",
+  "mean_obs_het_pop1", "mean_obs_het_pop2",
+  "var_alleles_pop1", "var_alleles_pop2"
+)
+
+# Supprimer les colonnes et lignes avec au moins un NA
+data_clean <- data_clean %>% 
+  select(-any_of(cols_to_remove)) %>%
+  na.omit()
+
 ```
 
 ```{r}
-
 # 1. Sélectionner les colonnes MatchCount
 matchcount_cols <- grep("MatchCount", names(data_clean), value = TRUE)
 
@@ -99,110 +124,175 @@ data_clean <- data_clean[,other_cols]
 #data_clean <- data_clean[, c(other_cols, cols_to_keep)]
 ```
 
+```{r}
+# Étape 1 : Extraire toutes les colonnes Realized_Ne_*
+ne_cols <- grep("^Realized_Ne_", names(data_clean), value = TRUE)
 
-```{r = Delete all Ne stats}
+# Étape 2 : Calcul de la moyenne harmonique
+harmonic_mean <- function(x) {
+  x <- as.numeric(x)
+  x <- x[!is.na(x) & x > 0]
+  if (length(x) == 0) return(NA)
+  return(length(x) / sum(1 / x))
+}
 
-to_remove <- c(
-  "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
-  "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
-  "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000", "census_N_1", "census_N_2","census_N_3", "census_N_4", "census_N_5", "census_N_6", "census_N_7", "census_N_8", "census_N_9", "census_N_10", "census_N_11", "batch"
-)
+# Appliquer la fonction à chaque ligne
+data_clean$Harmonic_Ne <- apply(data_clean[, ne_cols], 1, harmonic_mean)
 
-# Remove the lines that contain at least one "NA"
-data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
-
-```
-
-```{r = Delete the historic genetic stats}
-
-to_remove <- c(
-  "mean_alleles_pop1", "mean_alleles_pop2",
-  "sum_alleles_pop1", "sum_alleles_pop2",
-  "mean_exp_het_pop1", "mean_exp_het_pop2",
-  "mean_obs_het_pop1", "mean_obs_het_pop2",
-  "var_alleles_pop1", "var_alleles_pop2"
-)
-
-# Remove the lines that contain at least one "NA"
-data_clean <- data_clean %>% select(-any_of(to_remove)) %>% na.omit()
+# Étape 3 : Calcul du ratio Ne/N
+if ("pop_size" %in% colnames(data_clean)) {
+  data_clean$Ne_N_ratio <- data_clean$Harmonic_Ne / data_clean$pop_size
+} else {
+  warning("Colonne 'pop_size' manquante : ratio Ne/N non calculé.")
+}
 
 ```
 
-
-```{r = Soft cleaning (Median)}
-
-# Search every column for NA then calculate the median of the existing values and add it to the missing values
-data_imputed <- data %>% mutate(across(everything(), ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
-
-```
-
-```{r = Hard cleaning (column removal - Classic version)}
-
-# Hard version of the last method, choose the columns to delete to avoid suppressing too many lines while removing the NAs
-to_remove <- c(
-  "HE_Neb_mean_0.050_Pop2", "HE_Neb_mean_0.020_Pop2", "HE_Neb_mean_0.010_Pop2", "HE_Neb_mean_0.000_Pop2",
-  "HE_Neb_mean_0.050_Pop1", "HE_Neb_mean_0.020_Pop1", "HE_Neb_mean_0.010_Pop1", "HE_Neb_mean_0.000_Pop1",
-  "Coan_Neb_n_Pop1", "Coan_Neb_n_Pop2",
-  "LD_Ne_0.050_Pop1", "LD_Ne_0.020_Pop1", "LD_Ne_0.010_Pop1", "LD_Ne_0.000_Pop1",
-  "LD_Ne_0.050_Pop2", "LD_Ne_0.020_Pop2", "LD_Ne_0.010_Pop2", "LD_Ne_0.000_Pop2"
-)
-
-# Remove the lines that contain at least one "NA"
-data <- data %>% select(-any_of(to_remove)) %>% na.omit()
-
+```{r}
+data_clean <- na.omit(data_clean)
 ```
 
 ```{r = Set the parameters and resuming statistics tables}
 
 # List of parameters
 param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample_size_CMR", "mutation_rate", "recap_Ne")
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
 params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_", "J_", "MatchCount_")
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_", "Reprodcutive_")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table <- data_clean %>% select(all_of(stat_cols))
 
 ```
 
-```{r = ABCRF model}
+```{r = ABCRF model - pop_size}
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
-target_param <- "pop_size"
-learning_data <- bind_cols(y = params[[target_param]], stats_table) %>% rename(!!target_param := y)
+target_param_N <- "pop_size"
+learning_data_N <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf <- regAbcrf(as.formula(paste(target_param, "~ .")), data = learning_data, ntree = 1000)
-summary(model_rf)
+model_rf_N <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N, ntree = 100)
+summary(model_rf_N)
 
 ```
 
-```{r = Stat importance for ABCRF model}
+```{r = ABCRF model - Reailized_Ne}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_Ne <- "Harmonic_Ne"
+learning_data_Ne <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_Ne <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne, ntree = 100)
+summary(model_rf_Ne)
+
+```
+
+```{r = ABCRF model - Ne_N_ratio}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_Ne_N <- "Ne_N_ratio"
+learning_data_Ne_N <- bind_cols(y = params[[target_param_Ne_N]], stats_table) %>% rename(!!target_param_Ne_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 100)
+summary(model_rf_Ne_N)
+
+```
+
+```{r = Stat importance for ABCRF model - pop_size}
 
 # Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
-importance_df <- model_rf$model.rf$variable.importance %>%
+importance_df_N <- model_rf_N$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
 
 # 2. Ne garder que les 20 premières variables
 top_n <- 20
 # Créer une variable de couleur
-importance_top <- importance_df %>%
+importance_top_N <- importance_df_N %>%
   mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
   mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
   slice_max(order_by = Importance, n = top_n)
 
-importance_top <- importance_top %>%
+importance_top_N <- importance_top_N %>%
   mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
 
 # Graphique
-ggplot(importance_top, aes(x = Statistic, y = Importance, fill = color)) +
+ggplot(importance_top_N, aes(x = Statistic, y = Importance, fill = color)) +
   geom_col() +
   coord_flip() +
   scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
   labs(
-    title = paste("Top", top_n, "most important variables for", target_param),
+    title = paste("Top", top_n, "most important variables for", target_param_N),
+    x = "Statistics",
+    y = "Importance (abcrf)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+```
+
+```{r = Stat importance for ABCRF model - Harmonic Ne}
+
+# Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
+importance_df_Ne <- model_rf_Ne$model.rf$variable.importance %>%
+  sort(decreasing = TRUE) %>%
+  enframe(name = "Statistic", value = "Importance")
+
+# 2. Ne garder que les 20 premières variables
+top_n <- 20
+# Créer une variable de couleur
+importance_top_Ne <- importance_df_Ne %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
+  slice_max(order_by = Importance, n = top_n)
+
+importance_top_Ne <- importance_top_Ne %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
+
+# Graphique
+ggplot(importance_top_Ne, aes(x = Statistic, y = Importance, fill = color)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  labs(
+    title = paste("Top", top_n, "most important variables for", target_param_Ne),
+    x = "Statistics",
+    y = "Importance (abcrf)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+```
+
+```{r = Stat importance for ABCRF model - Ne_N_ratio}
+
+# Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
+importance_df_Ne_N <- model_rf_Ne_N$model.rf$variable.importance %>%
+  sort(decreasing = TRUE) %>%
+  enframe(name = "Statistic", value = "Importance")
+
+# 2. Ne garder que les 20 premières variables
+top_n <- 20
+# Créer une variable de couleur
+importance_top_Ne_N <- importance_df_Ne_N %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
+  slice_max(order_by = Importance, n = top_n)
+
+importance_top_Ne_N <- importance_top_Ne_N %>%
+  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
+
+# Graphique
+ggplot(importance_top_Ne_N, aes(x = Statistic, y = Importance, fill = color)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  labs(
+    title = paste("Top", top_n, "most important variables for", target_param_Ne_N),
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
@@ -229,18 +319,20 @@ abline(0, 1, col = "red")
 plot(learning_data$pop_size, learning_data$MatchCount_var)
 ```
 
-```{r}
+```{r prediction vs true value - pop_size}
 
 # Créer un dataframe avec les vraies valeurs et les prédictions
-prediction_df <- data.frame(
-  pop_size = learning_data$pop_size,
-  prediction = model_rf$model.rf$predictions
+prediction_df_N <- data.frame(
+  pop_size = learning_data_N$pop_size,
+  prediction = model_rf_N$model.rf$predictions
 )
 
 # Graphique ggplot
-ggplot(prediction_df, aes(x = pop_size, y = prediction)) +
+ggplot(prediction_df_N, aes(x = pop_size, y = prediction)) +
   geom_point(shape = 1, alpha = 0.6) +  # cercles ouverts et transparence
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # ligne identité
+  scale_x_log10() +
+  scale_y_log10() +
   labs(
     x = "True value (pop_size)",
     y = "Predicted value",
@@ -249,4 +341,125 @@ ggplot(prediction_df, aes(x = pop_size, y = prediction)) +
   theme_minimal()
 
 ```
+
+```{r prediction vs true value - Harmonic_Ne}
+
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_Ne <- data.frame(
+  Harmonic_Ne = learning_data_Ne$Harmonic_Ne,
+  prediction = model_rf_Ne$model.rf$predictions
+)
+
+# Graphique ggplot
+ggplot(prediction_df_Ne, aes(x = Harmonic_Ne, y = prediction)) +
+  geom_point(shape = 1, alpha = 0.6) +  # cercles ouverts et transparence
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # ligne identité
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(
+    x = "True value (Harmonic_Ne)",
+    y = "Predicted value",
+    title = "Prediction vs True values (abcrf)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r prediction vs true value - Ne_N_ratio}
+
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_Ne_N <- data.frame(
+  Ne_N_ratio = learning_data_Ne_N$Ne_N_ratio,
+  prediction = model_rf_Ne_N$model.rf$predictions
+)
+
+# Graphique ggplot
+ggplot(prediction_df_Ne_N, aes(x = Ne_N_ratio, y = prediction)) +
+  geom_point(shape = 1, alpha = 0.6) +  # cercles ouverts et transparence
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +  # ligne identité
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(
+    x = "True value (Ne_N_ratio)",
+    y = "Predicted value",
+    title = "Prediction vs True values (abcrf)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+res_oob_N <- predictOOB(object = model_rf_N, training = learning_data_N)
+
+# Vraies valeurs
+true_values_N <- learning_data_N$pop_size
+
+# Prédictions
+predicted_N <- res_oob_N$expectation
+
+# RMSE
+rmse_N <- sqrt(res_oob_N$MSE)
+
+# Biais
+bias_N <- mean(predicted_N - true_values_N)
+
+# R²
+r2_N <- 1 - sum((true_values_N - predicted_N)^2) / sum((true_values_N - mean(true_values_N))^2)
+
+```
+
+```{r}
+res_oob_Ne <- predictOOB(object = model_rf_Ne, training = learning_data_Ne)
+
+# Vraies valeurs
+true_values_Ne <- learning_data_Ne$Harmonic_Ne
+
+# Prédictions
+predicted_Ne <- res_oob_Ne$expectation
+
+# RMSE
+rmse_Ne <- sqrt(res_oob_Ne$MSE)
+
+# Biais
+bias_Ne <- mean(predicted_Ne - true_values_Ne)
+
+# R²
+r2_Ne <- 1 - sum((true_values_Ne - predicted_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
+
+```
+
+```{r}
+res_oob_Ne_N <- predictOOB(object = model_rf_Ne_N, training = learning_data_Ne_N)
+
+# Vraies valeurs
+true_values_Ne_N <- learning_data_Ne_N$Ne_N_ratio
+
+# Prédictions
+predicted_Ne_N <- res_oob_Ne_N$expectation
+
+# RMSE
+rmse_Ne_N <- sqrt(res_oob_Ne_N$MSE)
+
+# Biais
+bias_Ne_N <- mean(predicted_Ne_N - true_values_Ne_N)
+
+# R²
+r2_Ne_N <- 1 - sum((true_values_Ne_N - predicted_Ne_N)^2) / sum((true_values_Ne_N - mean(true_values_Ne_N))^2)
+
+```
+
+```{r}
+# Sélection par nom exact pour les 2 premières colonnes
+cols_fixed <- c("pop_size", "max_value")
+
+# Sélection automatique des colonnes contenant 'Realized_Ne'
+cols_realized <- grep("Realized_Ne", names(data), value = TRUE)
+
+# Création d'un nouveau data frame avec ces colonnes uniquement
+data_results <- data[, c(cols_fixed, cols_realized)]
+
+write.xlsx(data_results, file = "C:/Users/poupe/simulations/selected_reference_data.xlsx", rowNames = FALSE)
+ 
+```
+
 
