@@ -1,15 +1,16 @@
-#!/bin/bash -l
+#!/bin/sh -l
 
-# Echo des paramètres SLURM utiles (pour debug)
-echo "BATCH=$BATCH_NAME, NUM_SIMS=$NUM_SIMS, OFFSET=$OFFSET"
+#SBATCH -J Job_simu
+#SBATCH -p long
+#SBATCH -N 2
+#SBATCH -n 32
+#SBATCH -A stage_m2
+#SBATCH -t 2-12
+#SBATCH -o ./%N.out
+#SBATCH -e ./%N.err
+#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user=thomas.lejeune@etu.umontpellier.fr
 
-#SBATCH --job-name=${BATCH_NAME}
-#SBATCH -o $HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.out
-#SBATCH -e $HOME/M2_Internship_CBGP/Project_Model/logs/%x_%j.err
-#SBATCH -t 24:00:00
-#SBATCH --mem=8G
-#SBATCH --cpus-per-task=1
-#SBATCH --partition=long
 
 # Activation de l'environnement conda
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
