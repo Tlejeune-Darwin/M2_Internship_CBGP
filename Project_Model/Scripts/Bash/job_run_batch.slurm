@@ -9,7 +9,7 @@ echo "BATCH=$BATCH_NAME, NUM_SIMS=$NUM_SIMS, OFFSET=$OFFSET"
 #SBATCH -t 24:00:00
 #SBATCH --mem=8G
 #SBATCH --cpus-per-task=1
-#SBATCH -p long
+#SBATCH --work=long
 
 # Activation de l'environnement conda
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
