@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/bash -l
 
 #SBATCH -J Job_simu
 #SBATCH -p long
