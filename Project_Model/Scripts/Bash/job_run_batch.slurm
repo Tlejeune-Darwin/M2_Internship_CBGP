@@ -8,7 +8,7 @@
 #SBATCH -t 2-12
 #SBATCH -o ./%N.out
 #SBATCH -e ./%N.err
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-type=END
 #SBATCH --mail-user=thomas.lejeune@etu.umontpellier.fr
 
 
