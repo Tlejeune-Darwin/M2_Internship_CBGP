@@ -76,7 +76,7 @@ ggplot(result$na_summary %>%
 
 ```
 
-```{r}
+```{r = Delete all columns}
 # Fusionner les colonnes à retirer
 cols_to_remove <- c(
   # Ne stats
@@ -160,13 +160,33 @@ param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sam
 params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_", "Reprodcutive_")
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table <- data_clean %>% select(all_of(stat_cols))
 
 ```
 
-```{r = ABCRF model - pop_size}
+```{r = Stats table : CMR}
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params_N <- data_clean %>% select(all_of(param_cols))
+
+stat_keywords <- c("id", "MatchCount_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table_N <- data_clean %>% select(all_of(stat_cols))
+```
+
+```{r = Stats table : Genetic}
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params_Ne <- data_clean %>% select(all_of(param_cols))
+
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table_Ne <- data_clean %>% select(all_of(stat_cols))
+```
+
+```{r = ABCRF model - pop_size - all data}
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_N <- "pop_size"
@@ -178,7 +198,19 @@ summary(model_rf_N)
 
 ```
 
-```{r = ABCRF model - Reailized_Ne}
+```{r = ABCRF model - pop_size - specific data}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_N <- "pop_size"
+learning_data_N <- bind_cols(y = params_N[[target_param_N]], stats_table_N) %>% rename(!!target_param_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_N <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N, ntree = 100)
+summary(model_rf_N)
+
+```
+
+```{r = ABCRF model - Reailized_Ne - all data}
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_Ne <- "Harmonic_Ne"
@@ -190,7 +222,19 @@ summary(model_rf_Ne)
 
 ```
 
-```{r = ABCRF model - Ne_N_ratio}
+```{r = ABCRF model - Reailized_Ne - specific data}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_Ne <- "Harmonic_Ne"
+learning_data_Ne <- bind_cols(y = params_Ne[[target_param_Ne]], stats_table_Ne) %>% rename(!!target_param_Ne := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_Ne <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne, ntree = 100)
+summary(model_rf_Ne)
+
+```
+
+```{r = ABCRF model - Ne_N_ratio - all data}
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_Ne_N <- "Ne_N_ratio"
@@ -406,6 +450,13 @@ bias_N <- mean(predicted_N - true_values_N)
 # R²
 r2_N <- 1 - sum((true_values_N - predicted_N)^2) / sum((true_values_N - mean(true_values_N))^2)
 
+coverage_N <- res_oob_N$coverage
+
+coverage_N
+rmse_N
+bias_N
+r2_N
+
 ```
 
 ```{r}
@@ -425,6 +476,13 @@ bias_Ne <- mean(predicted_Ne - true_values_Ne)
 
 # R²
 r2_Ne <- 1 - sum((true_values_Ne - predicted_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
+
+coverage_Ne <- res_oob_Ne$coverage
+
+coverage_Ne
+rmse_Ne
+bias_Ne
+r2_Ne
 
 ```
 
@@ -446,6 +504,13 @@ bias_Ne_N <- mean(predicted_Ne_N - true_values_Ne_N)
 # R²
 r2_Ne_N <- 1 - sum((true_values_Ne_N - predicted_Ne_N)^2) / sum((true_values_Ne_N - mean(true_values_Ne_N))^2)
 
+coverage_Ne_N <- res_oob_Ne_N$coverage
+
+coverage_Ne_N
+rmse_Ne_N
+bias_Ne_N
+r2_Ne_N
+
 ```
 
 ```{r}
@@ -462,4 +527,253 @@ write.xlsx(data_results, file = "C:/Users/poupe/simulations/selected_reference_d
  
 ```
 
+```{r = 10 times all_stats for N parameter}
 
+# Vecteurs de stockage
+rmse_vec_all_N <- numeric(10)
+bias_vec_all_N <- numeric(10)
+r2_vec_all_N <- numeric(10)
+coverage_vec_all_N <- numeric(10)
+
+# List of parameters
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params <- data_clean %>% select(all_of(param_cols))
+
+# List of resuming statistics
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data_clean %>% select(all_of(stat_cols))
+
+# Paramètres
+target_param_N <- "pop_size"
+learning_data_N <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
+
+# Boucle
+set.seed(123)  # Pour reproductibilité
+for (i in 1:10) {
+  cat("Répétition", i, "\n")
+  
+  # Entraînement ABC-RF
+  model_rf_N <- regAbcrf(
+    formula = as.formula(paste(target_param_N, "~ .")),
+    data = learning_data_N,
+    ntree = 100
+  )
+  
+  # Prédictions sur le même jeu
+  predictions_N <- predictOOB(model_rf_N,
+                         training = learning_data_N)
+  
+  pred_values_N <- predictions_N$expectation
+  true_values_N <- learning_data_N[[target_param_N]]
+  
+  # RMSE
+  rmse_vec_all_N[i] <- sqrt(predictions_N$MSE)
+  
+  # Biais
+  bias_vec_all_N[i] <- mean(pred_values_N - true_values_N)
+  
+  # R²
+  r2_vec_all_N[i] <- 1 - sum((true_values_N - pred_values_N)^2) / sum((true_values_N - mean(true_values_N))^2)
+  
+  coverage_vec_all_N[i] <- predictions_N$coverage
+
+}
+# Résumé
+data.frame(
+  RMSE = rmse_vec_all_N,
+  Bias = bias_vec_all_N,
+  R2 = r2_vec_all_N,
+  Coverage = coverage_vec_all_N
+)
+
+```
+
+```{r = 10 times all_stats for Ne parameter}
+
+# Vecteurs de stockage
+rmse_vec_all_Ne <- numeric(10)
+bias_vec_all_Ne <- numeric(10)
+r2_vec_all_Ne <- numeric(10)
+coverage_vec_all_Ne <- numeric(10)
+
+# List of parameters
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params <- data_clean %>% select(all_of(param_cols))
+
+# List of resuming statistics
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data_clean %>% select(all_of(stat_cols))
+
+# Paramètres
+target_param_Ne <- "Harmonic_Ne"
+learning_data_Ne <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
+
+# Boucle
+set.seed(123)  # Pour reproductibilité
+for (i in 1:10) {
+  cat("Répétition", i, "\n")
+  
+  # Entraînement ABC-RF
+  model_rf_Ne <- regAbcrf(
+    formula = as.formula(paste(target_param_Ne, "~ .")),
+    data = learning_data_Ne,
+    ntree = 100
+  )
+  
+  # Prédictions sur le même jeu
+  predictions_Ne <- predictOOB(model_rf_Ne,
+                         training = learning_data_Ne)
+  
+  pred_values_Ne <- predictions_Ne$expectation
+  true_values_Ne <- learning_data_Ne[[target_param_Ne]]
+  
+  # RMSE
+  rmse_vec_all_Ne[i] <- sqrt(predictions_Ne$MSE)
+  
+  # Biais
+  bias_vec_all_Ne[i] <- mean(pred_values_Ne - true_values_Ne)
+  
+  # R²
+  r2_vec_all_Ne[i] <- 1 - sum((true_values_Ne - pred_values_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
+  
+  coverage_vec_all_Ne[i] <- predictions_Ne$coverage
+
+}
+# Résumé
+data.frame(
+  RMSE = rmse_vec_all_Ne,
+  Bias = bias_vec_all_Ne,
+  R2 = r2_vec_all_Ne,
+  Coverage = coverage_vec_all_Ne
+)
+
+```
+```{r = 10 times specific_stats for N parameter}
+
+# Vecteurs de stockage
+rmse_vec_spe_N <- numeric(10)
+bias_vec_spe_N <- numeric(10)
+r2_vec_spe_N <- numeric(10)
+coverage_vec_spe_N <- numeric(10)
+
+# List of parameters
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params <- data_clean %>% select(all_of(param_cols))
+
+# List of resuming statistics
+stat_keywords <- c("id", "MatchCount_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data_clean %>% select(all_of(stat_cols))
+
+# Paramètres
+target_param_N <- "pop_size"
+learning_data_N <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
+
+# Boucle
+set.seed(123)  # Pour reproductibilité
+for (i in 1:10) {
+  cat("Répétition", i, "\n")
+  
+  # Entraînement ABC-RF
+  model_rf_N <- regAbcrf(
+    formula = as.formula(paste(target_param_N, "~ .")),
+    data = learning_data_N,
+    ntree = 100
+  )
+  
+  # Prédictions sur le même jeu
+  predictions_N <- predictOOB(model_rf_N,
+                         training = learning_data_N)
+  
+  pred_values_N <- predictions_N$expectation
+  true_values_N <- learning_data_N[[target_param_N]]
+  
+  # RMSE
+  rmse_vec_spe_N[i] <- sqrt(predictions_N$MSE)
+  
+  # Biais
+  bias_vec_spe_N[i] <- mean(pred_values_N - true_values_N)
+  
+  # R²
+  r2_vec_spe_N[i] <- 1 - sum((true_values_N - pred_values_N)^2) / sum((true_values_N - mean(true_values_N))^2)
+  
+  coverage_vec_spe_N[i] <- predictions_N$coverage
+
+}
+# Résumé
+data.frame(
+  RMSE = rmse_vec_spe_N,
+  Bias = bias_vec_spe_N,
+  R2 = r2_vec_spe_N,
+  Coverage = coverage_vec_spe_N
+)
+
+```
+
+```{r = 10 times specific_stats for Ne parameter}
+
+# Vecteurs de stockage
+rmse_vec_spe_Ne <- numeric(10)
+bias_vec_spe_Ne <- numeric(10)
+r2_vec_spe_Ne <- numeric(10)
+coverage_vec_spe_Ne <- numeric(10)
+
+# List of parameters
+param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
+params <- data_clean %>% select(all_of(param_cols))
+
+# List of resuming statistics
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_")
+stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
+stats_table <- data_clean %>% select(all_of(stat_cols))
+
+# Paramètres
+target_param_Ne <- "Harmonic_Ne"
+learning_data_Ne <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
+
+# Boucle
+set.seed(123)  # Pour reproductibilité
+for (i in 1:10) {
+  cat("Répétition", i, "\n")
+  
+  # Entraînement ABC-RF
+  model_rf_Ne <- regAbcrf(
+    formula = as.formula(paste(target_param_Ne, "~ .")),
+    data = learning_data_Ne,
+    ntree = 100
+  )
+  
+  # Prédictions sur le même jeu
+  predictions_Ne <- predictOOB(model_rf_Ne,
+                         training = learning_data_Ne)
+  
+  pred_values_Ne <- predictions_Ne$expectation
+  true_values_Ne <- learning_data_Ne[[target_param_Ne]]
+  
+  # RMSE
+  rmse_vec_spe_Ne[i] <- sqrt(predictions_Ne$MSE)
+  
+  # Biais
+  bias_vec_spe_Ne[i] <- mean(pred_values_Ne - true_values_Ne)
+  
+  # R²
+  r2_vec_spe_Ne[i] <- 1 - sum((true_values_Ne - pred_values_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
+  
+  coverage_vec_spe_Ne[i] <- predictions_Ne$coverage
+
+}
+# Résumé
+data.frame(
+  RMSE = rmse_vec_spe_Ne,
+  Bias = bias_vec_spe_Ne,
+  R2 = r2_vec_spe_Ne,
+  Coverage = coverage_vec_spe_Ne
+)
+
+```
