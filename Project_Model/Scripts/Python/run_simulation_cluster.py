@@ -93,14 +93,14 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
         "pop_size" : pop_size,                                                                  # Size of the population
         "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM
-        "max_value" : max_value,   
+        "max_value" : max_value,                                                                # Value used in SLiM to calculate the fecundity weight (other than 0 on the second value allows reproductive variance)
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
         "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : float(global_config["mutation_rate"]),                                  # Mutation rate used during mutation simulation
+        "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
