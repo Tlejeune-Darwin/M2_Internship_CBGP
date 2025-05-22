@@ -30,7 +30,11 @@ desktop_path <- if (dir.exists(file.path(home_path, "Desktop"))) {
 }
 
 # Complete path
+<<<<<<< Updated upstream
 file_path_data <- file.path("C:/Users/poupe/simulations/data_model.csv")
+=======
+file_path <- file.path(desktop_path, "simulations", "summary_table_all_batches.csv")
+>>>>>>> Stashed changes
 
 # Reading file
 data <- read_csv(file_path_data)
