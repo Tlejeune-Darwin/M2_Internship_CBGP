@@ -162,7 +162,7 @@ if ("pop_size" %in% colnames(data_clean)) {
 ```{r}
 # 5. Prélèvement de 20 000 lignes aléatoires
 n_total <- nrow(data_clean)
-n_sample <- min(20000, n_total)
+n_sample <- min(15000, n_total)
 sample_indices <- sample(seq_len(n_total), size = n_sample, replace = FALSE)
 
 data_clean <- data_clean[sample_indices, ]
@@ -216,7 +216,7 @@ target_param_N <- "pop_size"
 learning_data_N_all <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_N_all <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_all, ntree = 50)
+model_rf_N_all <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_all, ntree = 400)
 summary(model_rf_N_all)
 
 ```
@@ -228,7 +228,7 @@ target_param_N <- "pop_size"
 learning_data_N_CMR <- bind_cols(y = params_N[[target_param_N]], stats_table_N) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_N_CMR <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_CMR, ntree = 50)
+model_rf_N_CMR <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_CMR, ntree = 400)
 summary(model_rf_N_CMR)
 
 ```
@@ -240,7 +240,7 @@ target_param_N <- "pop_size"
 learning_data_N_gen<- bind_cols(y = params_Ne[[target_param_N]], stats_table_Ne) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_N_gen <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_gen, ntree = 50)
+model_rf_N_gen <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_gen, ntree = 400)
 summary(model_rf_N_gen)
 
 ```
@@ -252,7 +252,7 @@ target_param_Ne <- "Harmonic_Ne"
 learning_data_Ne_all <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_all <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_all, ntree = 50)
+model_rf_Ne_all <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_all, ntree = 400)
 summary(model_rf_Ne_all)
 
 ```
@@ -265,7 +265,7 @@ target_param_Ne <- "Harmonic_Ne"
 learning_data_Ne_gen <- bind_cols(y = params_Ne[[target_param_Ne]], stats_table_Ne) %>% rename(!!target_param_Ne := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_gen <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_gen, ntree = 50)
+model_rf_Ne_gen <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_gen, ntree = 400)
 summary(model_rf_Ne_gen)
 
 ```
@@ -278,7 +278,7 @@ target_param_Ne <- "Harmonic_Ne"
 learning_data_Ne_CMR <- bind_cols(y = params_N[[target_param_Ne]], stats_table_N) %>% rename(!!target_param_Ne := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_CMR <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_CMR, ntree = 50)
+model_rf_Ne_CMR <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_CMR, ntree = 400)
 summary(model_rf_Ne_CMR)
 
 ```
@@ -290,7 +290,7 @@ target_param_Ne_N <- "Ne_N_ratio"
 learning_data_Ne_N <- bind_cols(y = params[[target_param_Ne_N]], stats_table) %>% rename(!!target_param_Ne_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 100)
+model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 400)
 summary(model_rf_Ne_N)
 
 ```
@@ -419,7 +419,7 @@ target_param_Ne_N <- "Ne_N_ratio"
 learning_data_Ne_N <- bind_cols(y = params[[target_param_Ne_N]], stats_table) %>% rename(!!target_param_Ne_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 100)
+model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 400)
 summary(model_rf_Ne_N)
 
 ```
@@ -568,6 +568,11 @@ ggplot(importance_top_Ne_N, aes(x = Statistic, y = Importance, fill = color)) +
   ) +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
+
+```
+```{r}
+subset_ref <- reference_table[sample(1:nrow(reference_table), 2000), ]
+predictOOB(abcrf_model, refTable = subset_ref, training = TRUE)
 
 ```
 
