@@ -6,7 +6,7 @@ output: html_document
 runtime: shiny
 ---
 
-```{r = Package libraries} 
+```{r = Package libraries}
 
 library(tidyverse)
 library(abcrf)
@@ -40,7 +40,7 @@ data <- read_csv(file_path_data)
 ```{r = Hard cleaning (Column removal - Automatic version)}
 
 # Function that will search every column and count the "NA", then remove the columns having too much missing values according to the threshold
-remove_high_na_cols <- function(data, threshold = 0.01) {
+remove_high_na_cols <- function(data, threshold = 0.1) {
   total_rows <- nrow(data)
   na_summary <- data %>%
     summarise(across(everything(), ~ sum(is.na(.)))) %>%
@@ -83,42 +83,55 @@ cols_to_remove <- c(
   "P_Ne_0.050", "P_Ne_0.020", "P_Ne_0.010", "P_Ne_0.000",
   "N_Ne_0.050", "N_Ne_0.020", "N_Ne_0.010", "N_Ne_0.000",
   "J_Ne_0.050", "J_Ne_0.020", "J_Ne_0.010", "J_Ne_0.000",
-
+  
+  #"mean_exp_het_pop2", "mean_exp_het_pop1",
+  #"var_alleles_pop2", "var_alleles_pop1", 
+  #"var_allele_size_pop2", "var_allele_size_pop1",
+  #"sum_alleles_pop1", "sum_alleles_pop2",
+  #"mean_obs_het_pop1", "mean_obs_het_pop2",
+  #"mean_alleles_pop1", "mean_alleles_pop2",
+  
   # census_N & batch
   "census_N_1", "census_N_2", "census_N_3", "census_N_4", 
   "census_N_5", "census_N_6", "census_N_7", "census_N_8",
   "census_N_9", "census_N_10", "census_N_11",
-  "batch",
-
-  # Historic genetic stats
-  "mean_alleles_pop1", "mean_alleles_pop2",
-  "sum_alleles_pop1", "sum_alleles_pop2",
-  "mean_exp_het_pop1", "mean_exp_het_pop2",
-  "mean_obs_het_pop1", "mean_obs_het_pop2",
-  "var_alleles_pop1", "var_alleles_pop2"
-)
+  "batch", "simulation_id")
 
 # Remove the lines with NA
 data_clean <- data_clean %>% 
   select(-any_of(cols_to_remove)) %>%
   na.omit()
 
+# Add random columns with values between 0 and 100
+data_clean <- data_clean %>%
+  mutate(
+    random_1 = runif(n(), min = 0, max = 100),
+    random_2 = runif(n(), min = 0, max = 100),
+    random_3 = runif(n(), min = 0, max = 100)
+  )
 ```
 
-```{r =0MatchCount mean and variance calculations }
+```{r = MatchCount mean and variance calculations }
 
-# 1. Create a vector for all MatchCount values
-matchcount_cols <- grep("MatchCount", names(data_clean), value = TRUE)
+## {r = MatchCount mean, variance, median & CV calculations }
 
-# 2. Calculate mean and variance from the MatchCount vector
+# 1. Récupère toutes les colonnes MatchCount
+matchcount_cols <- grep("^MatchCount", names(data_clean), value = TRUE)
+
+# 2. Calcule la moyenne et la variance
 data_clean$MatchCount_mean <- rowMeans(data_clean[, matchcount_cols], na.rm = TRUE)
-data_clean$MatchCount_var  <- apply(data_clean[, matchcount_cols], 1, var, na.rm = TRUE)
+data_clean$MatchCount_var  <- apply(data_clean[, matchcount_cols],  1, var,    na.rm = TRUE)
 
-# Create a second vector containing all the other columns to keep them
-other_cols <- setdiff(names(data_clean), matchcount_cols)
+# 3. Calcule la médiane
+data_clean$MatchCount_median <- apply(data_clean[, matchcount_cols], 1, median, na.rm = TRUE)
 
-# Add the new MatchCount columns to the dataframe
-data_clean <- data_clean[,other_cols]
+# 4. Calcule l’écart-type et le coefficient de variation (CV = SD / mean)
+data_clean$MatchCount_sd <- apply(data_clean[, matchcount_cols], 1, sd, na.rm = TRUE)
+data_clean$MatchCount_cv <- data_clean$MatchCount_sd / data_clean$MatchCount_mean
+
+# 5. Conserve toutes les autres colonnes (en supprimant les colonnes "brutes" MatchCount_*)
+other_cols   <- setdiff(names(data_clean), matchcount_cols)
+data_clean   <- data_clean[, other_cols]
 
 ```
 
@@ -146,16 +159,26 @@ if ("pop_size" %in% colnames(data_clean)) {
 
 ```
 
+```{r}
+# 5. Prélèvement de 20 000 lignes aléatoires
+n_total <- nrow(data_clean)
+n_sample <- min(20000, n_total)
+sample_indices <- sample(seq_len(n_total), size = n_sample, replace = FALSE)
+
+data_clean <- data_clean[sample_indices, ]
+
+```
+
 ```{r = Set the parameters and resuming statistics tables}
 
 # This part allows to make a overall dataframe with all the informative resuming statistics
 # List of parameters
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+param_cols <- c("pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
                 "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
 params <- data_clean %>% select(all_of(param_cols))
 
 # List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_", "random")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table <- data_clean %>% select(all_of(stat_cols))
 
@@ -164,11 +187,11 @@ stats_table <- data_clean %>% select(all_of(stat_cols))
 ```{r = Stats table : CMR}
 
 # This part is useful for the study of N estimations, only ecological statistics are represented
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+param_cols <- c("pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
                 "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
 params_N <- data_clean %>% select(all_of(param_cols))
 
-stat_keywords <- c("id", "MatchCount_")
+stat_keywords <- c("id", "MatchCount_", "random")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table_N <- data_clean %>% select(all_of(stat_cols))
 ```
@@ -176,11 +199,11 @@ stats_table_N <- data_clean %>% select(all_of(stat_cols))
 ```{r = Stats table : Genetic}
 
 # This part is useful for the study of Ne estimations, only genetic statistics are represented
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
+param_cols <- c("pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
                 "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
 params_Ne <- data_clean %>% select(all_of(param_cols))
 
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_")
+stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "random")
 stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
 stats_table_Ne <- data_clean %>% select(all_of(stat_cols))
 ```
@@ -193,46 +216,70 @@ target_param_N <- "pop_size"
 learning_data_N_all <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_N_all <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_all, ntree = 100)
+model_rf_N_all <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_all, ntree = 50)
 summary(model_rf_N_all)
 
 ```
 
-```{r = ABCRF model - pop_size - specific data}
-
+```{r = ABCRF model - pop_size - CMR data}
 # Use the specific data ("MatchCount") to get N predictions and construct the model
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_N <- "pop_size"
-learning_data_N_spe <- bind_cols(y = params_N[[target_param_N]], stats_table_N) %>% rename(!!target_param_N := y)
+learning_data_N_CMR <- bind_cols(y = params_N[[target_param_N]], stats_table_N) %>% rename(!!target_param_N := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_N_spe <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_spe, ntree = 100)
-summary(model_rf_N_spe)
+model_rf_N_CMR <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_CMR, ntree = 50)
+summary(model_rf_N_CMR)
 
 ```
 
-```{r = ABCRF model - Reailized_Ne - all data}
+```{r = ABCRF model - pop_size - genetic data}
+# Use the specific data ("MatchCount") to get N predictions and construct the model
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_N <- "pop_size"
+learning_data_N_gen<- bind_cols(y = params_Ne[[target_param_N]], stats_table_Ne) %>% rename(!!target_param_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_N_gen <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_gen, ntree = 50)
+summary(model_rf_N_gen)
+
+```
+
+```{r = ABCRF model - Realized_Ne - all data}
 
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_Ne <- "Harmonic_Ne"
 learning_data_Ne_all <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_all <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_all, ntree = 100)
+model_rf_Ne_all <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_all, ntree = 50)
 summary(model_rf_Ne_all)
 
 ```
 
-```{r = ABCRF model - Realized_Ne - specific data}
+```{r = ABCRF model - Realized_Ne - genetic data}
 
 # Use "Harmonic_Ne" as the target parameter. It will be used by the ABC-RF model to choose which resuming statistics are the most useful to predict Ne values.
 # Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
 target_param_Ne <- "Harmonic_Ne"
-learning_data_Ne_spe <- bind_cols(y = params_Ne[[target_param_Ne]], stats_table_Ne) %>% rename(!!target_param_Ne := y)
+learning_data_Ne_gen <- bind_cols(y = params_Ne[[target_param_Ne]], stats_table_Ne) %>% rename(!!target_param_Ne := y)
 
 # Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
-model_rf_Ne_spe <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_spe, ntree = 100)
-summary(model_rf_Ne_spe)
+model_rf_Ne_gen <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_gen, ntree = 50)
+summary(model_rf_Ne_gen)
+
+```
+
+```{r = ABCRF model - Realized_Ne - CMR data}
+
+# Use "Harmonic_Ne" as the target parameter. It will be used by the ABC-RF model to choose which resuming statistics are the most useful to predict Ne values.
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_Ne <- "Harmonic_Ne"
+learning_data_Ne_CMR <- bind_cols(y = params_N[[target_param_Ne]], stats_table_N) %>% rename(!!target_param_Ne := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_Ne_CMR <- regAbcrf(as.formula(paste(target_param_Ne, "~ .")), data = learning_data_Ne_CMR, ntree = 50)
+summary(model_rf_Ne_CMR)
 
 ```
 
@@ -251,28 +298,34 @@ summary(model_rf_Ne_N)
 ```{r = Stat importance for ABCRF model - pop_size - all_data}
 
 # Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
-importance_df_N <- model_rf_N_all$model.rf$variable.importance %>%
+importance_df_N_all <- model_rf_N_all$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
 
 # Only keep the 20 most useful variable 
 top_n <- 20
 # Create a variable of colour on the "simulation_id". Its the variable that shows every other variable non pertinent to the model. Every variables that are below this one are significantly unuseful.
-importance_top_N <- importance_df_N %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
-  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
-  slice_max(order_by = Importance, n = top_n)
-
-importance_top_N <- importance_top_N %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
+# Créer une variable de couleur
+importance_top_N_all <- importance_df_N_all %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median", "MatchCount_cv", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
 
 # Graphic 
-ggplot(importance_top_N, aes(x = Statistic, y = Importance, fill = color)) +
+ggplot(importance_top_N_all, aes(x = Statistic, y = Importance, fill = color)) +
   geom_col() +
   coord_flip() +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
   labs(
-    title = paste("Top", top_n, "most important variables for", target_param_N),
+    title = "Important resuming stats - All_data - N",
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
@@ -280,64 +333,128 @@ ggplot(importance_top_N, aes(x = Statistic, y = Importance, fill = color)) +
   theme(legend.position = "none")
 
 ```
-```{r = Stat importance for ABCRF model - pop_size - specific}
+
+```{r = Stat importance for ABCRF model - pop_size - CMR}
 
 # Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
-importance_df_N <- model_rf_N_spe$model.rf$variable.importance %>%
+importance_df_N_CMR <- model_rf_N_CMR$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
 
 # Only keep the 20 most useful variable 
 top_n <- 20
 # Create a variable of colour on the "simulation_id". Its the variable that shows every other variable non pertinent to the model. Every variables that are below this one are significantly unuseful.
-importance_top_N <- importance_df_N %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
-  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
-  slice_max(order_by = Importance, n = top_n)
-
-importance_top_N <- importance_top_N %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
+# Créer une variable de couleur
+importance_top_N_CMR <- importance_df_N_CMR %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
 
 # Graphic 
-ggplot(importance_top_N, aes(x = Statistic, y = Importance, fill = color)) +
+ggplot(importance_top_N_CMR, aes(x = Statistic, y = Importance, fill = color)) +
   geom_col() +
   coord_flip() +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
   labs(
-    title = paste("Top", top_n, "most important variables for", target_param_N),
+    title = "Important resuming stats - CMR_only - Ne",
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
   theme_minimal(base_size = 14) +
   theme(legend.position = "none")
+
+```
+
+```{r = Stat importance for ABCRF model - pop_size - genetic}
+
+# Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
+importance_df_N_gen <- model_rf_N_gen$model.rf$variable.importance %>%
+  sort(decreasing = TRUE) %>%
+  enframe(name = "Statistic", value = "Importance")
+
+# Only keep the 20 most useful variable 
+top_n <- 20
+# Create a variable of colour on the "simulation_id". Its the variable that shows every other variable non pertinent to the model. Every variables that are below this one are significantly unuseful.
+# Créer une variable de couleur
+importance_top_N_gen <- importance_df_N_gen %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
+
+# Graphic 
+ggplot(importance_top_N_gen, aes(x = Statistic, y = Importance, fill = color)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
+  labs(
+    title = "Important resuming stats - Genetic_only - N",
+    x = "Statistics",
+    y = "Importance (abcrf)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+```
+
+```{r = ABCRF model - Ne_N_ratio - all data}
+
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_Ne_N <- "Ne_N_ratio"
+learning_data_Ne_N <- bind_cols(y = params[[target_param_Ne_N]], stats_table) %>% rename(!!target_param_Ne_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_Ne_N <- regAbcrf(as.formula(paste(target_param_Ne_N, "~ .")), data = learning_data_Ne_N, ntree = 100)
+summary(model_rf_Ne_N)
 
 ```
 
 ```{r = Stat importance for ABCRF model - Harmonic Ne - all_data}
 
 # Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
-importance_df_Ne <- model_rf_Ne_all$model.rf$variable.importance %>%
+importance_df_Ne_all <- model_rf_Ne_all$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
 
 # 2. Ne garder que les 20 premières variables
 top_n <- 20
 # Créer une variable de couleur
-importance_top_Ne <- importance_df_Ne %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
-  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
-  slice_max(order_by = Importance, n = top_n)
+# Créer une variable de couleur
+importance_top_Ne_all <- importance_df_Ne_all %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median","MatchCount_cv", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
 
-importance_top_Ne <- importance_top_Ne %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
-
-# Graphique
-ggplot(importance_top_Ne, aes(x = Statistic, y = Importance, fill = color)) +
+# Graphic 
+ggplot(importance_top_Ne_all, aes(x = Statistic, y = Importance, fill = color)) +
   geom_col() +
   coord_flip() +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
   labs(
-    title = paste("Top", top_n, "most important variables for", target_param_Ne),
+    title = "Important resuming stats - all_data - Ne",
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
@@ -345,31 +462,75 @@ ggplot(importance_top_Ne, aes(x = Statistic, y = Importance, fill = color)) +
   theme(legend.position = "none")
 ```
 
-```{r = Stat importance for ABCRF model - Harmonic Ne - specific}
+```{r = Stat importance for ABCRF model - Harmonic Ne - genetic}
 
 # Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
-importance_df_Ne <- model_rf_Ne_spe$model.rf$variable.importance %>%
+importance_df_Ne_gen <- model_rf_Ne_gen$model.rf$variable.importance %>%
+  sort(decreasing = TRUE) %>%
+  enframe(name = "Statistic", value = "Importance")
+
+# 2. Ne garder que les 20 premières variables
+top_n <- 20
+
+importance_top_Ne_gen <- importance_df_N_gen %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
+
+# Graphic 
+ggplot(importance_top_Ne_gen, aes(x = Statistic, y = Importance, fill = color)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
+  labs(
+    title = "Important resuming stats - Genetic_only - Ne",
+    x = "Statistics",
+    y = "Importance (abcrf)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+```
+
+```{r = Stat importance for ABCRF model - Harmonic Ne - CMR}
+
+# Determines the order of importance of every resuming stat in the dataframe concerning the prediction of the parameter
+importance_df_Ne_CMR <- model_rf_Ne_CMR$model.rf$variable.importance %>%
   sort(decreasing = TRUE) %>%
   enframe(name = "Statistic", value = "Importance")
 
 # 2. Ne garder que les 20 premières variables
 top_n <- 20
 # Créer une variable de couleur
-importance_top_Ne <- importance_df_Ne %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal")) %>%
-  mutate(Statistic = fct_reorder(Statistic, Importance)) %>%
-  slice_max(order_by = Importance, n = top_n)
+# Créer une variable de couleur
+importance_top_Ne_CMR <- importance_df_Ne_CMR %>%
+  slice_max(order_by = Importance, n = top_n) %>%
+  mutate(color = case_when(
+    Statistic %in% c("random_1", "random_2", "random_3") ~ "highlight",
+    Statistic %in% c("MatchCount_var", "MatchCount_mean", "MatchCount_median", "MatchCount_sd") ~ "match",
+    TRUE ~ "normal"
+  )) %>%
+  mutate(Statistic = fct_reorder(Statistic, Importance))
 
-importance_top_Ne <- importance_top_Ne %>%
-  mutate(color = ifelse(Statistic == "simulation_id", "highlight", "normal"))
-
-# Graphique
-ggplot(importance_top_Ne, aes(x = Statistic, y = Importance, fill = color)) +
+# Graphic 
+ggplot(importance_top_Ne_CMR, aes(x = Statistic, y = Importance, fill = color)) +
   geom_col() +
   coord_flip() +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "steelblue")) +
+  scale_fill_manual(values = c(
+    "highlight" = "red",
+    "match" = "darkgreen",
+    "normal" = "steelblue"
+  )) +
   labs(
-    title = paste("Top", top_n, "most important variables for", target_param_Ne),
+    title = "Important resuming stats - CMR_only - Ne",
     x = "Statistics",
     y = "Importance (abcrf)"
   ) +
@@ -410,23 +571,9 @@ ggplot(importance_top_Ne_N, aes(x = Statistic, y = Importance, fill = color)) +
 
 ```
 
-```{r = Prediction values of the model}
-
-# Use the model to make the predictions according to the "observed data" from the Out-Of-Bag "OOB"
-predictions <- predict(model_rf, training = learning_data, obs = learning_data)$expectation
-
-# Plotting the curve demonstrating the differences of the predictions of the dataframe studied with the target data from the Out-Of-Bag
-plot(learning_data[[target_param]], predictions,
-     xlab = "Real pop_size", ylab = "Predicted pop_size (OOB)",
-     main = "Real vs prediction",
-     pch = 20, col = "blue")
-abline(0, 1, col = "red")
-
-```
-
 ```{r prediction vs true value - pop_size - all_data}
 
-# Create a dataframe with the real values and prediction 
+# Création du dataframe avec vraies valeurs et prédictions
 prediction_df_N_all <- data.frame(
   pop_size = learning_data_N_all$pop_size,
   prediction = model_rf_N_all$model.rf$predictions
@@ -435,35 +582,39 @@ prediction_df_N_all <- data.frame(
 res_N_all <- predictOOB(model_rf_N_all, training = learning_data_N_all)
 
 out_N_all <- data.frame(
-  simulation_id = learning_data_N_all$simulation_id,
-  true = learning_data_N_all$pop_size,
-  pred = res_N_all$expectation
+  random_1 = learning_data_N_all$random_1,
+  true_N_all = learning_data_N_all$pop_size,
+  pred_N_all = res_N_all$expectation
 )
 
-# Erreur relative
-out_N_all$rel_error <- abs(out_N_all$pred - out_N_all$true) / out_N_all$true
+# Calcul de l'erreur relative
+out_N_all$rel_error <- abs(out_N_all$pred_N_all - out_N_all$true_N_all) / out_N_all$true_N_all
 
-# Marquage des outliers
-threshold <- quantile(out_N_all$rel_error, 0.95, na.rm = TRUE)
-out_N_all$is_outlier <- out_N_all$rel_error > threshold
+# Marquage des outliers : les 0.5% les plus éloignés
+percentile_cutoff <- 0.999  # 0.5% les plus extrêmes
+threshold_error <- quantile(out_N_all$rel_error, percentile_cutoff, na.rm = TRUE)
+out_N_all$is_outlier <- out_N_all$rel_error > threshold_error
 
-# Extraire juste les stats résumantes
-stats_only <- learning_data_N_all %>%
-  select(-pop_size)
+# Supprimer les bornes (plus utiles ici)
+out_N_all$lower_bound <- NA
+out_N_all$upper_bound <- NA
 
-# Fusion sur simulation_id
-out_N_all <- left_join(out_N_all, stats_only, by = "simulation_id")
+# Fusionner les stats résumantes
+stats_only <- learning_data_N_all %>% select(-pop_size)
+out_N_all <- left_join(out_N_all, stats_only, by = "random_1")
 
-ggplot(out_N_all, aes(x = true, y = pred)) +
+# Affichage graphique
+ggplot(out_N_all, aes(x = true_N_all, y = pred_N_all)) +
   geom_point(aes(color = is_outlier), alpha = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   scale_x_log10() + scale_y_log10() +
-  labs(title = "All_data_N - Outliers 5%",
-       x = "Valeur vraie (N)",
-       y = "Valeur prédite",
+  labs(title = paste0("All_data_N – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+       x = "True_value (N)",
+       y = "Prediction",
        color = "Outlier ?") +
   theme_minimal()
+
 
 # Moyennes par groupe
 out_stats_N_all <- out_N_all %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
@@ -477,14 +628,14 @@ diffs_N_all <- t(out_stats_N_all - non_out_stats_N_all) %>%
   arrange(desc(abs(diff)))
 
 out_N_all$estimation_type <- case_when(
-  out_N_all$is_outlier & out_N_all$pred > out_N_all$true ~ "surestimation",
-  out_N_all$is_outlier & out_N_all$pred < out_N_all$true ~ "sousestimation",
+  out_N_all$is_outlier & out_N_all$pred_N_all > out_N_all$true_N_all ~ "surestimation",
+  out_N_all$is_outlier & out_N_all$pred_N_all < out_N_all$true_N_all ~ "sousestimation",
   TRUE ~ "correct"
 )
 
 ggplot(out_N_all, aes(x = estimation_type)) +
   geom_bar(fill = "steelblue") +
-  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 5) +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
   labs(title = "Répartition des types d'erreur parmi les outliers",
        x = "Type d’estimation",
        y = "Nombre de simulations") +
@@ -500,76 +651,117 @@ ggplot(head(diffs_N_all, 10), aes(x = reorder(stat, diff), y = diff)) +
        y = "Différence de moyenne") +
   theme_minimal()
 
+# Vraies valeurs
+true_values_N_all <- learning_data_N_all$pop_size
+
+# Prédictions
+predicted_N_all <- res_N_all$expectation
+
+# RMSE
+rmse_N_all <- sqrt(res_N_all$MSE)
+
+# Biais
+bias_N_all <- mean(predicted_N_all - true_values_N_all)
+
+# R²
+r2_N_all <- 1 - sum((true_values_N_all - predicted_N_all)^2) / sum((true_values_N_all - mean(true_values_N_all))^2)
+
+# RMSE_relative
+rmse_re_N_all <- mean((predicted_N_all - true_values_N_all)^2 / true_values_N_all^2)
+sqrt(rmse_N_all)
+
+# Biais_relatif
+bias_re_N_all <- mean((predicted_N_all - true_values_N_all) / true_values_N_all)
+
+coverage_N_all <- res_N_all$coverage
+
+cat("N_All_data", "\n")
+cat("Coverage    : ", coverage_N_all, "\n")
+cat("RMSE        : ", rmse_N_all, "\n")
+cat("Bias        : ", bias_N_all, "\n")
+cat("R²          : ", r2_N_all, "\n")
+cat("RMSE (rel)  : ", rmse_re_N_all, "\n")
+cat("Bias (rel)  : ", bias_re_N_all, "\n")
 ```
 
-```{r prediction vs true value - pop_size - specific}
+```{r prediction vs true value - pop_size - CMR}
 
-# Create a dataframe with the real values and prediction 
-prediction_df_N_spe <- data.frame(
-  pop_size = learning_data_N_spe$pop_size,
-  prediction = model_rf_N_spe$model.rf$predictions
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_N_CMR <- data.frame(
+  pop_size = learning_data_N_CMR$pop_size,
+  prediction = model_rf_N_CMR$model.rf$predictions
 )
 
-res_N_spe <- predictOOB(model_rf_N_spe, training = learning_data_N_spe)
+res_N_CMR <- predictOOB(model_rf_N_CMR, training = learning_data_N_CMR)
 
-out_N_spe <- data.frame(
-  simulation_id = learning_data_N_spe$simulation_id,
-  true = learning_data_N_spe$pop_size,
-  pred = res_N_spe$expectation
+out_N_CMR <- data.frame(
+  random_1 = learning_data_N_CMR$random_1,
+  true_N_CMR = learning_data_N_CMR$pop_size,
+  pred_N_CMR = res_N_CMR$expectation
 )
 
 # Erreur relative
-out_N_spe$rel_error <- abs(out_N_spe$pred - out_N_spe$true) / out_N_spe$true
+out_N_CMR$rel_error <- abs(out_N_CMR$pred_N_CMR - out_N_CMR$true_N_CMR) / out_N_CMR$true_N_CMR
+
+# Seuil quantile local (0.5% des pires erreurs relatives)
+percentile_cutoff <- 0.999
+threshold_error_CMR <- quantile(out_N_CMR$rel_error, percentile_cutoff, na.rm = TRUE)
 
 # Marquage des outliers
-threshold <- quantile(out_N_spe$rel_error, 0.95, na.rm = TRUE)
-out_N_spe$is_outlier <- out_N_spe$rel_error > threshold
+out_N_CMR$is_outlier <- out_N_CMR$rel_error > threshold_error_CMR
+
+# (On supprime les bornes inutiles)
+out_N_CMR$lower_bound <- NA
+out_N_CMR$upper_bound <- NA
 
 # Extraire juste les stats résumantes
-stats_only <- learning_data_N_spe %>%
+stats_only <- learning_data_N_CMR %>%
   select(-pop_size)
 
-# Fusion sur simulation_id
-out_N_spe <- left_join(out_N_spe, stats_only, by = "simulation_id")
+# Fusion par random_1
+out_N_CMR <- left_join(out_N_CMR, stats_only, by = "random_1")
 
-ggplot(out_N_spe, aes(x = true, y = pred)) +
+# Affichage graphique
+ggplot(out_N_CMR, aes(x = true_N_CMR, y = pred_N_CMR)) +
   geom_point(aes(color = is_outlier), alpha = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   scale_x_log10() + scale_y_log10() +
-  labs(title = "CMR_only_N - Outliers 5%",
-       x = "Valeur vraie (N)",
-       y = "Valeur prédite",
-       color = "Outlier ?") +
+  labs(
+    title = paste0("CMR_only_N – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+    x = "True_value (N)",
+    y = "Prediction",
+    color = "Outlier ?"
+  ) +
   theme_minimal()
 
 # Moyennes par groupe
-out_stats_N_spe <- out_N_spe %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
-non_out_stats_N_spe <- out_N_spe %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+out_stats_N_CMR <- out_N_CMR %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+non_out_stats_N_CMR <- out_N_CMR %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
 
 # Comparaison
-diffs_N_spe <- t(out_stats_N_spe - non_out_stats_N_spe) %>%
+diffs_N_CMR <- t(out_stats_N_CMR - non_out_stats_N_CMR) %>%
   as.data.frame() %>%
   rename(diff = V1) %>%
   tibble::rownames_to_column("stat") %>%
   arrange(desc(abs(diff)))
 
-out_N_spe$estimation_type <- case_when(
-  out_N_spe$is_outlier & out_N_spe$pred > out_N_spe$true ~ "surestimation",
-  out_N_spe$is_outlier & out_N_spe$pred < out_N_spe$true ~ "sousestimation",
+out_N_CMR$estimation_type <- case_when(
+  out_N_CMR$is_outlier & out_N_CMR$pred_N_CMR > out_N_CMR$true_N_CMR ~ "surestimation",
+  out_N_CMR$is_outlier & out_N_CMR$pred_N_CMR < out_N_CMR$true_N_CMR ~ "sousestimation",
   TRUE ~ "correct"
 )
 
-ggplot(out_N_spe, aes(x = estimation_type)) +
+ggplot(out_N_CMR, aes(x = estimation_type)) +
   geom_bar(fill = "steelblue") +
-  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 5) +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
   labs(title = "Répartition des types d'erreur parmi les outliers",
        x = "Type d’estimation",
        y = "Nombre de simulations") +
   theme_minimal(base_size = 14)
 
 # Visualisation
-ggplot(head(diffs_N_spe, 10), aes(x = reorder(stat, diff), y = diff)) +
+ggplot(head(diffs_N_CMR, 10), aes(x = reorder(stat, diff), y = diff)) +
   geom_bar(stat = "identity", fill = "#F8766D") +
   coord_flip() +
   labs(title = "Différence de moyenne des stats (outliers vs non-outliers)",
@@ -577,7 +769,154 @@ ggplot(head(diffs_N_spe, 10), aes(x = reorder(stat, diff), y = diff)) +
        y = "Différence de moyenne") +
   theme_minimal()
 
+# Vraies valeurs
+true_values_N_CMR <- learning_data_N_CMR$pop_size
 
+# Prédictions
+predicted_N_CMR <- res_N_CMR$expectation
+
+# RMSE
+rmse_N_CMR <- sqrt(res_N_CMR$MSE)
+
+# Biais
+bias_N_CMR <- mean(predicted_N_CMR - true_values_N_CMR)
+
+# R²
+r2_N_CMR <- 1 - sum((true_values_N_CMR - predicted_N_CMR)^2) / sum((true_values_N_CMR - mean(true_values_N_CMR))^2)
+
+# RMSE_relative
+rmse_re_N_CMR <- mean((predicted_N_CMR - true_values_N_CMR)^2 / true_values_N_CMR^2)
+sqrt(rmse_N_CMR)
+
+# Biais_relatif
+bias_re_N_CMR <- mean((predicted_N_CMR - true_values_N_CMR) / true_values_N_CMR)
+
+coverage_N_CMR <- res_N_CMR$coverage
+
+cat("N_CMR_only", "\n")
+cat("Coverage    : ", coverage_N_CMR, "\n")
+cat("RMSE        : ", rmse_N_CMR, "\n")
+cat("Bias        : ", bias_N_CMR, "\n")
+cat("R²          : ", r2_N_CMR, "\n")
+cat("RMSE (rel)  : ", rmse_re_N_CMR, "\n")
+cat("Bias (rel)  : ", bias_re_N_CMR, "\n")
+```
+
+```{r prediction vs true value - pop_size - Genetic}
+
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_N_gen <- data.frame(
+  pop_size = learning_data_N_gen$pop_size,
+  prediction = model_rf_N_gen$model.rf$predictions
+)
+
+res_N_gen <- predictOOB(model_rf_N_gen, training = learning_data_N_gen)
+
+out_N_gen <- data.frame(
+  random_1 = learning_data_N_gen$random_1,
+  true_N_gen = learning_data_N_gen$pop_size,
+  pred_N_gen = res_N_gen$expectation
+)
+
+# Calcul de l’erreur relative
+out_N_gen$rel_error <- abs(out_N_gen$pred_N_gen - out_N_gen$true_N_gen) / out_N_gen$true_N_gen
+
+# Définir les outliers comme les 0.5% des erreurs relatives les plus élevées
+percentile_cutoff <- 0.999
+threshold_error_gen <- quantile(out_N_gen$rel_error, percentile_cutoff, na.rm = TRUE)
+
+# Marquage des outliers
+out_N_gen$is_outlier <- out_N_gen$rel_error > threshold_error_gen
+
+# Supprimer les bornes inutiles
+out_N_gen$lower_bound <- NA
+out_N_gen$upper_bound <- NA
+
+# Fusionner les stats résumantes
+stats_only <- learning_data_N_gen %>%
+  select(-pop_size)
+
+out_N_gen <- left_join(out_N_gen, stats_only, by = "random_1")
+
+# Affichage graphique
+ggplot(out_N_gen, aes(x = true_N_gen, y = pred_N_gen)) +
+  geom_point(aes(color = is_outlier), alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
+  scale_x_log10() + scale_y_log10() +
+  labs(
+    title = paste0("Genetic_only_N – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+    x = "True_value (N)",
+    y = "Prediction",
+    color = "Outlier ?"
+  ) +
+  theme_minimal()
+
+# Moyennes par groupe
+out_stats_N_gen <- out_N_gen %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+non_out_stats_N_gen <- out_N_gen %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+
+# Comparaison
+diffs_N_gen <- t(out_stats_N_gen - non_out_stats_N_gen) %>%
+  as.data.frame() %>%
+  rename(diff = V1) %>%
+  tibble::rownames_to_column("stat") %>%
+  arrange(desc(abs(diff)))
+
+out_N_gen$estimation_type <- case_when(
+  out_N_gen$is_outlier & out_N_gen$pred_N_gen > out_N_gen$true_N_gen ~ "surestimation",
+  out_N_gen$is_outlier & out_N_gen$pred_N_gen < out_N_gen$true_N_gen ~ "sousestimation",
+  TRUE ~ "correct"
+)
+
+ggplot(out_N_gen, aes(x = estimation_type)) +
+  geom_bar(fill = "steelblue") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
+  labs(title = "Répartition des types d'erreur parmi les outliers",
+       x = "Type d’estimation",
+       y = "Nombre de simulations") +
+  theme_minimal(base_size = 14)
+
+# Visualisation
+ggplot(head(diffs_N_gen, 10), aes(x = reorder(stat, diff), y = diff)) +
+  geom_bar(stat = "identity", fill = "#F8766D") +
+  coord_flip() +
+  labs(title = "Différence de moyenne des stats (outliers vs non-outliers)",
+       x = "Statistique résumante",
+       y = "Différence de moyenne") +
+  theme_minimal()
+
+# Vraies valeurs
+true_values_N_gen <- learning_data_N_gen$pop_size
+
+# Prédictions
+predicted_N_gen <- res_N_gen$expectation
+
+# RMSE
+rmse_N_gen <- sqrt(res_N_gen$MSE)
+
+# Biais
+bias_N_gen <- mean(predicted_N_gen - true_values_N_gen)
+
+# R²
+r2_N_gen <- 1 - sum((true_values_N_gen - predicted_N_gen)^2) / sum((true_values_N_gen - mean(true_values_N_gen))^2)
+
+# RMSE_relative
+rmse_re_N_gen <- mean((predicted_N_gen - true_values_N_gen)^2 / true_values_N_gen^2)
+sqrt(rmse_N_gen)
+
+# Biais_relatif
+bias_re_N_gen <- mean((predicted_N_gen - true_values_N_gen) / true_values_N_gen)
+
+coverage_N_gen <- res_N_gen$coverage
+
+cat("N_Gen_only", "\n")
+cat("Coverage    : ", coverage_N_gen, "\n")
+cat("RMSE        : ", rmse_N_gen, "\n")
+cat("Bias        : ", bias_N_gen, "\n")
+cat("R²          : ", r2_N_gen, "\n")
+cat("RMSE (rel)  : ", rmse_re_N_gen, "\n")
+cat("Bias (rel)  : ", bias_re_N_gen, "\n")
 ```
 
 ```{r}
@@ -668,7 +1007,7 @@ ggplot(plot_data, aes(x = stat, y = count, fill = groupe)) +
 
 ```{r prediction vs true value - Harmonic_Ne - all_data}
 
-# Create a dataframe with the real values and prediction 
+# Créer un dataframe avec les vraies valeurs et les prédictions
 prediction_df_Ne_all <- data.frame(
   Harmonic_Ne = learning_data_Ne_all$Harmonic_Ne,
   prediction = model_rf_Ne_all$model.rf$predictions
@@ -677,35 +1016,45 @@ prediction_df_Ne_all <- data.frame(
 res_Ne_all <- predictOOB(model_rf_Ne_all, training = learning_data_Ne_all)
 
 out_Ne_all <- data.frame(
-  simulation_id = learning_data_Ne_all$simulation_id,
+  random_1 = learning_data_Ne_all$random_1,
   true = learning_data_Ne_all$Harmonic_Ne,
   pred = res_Ne_all$expectation
 )
 
-# Erreur relative
+# Calcul de l’erreur relative
 out_Ne_all$rel_error <- abs(out_Ne_all$pred - out_Ne_all$true) / out_Ne_all$true
 
-# Marquage des outliers
-threshold <- quantile(out_Ne_all$rel_error, 0.95, na.rm = TRUE)
-out_Ne_all$is_outlier <- out_Ne_all$rel_error > threshold
+# Marquage des outliers : seuil basé sur les 0.5% plus grosses erreurs
+percentile_cutoff <- 0.999
+threshold_error_Ne <- quantile(out_Ne_all$rel_error, percentile_cutoff, na.rm = TRUE)
 
-# Extraire juste les stats résumantes
+out_Ne_all$is_outlier <- out_Ne_all$rel_error > threshold_error_Ne
+
+# (Pas de bornes ici, on les ignore volontairement)
+out_Ne_all$lower_bound <- NA
+out_Ne_all$upper_bound <- NA
+
+# Extraire les stats résumantes
 stats_only <- learning_data_Ne_all %>%
   select(-Harmonic_Ne)
 
-# Fusion sur simulation_id
-out_Ne_all <- left_join(out_Ne_all, stats_only, by = "simulation_id")
+# Fusion avec les stats
+out_Ne_all <- left_join(out_Ne_all, stats_only, by = "random_1")
 
+# Visualisation
 ggplot(out_Ne_all, aes(x = true, y = pred)) +
   geom_point(aes(color = is_outlier), alpha = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   scale_x_log10() + scale_y_log10() +
-  labs(title = "All_data_Ne - Outliers 5%",
-       x = "Valeur vraie (N)",
-       y = "Valeur prédite",
-       color = "Outlier ?") +
+  labs(
+    title = paste0("All_data_Ne – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+    x = "True_value (Ne)",
+    y = "Prediction",
+    color = "Outlier ?"
+  ) +
   theme_minimal()
+
 
 # Moyennes par groupe
 out_stats_Ne_all <- out_Ne_all %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
@@ -726,7 +1075,7 @@ out_Ne_all$estimation_type <- case_when(
 
 ggplot(out_Ne_all, aes(x = estimation_type)) +
   geom_bar(fill = "steelblue") +
-  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 5) +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
   labs(title = "Répartition des types d'erreur parmi les outliers",
        x = "Type d’estimation",
        y = "Nombre de simulations") +
@@ -742,70 +1091,109 @@ ggplot(head(diffs_Ne_all, 10), aes(x = reorder(stat, diff), y = diff)) +
        y = "Différence de moyenne") +
   theme_minimal()
 
+# Vraies valeurs
+true_values_Ne_all <- learning_data_Ne_all$Harmonic_Ne
+
+# Prédictions
+predicted_Ne_all <- res_Ne_all$expectation
+
+# RMSE
+rmse_Ne_all <- sqrt(res_Ne_all$MSE)
+
+# Biais
+bias_Ne_all <- mean(predicted_Ne_all - true_values_Ne_all)
+
+# RMSE_relative
+rmse_re_Ne_all <- mean((predicted_Ne_all - true_values_Ne_all)^2 / true_values_Ne_all^2)
+
+# Biais_relatif
+bias_re_Ne_all <- mean((predicted_Ne_all - true_values_Ne_all) / true_values_Ne_all)
+
+# R²
+r2_Ne_all <- 1 - sum((true_values_Ne_all - predicted_Ne_all)^2) / sum((true_values_Ne_all - mean(true_values_Ne_all))^2)
+
+coverage_Ne_all <- res_Ne_all$coverage
+
+cat("Ne_All_data", "\n")
+cat("Coverage    : ", coverage_Ne_all, "\n")
+cat("RMSE        : ", rmse_Ne_all, "\n")
+cat("Bias        : ", bias_Ne_all, "\n")
+cat("R²          : ", r2_Ne_all, "\n")
+cat("RMSE (rel)  : ", rmse_re_Ne_all, "\n")
+cat("Bias (rel)  : ", bias_re_Ne_all, "\n")
+
 ```
 
-```{r prediction vs true value - Harmonic_Ne - specific}
+```{r prediction vs true value - Harmonic_Ne - Genetic}
 
-# Create a dataframe with the real values and prediction 
-prediction_df_Ne_spe <- data.frame(
-  Harmonic_Ne = learning_data_Ne_spe$Harmonic_Ne,
-  prediction = model_rf_Ne_spe$model.rf$predictions
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_Ne_gen <- data.frame(
+  Harmonic_Ne = learning_data_Ne_gen$Harmonic_Ne,
+  prediction = model_rf_Ne_gen$model.rf$predictions
 )
 
-res_Ne_spe <- predictOOB(model_rf_Ne_spe, training = learning_data_Ne_spe)
+res_Ne_gen <- predictOOB(model_rf_Ne_gen, training = learning_data_Ne_gen)
 
-out_Ne_spe <- data.frame(
-  simulation_id = learning_data_Ne_spe$simulation_id,
-  true = learning_data_Ne_spe$Harmonic_Ne,
-  pred = res_Ne_spe$expectation
+out_Ne_gen <- data.frame(
+  random_1 = learning_data_Ne_gen$random_1,
+  true = learning_data_Ne_gen$Harmonic_Ne,
+  pred = res_Ne_gen$expectation
 )
 
-# Erreur relative
-out_Ne_spe$rel_error <- abs(out_Ne_spe$pred - out_Ne_spe$true) / out_Ne_spe$true
+# Calcul de l’erreur relative
+out_Ne_gen$rel_error <- abs(out_Ne_gen$pred - out_Ne_gen$true) / out_Ne_gen$true
 
-# Marquage des outliers
-# Seuil basé sur le 95e percentile des erreurs relatives (top 5%)
-threshold <- quantile(out_Ne_spe$rel_error, 0.95, na.rm = TRUE)
-out_Ne_spe$is_outlier <- out_Ne_spe$rel_error > threshold
+# Marquage des outliers : seuil basé sur les 0.5% plus grosses erreurs
+percentile_cutoff <- 0.999
+threshold_error_Ne_gen <- quantile(out_Ne_gen$rel_error, percentile_cutoff, na.rm = TRUE)
 
-# Extraire juste les stats résumantes
-stats_only <- learning_data_Ne_spe %>%
+out_Ne_gen$is_outlier <- out_Ne_gen$rel_error > threshold_error_Ne_gen
+
+# Supprimer les bornes du tunnel (inutile ici)
+out_Ne_gen$lower_bound <- NA
+out_Ne_gen$upper_bound <- NA
+
+# Extraire les stats résumantes
+stats_only <- learning_data_Ne_gen %>%
   select(-Harmonic_Ne)
 
-# Fusion sur simulation_id
-out_Ne_spe <- left_join(out_Ne_spe, stats_only, by = "simulation_id")
+# Fusion des données
+out_Ne_gen <- left_join(out_Ne_gen, stats_only, by = "random_1")
 
-ggplot(out_Ne_spe, aes(x = true, y = pred)) +
+# Visualisation
+ggplot(out_Ne_gen, aes(x = true, y = pred)) +
   geom_point(aes(color = is_outlier), alpha = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   scale_x_log10() + scale_y_log10() +
-  labs(title = "Genetic_only - Outliers 5%",
-       x = "Valeur vraie (N)",
-       y = "Valeur prédite",
-       color = "Outlier ?") +
+  labs(
+    title = paste0("Genetic_only_Ne – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+    x = "True_value (Ne)",
+    y = "Prediction",
+    color = "Outlier ?"
+  ) +
   theme_minimal()
 
 # Moyennes par groupe
-out_stats_Ne_spe <- out_Ne_spe %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
-non_out_stats_Ne_spe <- out_Ne_spe %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+out_stats_Ne_gen <- out_Ne_gen %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+non_out_stats_Ne_gen <- out_Ne_gen %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
 
 # Comparaison
-diffs_Ne_spe <- t(out_stats_Ne_spe - non_out_stats_Ne_spe) %>%
+diffs_Ne_gen <- t(out_stats_Ne_gen - non_out_stats_Ne_gen) %>%
   as.data.frame() %>%
   rename(diff = V1) %>%
   tibble::rownames_to_column("stat") %>%
   arrange(desc(abs(diff)))
 
-out_Ne_spe$estimation_type <- case_when(
-  out_Ne_spe$is_outlier & out_Ne_spe$pred > out_Ne_spe$true ~ "surestimation",
-  out_Ne_spe$is_outlier & out_Ne_spe$pred < out_Ne_spe$true ~ "sousestimation",
+out_Ne_gen$estimation_type <- case_when(
+  out_Ne_gen$is_outlier & out_Ne_gen$pred > out_Ne_gen$true ~ "surestimation",
+  out_Ne_gen$is_outlier & out_Ne_gen$pred < out_Ne_gen$true ~ "sousestimation",
   TRUE ~ "correct"
 )
 
-ggplot(out_Ne_spe, aes(x = estimation_type)) +
+ggplot(out_Ne_gen, aes(x = estimation_type)) +
   geom_bar(fill = "steelblue") +
-  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 5) +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
   labs(title = "Répartition des types d'erreur parmi les outliers",
        x = "Type d’estimation",
        y = "Nombre de simulations") +
@@ -813,7 +1201,7 @@ ggplot(out_Ne_spe, aes(x = estimation_type)) +
 
 
 # Visualisation
-ggplot(head(diffs_Ne_spe, 10), aes(x = reorder(stat, diff), y = diff)) +
+ggplot(head(diffs_Ne_gen, 10), aes(x = reorder(stat, diff), y = diff)) +
   geom_bar(stat = "identity", fill = "#F8766D") +
   coord_flip() +
   labs(title = "Différence de moyenne des stats (outliers vs non-outliers)",
@@ -821,18 +1209,167 @@ ggplot(head(diffs_Ne_spe, 10), aes(x = reorder(stat, diff), y = diff)) +
        y = "Différence de moyenne") +
   theme_minimal()
 
+# Vraies valeurs
+true_values_Ne_gen <- learning_data_Ne_gen$Harmonic_Ne
+
+# Prédictions
+predicted_Ne_gen <- res_Ne_gen$expectation
+
+# RMSE
+rmse_Ne_gen <- sqrt(res_Ne_gen$MSE)
+
+# Biais
+bias_Ne_gen <- mean(predicted_Ne_gen - true_values_Ne_gen)
+
+# R²
+r2_Ne_gen <- 1 - sum((true_values_Ne_gen - predicted_Ne_gen)^2) / sum((true_values_Ne_gen - mean(true_values_Ne_gen))^2)
+
+# RMSE_relative
+rmse_re_Ne_gen <- mean((predicted_Ne_gen - true_values_Ne_gen)^2 / true_values_Ne_gen^2)
+sqrt(rmse_Ne_gen)
+
+# Biais_relatif
+bias_re_Ne_gen <- mean((predicted_Ne_gen - true_values_Ne_gen) / true_values_Ne_gen)
+
+coverage_Ne_gen <- res_Ne_gen$coverage
+
+cat("Ne_Gen_only", "\n")
+cat("Coverage    : ", coverage_Ne_gen, "\n")
+cat("RMSE        : ", rmse_Ne_gen, "\n")
+cat("Bias        : ", bias_Ne_gen, "\n")
+cat("R²          : ", r2_Ne_gen, "\n")
+cat("RMSE (rel)  : ", rmse_re_Ne_gen, "\n")
+cat("Bias (rel)  : ", bias_re_Ne_gen, "\n")
+```
+
+```{r prediction vs true value - Harmonic_Ne - CMR}
+
+# Créer un dataframe avec les vraies valeurs et les prédictions
+prediction_df_Ne_CMR <- data.frame(
+  Harmonic_Ne = learning_data_Ne_CMR$Harmonic_Ne,
+  prediction = model_rf_Ne_CMR$model.rf$predictions
+)
+
+res_Ne_CMR <- predictOOB(model_rf_Ne_CMR, training = learning_data_Ne_CMR)
+
+out_Ne_CMR <- data.frame(
+  random_1 = learning_data_Ne_CMR$random_1,
+  true = learning_data_Ne_CMR$Harmonic_Ne,
+  pred = res_Ne_CMR$expectation
+)
+
+# Calcul de l’erreur relative
+out_Ne_CMR$rel_error <- abs(out_Ne_CMR$pred - out_Ne_CMR$true) / out_Ne_CMR$true
+
+# Marquage des outliers : seuil local sur les 0.5% plus grosses erreurs
+percentile_cutoff <- 0.999
+threshold_error_Ne_CMR <- quantile(out_Ne_CMR$rel_error, percentile_cutoff, na.rm = TRUE)
+
+out_Ne_CMR$is_outlier <- out_Ne_CMR$rel_error > threshold_error_Ne_CMR
+
+# Tunnel désactivé
+out_Ne_CMR$lower_bound <- NA
+out_Ne_CMR$upper_bound <- NA
+
+# Extraire les stats résumantes
+stats_only <- learning_data_Ne_CMR %>%
+  select(-Harmonic_Ne)
+
+# Fusion via random_1
+out_Ne_CMR <- left_join(out_Ne_CMR, stats_only, by = "random_1")
+
+# Visualisation
+ggplot(out_Ne_CMR, aes(x = true, y = pred)) +
+  geom_point(aes(color = is_outlier), alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
+  scale_x_log10() + scale_y_log10() +
+  labs(
+    title = paste0("CMR_only_Ne – Top ", round((1 - percentile_cutoff) * 100, 2), "% des pires erreurs relatives"),
+    x = "True_value (Ne)",
+    y = "Prediction",
+    color = "Outlier ?"
+  ) +
+  theme_minimal()
+
+# Moyennes par groupe
+out_stats_Ne_CMR <- out_Ne_CMR %>% filter(is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+non_out_stats_Ne_CMR <- out_Ne_CMR %>% filter(!is_outlier) %>% select(where(is.numeric)) %>% summarise(across(everything(), mean))
+
+# Comparaison
+diffs_Ne_CMR <- t(out_stats_Ne_CMR - non_out_stats_Ne_CMR) %>%
+  as.data.frame() %>%
+  rename(diff = V1) %>%
+  tibble::rownames_to_column("stat") %>%
+  arrange(desc(abs(diff)))
+
+out_Ne_CMR$estimation_type <- case_when(
+  out_Ne_CMR$is_outlier & out_Ne_CMR$pred > out_Ne_CMR$true ~ "surestimation",
+  out_Ne_CMR$is_outlier & out_Ne_CMR$pred < out_Ne_CMR$true ~ "sousestimation",
+  TRUE ~ "correct"
+)
+
+ggplot(out_Ne_CMR, aes(x = estimation_type)) +
+  geom_bar(fill = "steelblue") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5, size = 5) +
+  labs(title = "Répartition des types d'erreur parmi les outliers",
+       x = "Type d’estimation",
+       y = "Nombre de simulations") +
+  theme_minimal(base_size = 14)
+
+
+# Visualisation
+ggplot(head(diffs_Ne_CMR, 10), aes(x = reorder(stat, diff), y = diff)) +
+  geom_bar(stat = "identity", fill = "#F8766D") +
+  coord_flip() +
+  labs(title = "Différence de moyenne des stats (outliers vs non-outliers)",
+       x = "Statistique résumante",
+       y = "Différence de moyenne") +
+  theme_minimal()
+
+# Vraies valeurs
+true_values_Ne_CMR <- learning_data_Ne_CMR$Harmonic_Ne
+
+# Prédictions
+predicted_Ne_CMR <- res_Ne_CMR$expectation
+
+# RMSE
+rmse_Ne_CMR <- sqrt(res_Ne_CMR$MSE)
+
+# Biais
+bias_Ne_CMR <- mean(predicted_Ne_CMR - true_values_Ne_CMR)
+
+# R²
+r2_Ne_CMR <- 1 - sum((true_values_Ne_CMR - predicted_Ne_CMR)^2) / sum((true_values_Ne_CMR - mean(true_values_Ne_CMR))^2)
+
+# RMSE_relative
+rmse_re_Ne_CMR <- mean((predicted_Ne_CMR - true_values_Ne_CMR)^2 / true_values_Ne_CMR^2)
+sqrt(rmse_Ne_CMR)
+
+# Biais_relatif
+bias_re_Ne_CMR <- mean((predicted_Ne_CMR - true_values_Ne_CMR) / true_values_Ne_CMR)
+
+coverage_Ne_CMR <- res_Ne_CMR$coverage
+
+cat("Ne_CMR_only", "\n")
+cat("Coverage    : ", coverage_Ne_CMR, "\n")
+cat("RMSE        : ", rmse_Ne_CMR, "\n")
+cat("Bias        : ", bias_Ne_CMR, "\n")
+cat("R²          : ", r2_Ne_CMR, "\n")
+cat("RMSE (rel)  : ", rmse_re_Ne_CMR, "\n")
+cat("Bias (rel)  : ", bias_re_Ne_CMR, "\n")
 ```
 
 ```{r}
 
 # ID des simulations outliers dans les deux modèles Ne
 outliers_all_Ne <- out_Ne_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe_Ne <- out_Ne_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_gen_Ne <- out_Ne_gen %>% filter(is_outlier) %>% pull(simulation_id)
 
 # Détection des groupes d'outliers
-common_outliers_Ne <- intersect(outliers_all_Ne, outliers_spe_Ne)
-only_all_Ne <- setdiff(outliers_all_Ne, outliers_spe_Ne)
-only_spe_Ne <- setdiff(outliers_spe_Ne, outliers_all_Ne)
+common_outliers_Ne <- intersect(outliers_all_Ne, outliers_gen_Ne)
+only_all_Ne <- setdiff(outliers_all_Ne, outliers_gen_Ne)
+only_gen_Ne <- setdiff(outliers_gen_Ne, outliers_all_Ne)
 
 ### 2. Extraire les données brutes ====
 
@@ -845,8 +1382,8 @@ stats_only_all_Ne <- learning_data_Ne_all %>%
   filter(simulation_id %in% only_all_Ne) %>%
   select(-simulation_id, -Harmonic_Ne)
 
-stats_only_spe_Ne <- learning_data_Ne_spe %>%
-  filter(simulation_id %in% only_spe_Ne) %>%
+stats_only_gen_Ne <- learning_data_Ne_gen %>%
+  filter(simulation_id %in% only_gen_Ne) %>%
   select(-simulation_id, -Harmonic_Ne)
 
 ### 3. Identifier les outliers statistiques (z-score) ====
@@ -859,7 +1396,7 @@ identify_stat_outliers <- function(df) {
 
 flags_common_Ne <- identify_stat_outliers(stats_common_Ne)
 flags_all_Ne <- identify_stat_outliers(stats_only_all_Ne)
-flags_spe_Ne <- identify_stat_outliers(stats_only_spe_Ne)
+flags_gen_Ne <- identify_stat_outliers(stats_only_gen_Ne)
 
 ### 4. Comptage des outliers par statistique ====
 
@@ -873,10 +1410,10 @@ count_outliers <- function(flags_df, groupe) {
 
 count_common_Ne <- count_outliers(flags_common_Ne, "common")
 count_all_Ne <- count_outliers(flags_all_Ne, "all_stats")
-count_spe_Ne <- count_outliers(flags_spe_Ne, "genetic_only")
+count_gen_Ne <- count_outliers(flags_gen_Ne, "genetic_only")
 
 # Fusion des comptages
-outlier_counts_Ne <- bind_rows(count_common_Ne, count_all_Ne, count_spe_Ne)
+outlier_counts_Ne <- bind_rows(count_common_Ne, count_all_Ne, count_gen_Ne)
 
 # Sélection des 5 stats les plus souvent aberrantes
 top_stats_Ne <- outlier_counts_Ne %>%
@@ -929,616 +1466,13 @@ ggplot(prediction_df_Ne_N, aes(x = Ne_N_ratio, y = prediction)) +
 
 ```
 
-```{r = Key indicators - N}
-res_oob_N <- predictOOB(object = model_rf_N, training = learning_data_N)
-
-# Vraies valeurs
-true_values_N <- learning_data_N$pop_size
-
-# Prédictions
-predicted_N <- res_oob_N$expectation
-
-# RMSE
-rmse_N <- sqrt(res_oob_N$MSE)
-
-# Biais
-bias_N <- mean(predicted_N - true_values_N)
-
-# R²
-r2_N <- 1 - sum((true_values_N - predicted_N)^2) / sum((true_values_N - mean(true_values_N))^2)
-
-coverage_N <- res_oob_N$coverage
-
-coverage_N
-rmse_N
-bias_N
-r2_N
-
-```
-
-```{r = Key indicators - Ne}
-
-res_oob_Ne <- predictOOB(object = model_rf_Ne, training = learning_data_Ne)
-
-# True values
-true_values_Ne <- learning_data_Ne$Harmonic_Ne
-
-# Predictions
-predicted_Ne <- res_oob_Ne$expectation
-
-# RMSE
-rmse_Ne <- sqrt(res_oob_Ne$MSE)
-
-# Bias
-bias_Ne <- mean(predicted_Ne - true_values_Ne)
-
-# R²
-r2_Ne <- 1 - sum((true_values_Ne - predicted_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
-
-coverage_Ne <- res_oob_Ne$coverage
-
-coverage_Ne
-rmse_Ne
-bias_Ne
-r2_Ne
-
-```
-
-```{r = Key indicators - Ne_N_ratio}
-res_oob_Ne_N <- predictOOB(object = model_rf_Ne_N, training = learning_data_Ne_N)
-
-# True values
-true_values_Ne_N <- learning_data_Ne_N$Ne_N_ratio
-
-# Predictions
-predicted_Ne_N <- res_oob_Ne_N$expectation
-
-# RMSE
-rmse_Ne_N <- sqrt(res_oob_Ne_N$MSE)
-
-# Bias
-bias_Ne_N <- mean(predicted_Ne_N - true_values_Ne_N)
-
-# R²
-r2_Ne_N <- 1 - sum((true_values_Ne_N - predicted_Ne_N)^2) / sum((true_values_Ne_N - mean(true_values_Ne_N))^2)
-
-coverage_Ne_N <- res_oob_Ne_N$coverage
-
-coverage_Ne_N
-rmse_Ne_N
-bias_Ne_N
-r2_Ne_N
-
-```
-
-```{r = 10 times all_stats for N parameter}
-
-# This part is useful to test if a change in the use of resuming statistics is significantly different between two models for the same parameter estimates
-# Stock vectors
-rmse_vec_all_N <- numeric(10)
-bias_vec_all_N <- numeric(10)
-r2_vec_all_N <- numeric(10)
-coverage_vec_all_N <- numeric(10)
-
-# List of parameters
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
-params <- data_clean %>% select(all_of(param_cols))
-
-# List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
-stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
-stats_table <- data_clean %>% select(all_of(stat_cols))
-
-# Parameters
-target_param_N <- "pop_size"
-learning_data_N <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
-
-# For loop
-set.seed(123)
-for (i in 1:10) {
-  cat("Répétition", i, "\n")
-  
-  # ABCRF training
-  model_rf_N <- regAbcrf(
-    formula = as.formula(paste(target_param_N, "~ .")),
-    data = learning_data_N,
-    ntree = 100
-  )
-  
-  # Making predictions
-  predictions_N <- predictOOB(model_rf_N,
-                         training = learning_data_N)
-  
-  pred_values_N <- predictions_N$expectation
-  true_values_N <- learning_data_N[[target_param_N]]
-  
-  # RMSE
-  rmse_vec_all_N[i] <- sqrt(predictions_N$MSE)
-  
-  # Bias
-  bias_vec_all_N[i] <- mean(pred_values_N - true_values_N)
-  
-  # R²
-  r2_vec_all_N[i] <- 1 - sum((true_values_N - pred_values_N)^2) / sum((true_values_N - mean(true_values_N))^2)
-  
-  coverage_vec_all_N[i] <- predictions_N$coverage
-
-}
-# Summary
-data.frame(
-  RMSE = rmse_vec_all_N,
-  Bias = bias_vec_all_N,
-  R2 = r2_vec_all_N,
-  Coverage = coverage_vec_all_N
-)
-
-```
-
-```{r = 10 times all_stats for Ne parameter}
-
-# This part is useful to test if a change in the use of resuming statistics is significantly different between two models for the same parameter estimates
-# Stock vectors
-rmse_vec_all_Ne <- numeric(10)
-bias_vec_all_Ne <- numeric(10)
-r2_vec_all_Ne <- numeric(10)
-coverage_vec_all_Ne <- numeric(10)
-
-# List of parameters
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
-params <- data_clean %>% select(all_of(param_cols))
-
-# List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_", "MatchCount_")
-stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
-stats_table <- data_clean %>% select(all_of(stat_cols))
-
-# Parameters
-target_param_Ne <- "Harmonic_Ne"
-learning_data_Ne <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
-
-# For loop
-set.seed(123)  # Pour reproductibilité
-for (i in 1:10) {
-  cat("Répétition", i, "\n")
-  
-  # ABC-RF training
-  model_rf_Ne <- regAbcrf(
-    formula = as.formula(paste(target_param_Ne, "~ .")),
-    data = learning_data_Ne,
-    ntree = 100
-  )
-  
-  # Making predictions
-  predictions_Ne <- predictOOB(model_rf_Ne,
-                         training = learning_data_Ne)
-  
-  pred_values_Ne <- predictions_Ne$expectation
-  true_values_Ne <- learning_data_Ne[[target_param_Ne]]
-  
-  # RMSE
-  rmse_vec_all_Ne[i] <- sqrt(predictions_Ne$MSE)
-  
-  # Bias
-  bias_vec_all_Ne[i] <- mean(pred_values_Ne - true_values_Ne)
-  
-  # R²
-  r2_vec_all_Ne[i] <- 1 - sum((true_values_Ne - pred_values_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
-  
-  coverage_vec_all_Ne[i] <- predictions_Ne$coverage
-
-}
-# Summary
-data.frame(
-  RMSE = rmse_vec_all_Ne,
-  Bias = bias_vec_all_Ne,
-  R2 = r2_vec_all_Ne,
-  Coverage = coverage_vec_all_Ne
-)
-
-```
-
-```{r = 10 times specific_stats for N parameter}
-
-# Vecteurs de stockage
-rmse_vec_spe_N <- numeric(10)
-bias_vec_spe_N <- numeric(10)
-r2_vec_spe_N <- numeric(10)
-coverage_vec_spe_N <- numeric(10)
-
-# List of parameters
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
-params <- data_clean %>% select(all_of(param_cols))
-
-# List of resuming statistics
-stat_keywords <- c("id", "MatchCount_")
-stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
-stats_table <- data_clean %>% select(all_of(stat_cols))
-
-# Paramètres
-target_param_N <- "pop_size"
-learning_data_N <- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
-
-# Boucle
-set.seed(123)  # Pour reproductibilité
-for (i in 1:10) {
-  cat("Répétition", i, "\n")
-  
-  # Entraînement ABC-RF
-  model_rf_N <- regAbcrf(
-    formula = as.formula(paste(target_param_N, "~ .")),
-    data = learning_data_N,
-    ntree = 100
-  )
-  
-  # Prédictions sur le même jeu
-  predictions_N <- predictOOB(model_rf_N,
-                         training = learning_data_N)
-  
-  pred_values_N <- predictions_N$expectation
-  true_values_N <- learning_data_N[[target_param_N]]
-  
-  # RMSE
-  rmse_vec_spe_N[i] <- sqrt(predictions_N$MSE)
-  
-  # Biais
-  bias_vec_spe_N[i] <- mean(pred_values_N - true_values_N)
-  
-  # R²
-  r2_vec_spe_N[i] <- 1 - sum((true_values_N - pred_values_N)^2) / sum((true_values_N - mean(true_values_N))^2)
-  
-  coverage_vec_spe_N[i] <- predictions_N$coverage
-
-}
-# Résumé
-data.frame(
-  RMSE = rmse_vec_spe_N,
-  Bias = bias_vec_spe_N,
-  R2 = r2_vec_spe_N,
-  Coverage = coverage_vec_spe_N
-)
-
-```
-
-```{r = 10 times specific_stats for Ne parameter}
-
-# This part is useful to test if a change in the use of resuming statistics is significantly different between two models for the same parameter estimates
-# Stock vectors
-rmse_vec_spe_Ne <- numeric(10)
-bias_vec_spe_Ne <- numeric(10)
-r2_vec_spe_Ne <- numeric(10)
-coverage_vec_spe_Ne <- numeric(10)
-
-# List of parameters
-param_cols <- c("simulation_id", "pop_size", "num_loci", "sample1_size_Ne", "sample2_size_Ne",
-                "sample_size_CMR", "mutation_rate", "recap_Ne", "Harmonic_Ne", "Ne_N_ratio")
-params <- data_clean %>% select(all_of(param_cols))
-
-# List of resuming statistics
-stat_keywords <- c("id", "LD", "HE", "Coan", "het", "alleles", "P_", "N_F", "J_")
-stat_cols <- names(data_clean)[sapply(names(data_clean), function(col) any(str_detect(col, stat_keywords)))]
-stats_table <- data_clean %>% select(all_of(stat_cols))
-
-# Parameters
-target_param_Ne <- "Harmonic_Ne"
-learning_data_Ne <- bind_cols(y = params[[target_param_Ne]], stats_table) %>% rename(!!target_param_Ne := y)
-
-# For loop
-set.seed(123)
-for (i in 1:10) {
-  cat("Répétition", i, "\n")
-  
-  # ABC-RF training
-  model_rf_Ne <- regAbcrf(
-    formula = as.formula(paste(target_param_Ne, "~ .")),
-    data = learning_data_Ne,
-    ntree = 100
-  )
-  
-  # Making Prediction
-  predictions_Ne <- predictOOB(model_rf_Ne,
-                         training = learning_data_Ne)
-  
-  pred_values_Ne <- predictions_Ne$expectation
-  true_values_Ne <- learning_data_Ne[[target_param_Ne]]
-  
-  # RMSE
-  rmse_vec_spe_Ne[i] <- sqrt(predictions_Ne$MSE)
-  
-  # Bias
-  bias_vec_spe_Ne[i] <- mean(pred_values_Ne - true_values_Ne)
-  
-  # R²
-  r2_vec_spe_Ne[i] <- 1 - sum((true_values_Ne - pred_values_Ne)^2) / sum((true_values_Ne - mean(true_values_Ne))^2)
-  
-  coverage_vec_spe_Ne[i] <- predictions_Ne$coverage
-
-}
-# Summary
-data.frame(
-  RMSE = rmse_vec_spe_Ne,
-  Bias = bias_vec_spe_Ne,
-  R2 = r2_vec_spe_Ne,
-  Coverage = coverage_vec_spe_Ne
-)
-
-```
-
-```{r = Create a new dataframe with all stats that indicate model performances}
-
-# Fonction utilitaire pour éviter de répéter
-create_sub_df <- function(values, metric_name, param, context) {
-  data.frame(
-    metric_value = values,
-    metric_type = metric_name,
-    param = param,
-    context = context,
-    stringsAsFactors = FALSE
-  )
-}
-
-# Construction complète du tableau
-df <- rbind(
-  create_sub_df(rmse_vec_all_N, "RMSE", "N", "all_stats"),
-  create_sub_df(bias_vec_all_N, "Biais", "N", "all_stats"),
-  create_sub_df(r2_vec_all_N, "R2", "N", "all_stats"),
-  create_sub_df(coverage_vec_all_N, "Coverage", "N", "all_stats"),
-
-  create_sub_df(rmse_vec_spe_N, "RMSE", "N", "CMR_only"),
-  create_sub_df(bias_vec_spe_N, "Biais", "N", "CMR_only"),
-  create_sub_df(r2_vec_spe_N, "R2", "N", "CMR_only"),
-  create_sub_df(coverage_vec_spe_N, "Coverage", "N", "CMR_only"),
-
-  create_sub_df(rmse_vec_all_Ne, "RMSE", "Ne", "all_stats"),
-  create_sub_df(bias_vec_all_Ne, "Biais", "Ne", "all_stats"),
-  create_sub_df(r2_vec_all_Ne, "R2", "Ne", "all_stats"),
-  create_sub_df(coverage_vec_all_Ne, "Coverage", "Ne", "all_stats"),
-
-  create_sub_df(rmse_vec_spe_Ne, "RMSE", "Ne", "genetic_only"),
-  create_sub_df(bias_vec_spe_Ne, "Biais", "Ne", "genetic_only"),
-  create_sub_df(r2_vec_spe_Ne, "R2", "Ne", "genetic_only"),
-  create_sub_df(coverage_vec_spe_Ne, "Coverage", "Ne", "genetic_only")
-)
-
-# Visualisation
-head(df)
-
-
-```
-
 ```{r}
-
-for (param in c("N", "Ne")) {
-  for (metric in c("RMSE", "Biais", "R2", "Coverage")) {
-    cat("\n==== Comparaison", metric, "pour", param, "====\n")
-    
-    d1 <- df %>% filter(param == !!param,
-                        context %in% c("all_stats", ifelse(param == "N", "CMR_only", "genetic_only")),
-                        metric_type == metric)
-    g1 <- d1$metric_value[d1$context == "all_stats"]
-    g2 <- d1$metric_value[d1$context != "all_stats"]
-    
-    # Test de normalité
-    s1 <- shapiro.test(g1)
-    s2 <- shapiro.test(g2)
-    
-    if (s1$p.value > 0.05 & s2$p.value > 0.05) {
-      t <- t.test(g1, g2, var.equal = TRUE)
-      cat("✅ t-test p-value :", t$p.value, "\n")
-    } else {
-      w <- wilcox.test(g1, g2)
-      cat("⚠️ Wilcoxon p-value :", w$p.value, "\n")
-    }
-  }
-}
-
-```
-
-```{r}
-summary_df <- df %>%
-  group_by(param, context, metric_type) %>%
-  summarise(
-    mean = mean(metric_value),
-    sd = sd(metric_value),
-    .groups = "drop"
-  )
-
-print(summary_df)
-```
-
-```{r}
-library(ggplot2)
-library(dplyr)
-
-# Préparer le data frame avec un groupe combiné
-df_grouped <- df %>%
-  filter((param == "N" & context %in% c("all_stats", "CMR_only")) |
-         (param == "Ne" & context %in% c("all_stats", "genetic_only"))) %>%
-  mutate(facet_group = paste0(param, "_", context))  # Exemple : "N_all_stats"
-
-# Pour un affichage propre des noms
-df_grouped$facet_group <- factor(df_grouped$facet_group, levels = c(
-  "N_all_stats", "N_CMR_only", "Ne_all_stats", "Ne_genetic_only"
-))
-
-# Affichage
-ggplot(df_grouped, aes(x = facet_group, y = metric_value, fill = facet_group)) +
-  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.1, size = 1.5, alpha = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
-  facet_wrap(~ metric_type, scales = "free_y", ncol = 1) +
-  scale_fill_manual(
-    values = c(
-      "N_all_stats" = "#F8766D",
-      "N_CMR_only" = "#00BA38",
-      "Ne_all_stats" = "#F8766D",
-      "Ne_genetic_only" = "#619CFF"
-    ),
-    labels = c(
-      "N_all_stats" = "N – all_stats",
-      "N_CMR_only" = "N – CMR_only",
-      "Ne_all_stats" = "Ne – all_stats",
-      "Ne_genetic_only" = "Ne – genetic_only"
-    )
-  ) +
-  labs(
-    title = "Performances ABC-RF par combinaison paramètre × contexte",
-    x = "Paramètre et type de statistiques résumantes",
-    y = "Valeur de la métrique",
-    fill = "Groupe"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 20, hjust = 1))
-
-
-```
-
-```{r}
-# 1. Vecteurs de base
-y_true <- learning_data_N$pop_size
-y_pred <- res$expectation  # ou predict(model_rf, ...)$expectation
-
-# 2. Erreur relative
-rel_error <- abs(y_pred - y_true) / y_true
-
-# 3. Détection des outliers : ici > 50%
-outliers <- which(rel_error > 0.5)
-
-# 4. Dataframe complet
-df <- data.frame(
-  true = y_true,
-  pred = y_pred,
-  rel_error = rel_error,
-  is_outlier = rel_error > 0.5
-)
-
-# 5. Visualisation
-library(ggplot2)
-ggplot(df, aes(x = true, y = pred)) +
-  geom_point(aes(color = is_outlier), alpha = 0.4) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-  scale_x_log10() + scale_y_log10() +
-  scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red")) +
-  labs(
-    title = "Valeurs aberrantes détectées via erreur relative",
-    x = "Valeur vraie",
-    y = "Valeur prédite",
-    color = "Outlier ?"
-  ) +
-  theme_minimal()
-
-library(openxlsx)
-
-# 1. Extraire les lignes de learning_data correspondant aux outliers
-outliers_df <- learning_data_N[outliers, ]
-
-# 2. Ajouter les colonnes de prédictions et erreurs
-outliers_df$predicted_value <- y_pred[outliers]
-outliers_df$rel_error <- rel_error[outliers]
-
-# 3. Export vers Excel
-library(openxlsx)
-write.xlsx(outliers_df, file = "outliers_with_stats.xlsx", rowNames = FALSE)
-
-```
-
-```{r}
-library(dplyr)
-library(ggplot2)
-
-# 1. Supprimer les colonnes non pertinentes pour le z-score
-numeric_cols <- outliers_df %>%
-  select(where(is.numeric)) %>%
-  select(-pop_size, -predicted_value, -rel_error)
-
-# 2. Calcul des z-scores
-z_scores <- scale(numeric_cols)
-
-# 3. Marquer comme aberrantes les valeurs |z| > 3
-outlier_flags <- abs(z_scores) > 3
-
-# 4. Compter combien de fois chaque variable dépasse le seuil
-aberrant_counts <- colSums(outlier_flags, na.rm = TRUE)
-
-# 5. Créer le data frame pour ggplot
-aberrant_df <- data.frame(
-  variable = names(aberrant_counts),
-  count = aberrant_counts
-) %>%
-  filter(count > 0) %>%
-  arrange(desc(count))
-
-# 6. Barplot (top 20)
-ggplot(head(aberrant_df, 20), aes(x = reorder(variable, count), y = count)) +
-  geom_bar(stat = "identity", fill = "#F8766D") +
-  coord_flip() +
-  labs(
-    title = "Variables les plus extrêmes parmi les outliers (z-score > 3)",
-    x = "Statistique résumante",
-    y = "Nb de valeurs très atypiques"
-  ) +
-  theme_minimal(base_size = 13)
-
-```
-
-```{r}
-
-# Ajout des colonnes manquantes à learning_data (à faire une seule fois)
-learning_data_N$predicted_value <- y_pred
-learning_data_N$rel_error <- abs(y_pred - learning_data_N$pop_size) / learning_data_N$pop_size
-outliers_df <- learning_data_N[outliers, ]
-non_outliers_df <- learning_data_N[-outliers, ]
-
-
-# 1. Identifier les non-outliers
-non_outliers <- setdiff(1:nrow(learning_data_N), outliers)
-non_outliers_df <- learning_data_N[non_outliers, ]
-
-# 2. On garde les colonnes numériques pertinentes
-vars <- learning_data_N %>%
-  select(where(is.numeric)) %>%
-  select(-pop_size, -predicted_value, -rel_error) %>%
-  colnames()
-
-# 3. Calcul des moyennes pour chaque groupe
-means_out <- outliers_df %>% summarise(across(all_of(vars), mean, na.rm = TRUE))
-means_non <- non_outliers_df %>% summarise(across(all_of(vars), mean, na.rm = TRUE))
-
-# 4. Construction du tableau de comparaison
-compare_df <- data.frame(
-  variable = vars,
-  mean_outliers = as.numeric(means_out),
-  mean_non_outliers = as.numeric(means_non)
-) %>%
-  mutate(diff = mean_outliers - mean_non_outliers) %>%
-  arrange(desc(abs(diff)))
-
-# 5. Barplot des différences de moyenne (top 20)
-ggplot(head(compare_df, 20), aes(x = reorder(variable, diff), y = diff)) +
-  geom_bar(stat = "identity", fill = "#00BFC4") +
-  coord_flip() +
-  labs(
-    title = "Différence des moyennes entre outliers et non-outliers",
-    x = "Statistique résumante",
-    y = "Différence de moyenne (outliers - non-outliers)"
-  ) +
-  theme_minimal(base_size = 13)
-
-```
-
-```{r}
-#library(dplyr)
-library(tidyr)
-library(ggplot2)
-
 # Fusion des prédictions
 compare_preds <- data.frame(
   simulation_id = learning_data_N_all$simulation_id,
   true = learning_data_N_all$pop_size,
   pred_all = out_N_all$pred,
-  pred_spe = out_N_spe$pred
+  pred_CMR = out_N_CMR$pred
 )
 
 # Identifier le type d'erreur (surestimation / sousestimation)
@@ -1549,9 +1483,9 @@ compare_preds <- compare_preds %>%
       pred_all < true ~ "sousestimation",
       TRUE ~ "correct"
     ),
-    type_spe = case_when(
-      pred_spe > true ~ "surestimation",
-      pred_spe < true ~ "sousestimation",
+    type_CMR = case_when(
+      pred_CMR > true ~ "surestimation",
+      pred_CMR < true ~ "sousestimation",
       TRUE ~ "correct"
     )
   )
@@ -1577,14 +1511,14 @@ ggplot(out_N_all_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = 
 
 
 # Histogramme des erreurs dans out_N_all
-out_N_spe_with_type <- out_N_spe %>%
+out_N_CMR_with_type <- out_N_CMR %>%
   mutate(estimation_type = case_when(
     pred > true ~ "surestimation",
     pred < true ~ "sousestimation",
     TRUE ~ "correct"
   ))
 
-ggplot(out_N_spe_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = estimation_type)) +
+ggplot(out_N_CMR_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = estimation_type)) +
   geom_histogram(bins = 50, position = "identity", alpha = 0.6) +
   scale_x_log10() +
   labs(
@@ -1597,7 +1531,7 @@ ggplot(out_N_spe_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = 
 
 # Trouver les simulations avec surestimation dans les deux modèles
 common_surestim <- compare_preds %>%
-  filter(type_all == "surestimation" & type_spe == "surestimation")
+  filter(type_all == "surestimation" & type_CMR == "surestimation")
 
 # Liste si besoin
 common_surestim_ids <- common_surestim$simulation_id
@@ -1605,7 +1539,7 @@ nrow(common_surestim)  # combien partagées
 
 # Comparaison des prédictions entre les deux modèles
 compare_long <- compare_preds %>%
-  select(simulation_id, true, pred_all, pred_spe) %>%
+  select(simulation_id, true, pred_all, pred_CMR) %>%
   pivot_longer(cols = starts_with("pred_"), 
                names_to = "modele", values_to = "prediction") %>%
   mutate(modele = ifelse(modele == "pred_all", "Toutes les stats", "Stats spécifiques"))
@@ -1637,7 +1571,7 @@ out_N_all_with_type %>%
 # Comparaison des prédictions pour les petites valeurs de N
 compare_preds %>%
   filter(true < 500) %>%
-  ggplot(aes(x = pred_all, y = pred_spe)) +
+  ggplot(aes(x = pred_all, y = pred_CMR)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   scale_x_log10() + scale_y_log10() +
@@ -1645,20 +1579,27 @@ compare_preds %>%
        title = "Comparaison des prédictions pour N < 500") +
   theme_minimal()
 
+# Comparaison des prédictions pour les petites valeurs de N
+compare_preds %>%
+  filter(true > 8000) %>%
+  ggplot(aes(x = pred_all, y = pred_CMR)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "Prédiction (all_stats)", y = "Prédiction (CMR_only)",
+       title = "Comparaison des prédictions pour N > 8000") +
+  theme_minimal()
+
 ```
 
 ```{r}
-# Chargement des bibliothèques
-library(dplyr)
-library(tidyr)
-library(ggplot2)
 
 # Fusion des prédictions
 compare_preds_Ne <- data.frame(
   simulation_id = learning_data_Ne_all$simulation_id,
   true = learning_data_Ne_all$Harmonic_Ne,
   pred_all = out_Ne_all$pred,
-  pred_spe = out_Ne_spe$pred
+  pred_gen = out_Ne_gen$pred
 )
 
 # Identifier le type d'erreur (surestimation / sous-estimation)
@@ -1669,9 +1610,9 @@ compare_preds_Ne <- compare_preds_Ne %>%
       pred_all < true ~ "sousestimation",
       TRUE ~ "correct"
     ),
-    type_spe = case_when(
-      pred_spe > true ~ "surestimation",
-      pred_spe < true ~ "sousestimation",
+    type_gen = case_when(
+      pred_gen > true ~ "surestimation",
+      pred_gen < true ~ "sousestimation",
       TRUE ~ "correct"
     )
   )
@@ -1695,14 +1636,14 @@ ggplot(out_Ne_all_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill =
   ) +
   theme_minimal()
 
-out_Ne_spe_with_type <- out_Ne_spe %>%
+out_Ne_gen_with_type <- out_Ne_gen %>%
   mutate(estimation_type = case_when(
     pred > true ~ "surestimation",
     pred < true ~ "sousestimation",
     TRUE ~ "correct"
   ))
 
-ggplot(out_Ne_spe_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = estimation_type)) +
+ggplot(out_Ne_gen_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill = estimation_type)) +
   geom_histogram(bins = 50, position = "identity", alpha = 0.6) +
   scale_x_log10() +
   labs(
@@ -1715,14 +1656,14 @@ ggplot(out_Ne_spe_with_type %>% filter(is_outlier == TRUE), aes(x = true, fill =
 
 # Simulations avec surestimation dans les deux modèles
 common_surestim_Ne <- compare_preds_Ne %>%
-  filter(type_all == "surestimation" & type_spe == "surestimation")
+  filter(type_all == "surestimation" & type_gen == "surestimation")
 
 common_surestim_Ne_ids <- common_surestim_Ne$simulation_id
 nrow(common_surestim_Ne)  # combien partagées
 
 # Comparaison des prédictions entre les deux modèles
 compare_long_Ne <- compare_preds_Ne %>%
-  select(simulation_id, true, pred_all, pred_spe) %>%
+  select(simulation_id, true, pred_all, pred_gen) %>%
   pivot_longer(cols = starts_with("pred_"), 
                names_to = "modele", values_to = "prediction") %>%
   mutate(modele = ifelse(modele == "pred_all", "Toutes les stats", "Stats spécifiques"))
@@ -1754,12 +1695,22 @@ out_Ne_all_with_type %>%
 # Comparaison des prédictions pour les petites valeurs de Ne
 compare_preds_Ne %>%
   filter(true < 500) %>%
-  ggplot(aes(x = pred_all, y = pred_spe)) +
+  ggplot(aes(x = pred_all, y = pred_gen)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   scale_x_log10() + scale_y_log10() +
   labs(x = "Prédiction (all_stats)", y = "Prédiction (genetic_only)",
        title = "Comparaison des prédictions pour Ne < 500") +
+  theme_minimal()
+
+compare_preds_Ne %>%
+  filter(true > 8000) %>%
+  ggplot(aes(x = pred_all, y = pred_gen)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "Prédiction (all_stats)", y = "Prédiction (genetic_only)",
+       title = "Comparaison des prédictions pour Ne > 8000") +
   theme_minimal()
 
 ```
@@ -1769,10 +1720,10 @@ compare_Ne_N <- data.frame(
   simulation_id = learning_data_N_all$simulation_id,
   true_N = out_N_all$true,
   pred_N_all = out_N_all$pred,
-  pred_N_spe = out_N_spe$pred,
+  pred_N_CMR = out_N_CMR$pred,
   true_Ne = out_Ne_all$true,
   pred_Ne_all = out_Ne_all$pred,
-  pred_Ne_spe = out_Ne_spe$pred
+  pred_Ne_gen = out_Ne_gen$pred
 )
 
 compare_Ne_N <- compare_Ne_N %>%
@@ -1785,7 +1736,6 @@ compare_Ne_N <- compare_Ne_N %>%
     ratio_pred = pred_Ne_all / pred_N_all
   )
 
-library(tidyr)
 compare_Ne_N_long <- compare_Ne_N %>%
   select(simulation_id, rel_error_N_all, rel_error_Ne_all) %>%
   pivot_longer(cols = -simulation_id, names_to = "param", values_to = "rel_error")
@@ -1811,7 +1761,6 @@ compare_Ne_N <- compare_Ne_N %>%
     )
 )
 
-library(ggplot2)
 ggplot(compare_Ne_N, aes(x = outlier_joint)) +
   geom_bar(fill = "steelblue") +
   labs(title = "Répartition des simulations aberrantes",
@@ -1884,20 +1833,20 @@ ggplot(head(diffs_N_all, 20), aes(x = reorder(stat, diff), y = diff)) +
 
 ```{r}
 outliers_all <- out_N_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe <- out_N_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_CMR <- out_N_CMR %>% filter(is_outlier) %>% pull(simulation_id)
 
-common_outliers <- intersect(outliers_all, outliers_spe)   # communs
-only_all        <- setdiff(outliers_all, outliers_spe)     # spécifiques à all
-only_spe        <- setdiff(outliers_spe, outliers_all)     # spécifiques à spe
+common_outliers <- intersect(outliers_all, outliers_CMR)   # communs
+only_all        <- setdiff(outliers_all, outliers_CMR)     # spécifiques à all
+only_CMR        <- setdiff(outliers_CMR, outliers_all)     # spécifiques à spe
 
 length(common_outliers)  # combien en commun
 length(only_all)         # spécifiques à all_stats
-length(only_spe)         # spécifiques à stats spécifiques
+length(only_CMR)         # spécifiques à stats spécifiques
 
 # Venn diagram
 library(ggvenn)
 ggvenn(
-  list(all_stats = outliers_all, specific_stats = outliers_spe),
+  list(all_stats = outliers_all, specific_stats = outliers_CMR),
   fill_color = c("skyblue", "salmon"),
   stroke_size = 0.5,
   text_size = 4
@@ -1905,10 +1854,10 @@ ggvenn(
 
 compare_outliers <- out_N_all %>%
   select(simulation_id, rel_error_all = rel_error) %>%
-  inner_join(out_N_spe %>% select(simulation_id, rel_error_spe = rel_error),
+  inner_join(out_N_CMR %>% select(simulation_id, rel_error_CMR = rel_error),
              by = "simulation_id")
 
-ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_spe)) +
+ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_CMR)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   labs(title = "Comparaison des erreurs relatives : all vs specific",
@@ -1920,20 +1869,20 @@ ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_spe)) +
 
 ```{r}
 outliers_all <- out_N_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe <- out_N_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_CMR <- out_N_CMR %>% filter(is_outlier) %>% pull(simulation_id)
 
-common_outliers <- intersect(outliers_all, outliers_spe)   # communs
-only_all        <- setdiff(outliers_all, outliers_spe)     # spécifiques à all
-only_spe        <- setdiff(outliers_spe, outliers_all)     # spécifiques à spe
+common_outliers <- intersect(outliers_all, outliers_CMR)   # communs
+only_all        <- setdiff(outliers_all, outliers_CMR)     # spécifiques à all
+only_CMR       <- setdiff(outliers_CMR, outliers_all)     # spécifiques à spe
 
 length(common_outliers)  # combien en commun
 length(only_all)         # spécifiques à all_stats
-length(only_spe)         # spécifiques à stats spécifiques
+length(only_CMR)         # spécifiques à stats spécifiques
 
 # Venn diagram
 library(ggvenn)
 ggvenn(
-  list(all_stats = outliers_all, specific_stats = outliers_spe),
+  list(all_stats = outliers_all, specific_stats = outliers_CMR),
   fill_color = c("skyblue", "salmon"),
   stroke_size = 0.5,
   text_size = 4
@@ -1941,10 +1890,10 @@ ggvenn(
 
 compare_outliers <- out_N_all %>%
   select(simulation_id, rel_error_all = rel_error) %>%
-  inner_join(out_N_spe %>% select(simulation_id, rel_error_spe = rel_error),
+  inner_join(out_N_CMR %>% select(simulation_id, rel_error_CMR = rel_error),
              by = "simulation_id")
 
-ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_spe)) +
+ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_CMR)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   labs(title = "Comparaison des erreurs relatives : all vs specific",
@@ -1954,16 +1903,16 @@ ggplot(compare_outliers, aes(x = rel_error_all, y = rel_error_spe)) +
 
 # ID des outliers
 outliers_all <- out_N_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe <- out_N_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_CMR <- out_N_CMR %>% filter(is_outlier) %>% pull(simulation_id)
 
 # Groupes
-common_outliers <- intersect(outliers_all, outliers_spe)
-only_all        <- setdiff(outliers_all, outliers_spe)
-only_spe        <- setdiff(outliers_spe, outliers_all)
+common_outliers <- intersect(outliers_all, outliers_CMR)
+only_all        <- setdiff(outliers_all, outliers_CMR)
+only_CMR        <- setdiff(outliers_CMR, outliers_all)
 
 # Données stats sans la variable cible
 stats_all <- learning_data_N_all %>% select(-pop_size, -simulation_id)
-stats_spe <- learning_data_N_spe %>% select(-pop_size, -simulation_id)
+stats_CMR <- learning_data_N_CMR %>% select(-pop_size, -simulation_id)
 
 # Associer simulation_id à chaque groupe
 common_stats <- learning_data_N_all %>%
@@ -1974,19 +1923,19 @@ only_all_stats <- learning_data_N_all %>%
   filter(simulation_id %in% only_all) %>%
   select(-pop_size)
 
-only_spe_stats <- learning_data_N_spe %>%
-  filter(simulation_id %in% only_spe) %>%
+only_spe_stats <- learning_data_N_CMR %>%
+  filter(simulation_id %in% only_CMR) %>%
   select(-pop_size)
 
 # Non-outliers pour comparaison
 non_out_stats <- learning_data_N_all %>%
-  filter(!(simulation_id %in% union(outliers_all, outliers_spe))) %>%
+  filter(!(simulation_id %in% union(outliers_all, outliers_CMR))) %>%
   select(-pop_size)
 
 # Moyennes par groupe
 mean_common     <- common_stats     %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 mean_only_all   <- only_all_stats   %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
-mean_only_spe   <- only_spe_stats   %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
+mean_only_CMR   <- only_spe_stats   %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 mean_non_out    <- non_out_stats    %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 
 # Fonction pour calculer les écarts
@@ -2010,12 +1959,10 @@ compare_to_nonout <- function(mean_out, mean_nonout, label) {
 # Appliquer
 diff_common   <- compare_to_nonout(mean_common, mean_non_out, "communs")
 diff_only_all <- compare_to_nonout(mean_only_all, mean_non_out, "all_only")
-diff_only_spe <- compare_to_nonout(mean_only_spe, mean_non_out, "spe_only")
+diff_only_CMR <- compare_to_nonout(mean_only_CMR, mean_non_out, "spe_only")
 
 # Regrouper les résultats
-diffs_all <- bind_rows(diff_common, diff_only_all, diff_only_spe)
-
-library(ggplot2)
+diffs_all <- bind_rows(diff_common, diff_only_all, diff_only_CMR)
 
 top_diffs <- diffs_all %>%
   mutate(abs_diff = abs(diff)) %>%
@@ -2041,22 +1988,22 @@ ggplot(diffs_all %>% filter(stat %in% top_diffs),
 ```{r}
 # 1. Identifier les outliers
 outliers_all_Ne <- out_Ne_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe_Ne <- out_Ne_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_gen_Ne <- out_Ne_gen %>% filter(is_outlier) %>% pull(simulation_id)
 
 # 2. Catégoriser les simulations
-common_outliers_Ne <- intersect(outliers_all_Ne, outliers_spe_Ne)   # communs
-only_all_Ne        <- setdiff(outliers_all_Ne, outliers_spe_Ne)     # spécifiques all
-only_spe_Ne        <- setdiff(outliers_spe_Ne, outliers_all_Ne)     # spécifiques spe
+common_outliers_Ne <- intersect(outliers_all_Ne, outliers_gen_Ne)   # communs
+only_all_Ne        <- setdiff(outliers_all_Ne, outliers_gen_Ne)     # spécifiques all
+only_gen_Ne        <- setdiff(outliers_gen_Ne, outliers_all_Ne)     # spécifiques spe
 
 # 3. Taille des groupes
 length(common_outliers_Ne)
 length(only_all_Ne)
-length(only_spe_Ne)
+length(only_gen_Ne)
 
 # 4. Diagramme de Venn
 library(ggvenn)
 ggvenn(
-  list(all_stats = outliers_all_Ne, specific_stats = outliers_spe_Ne),
+  list(all_stats = outliers_all_Ne, specific_stats = outliers_gen_Ne),
   fill_color = c("skyblue", "salmon"),
   stroke_size = 0.5,
   text_size = 4
@@ -2065,10 +2012,10 @@ ggvenn(
 # 5. Comparaison des erreurs relatives pour les mêmes simulations
 compare_outliers_Ne <- out_Ne_all %>%
   select(simulation_id, rel_error_all = rel_error) %>%
-  inner_join(out_Ne_spe %>% select(simulation_id, rel_error_spe = rel_error),
+  inner_join(out_Ne_gen %>% select(simulation_id, rel_error_gen = rel_error),
              by = "simulation_id")
 
-ggplot(compare_outliers_Ne, aes(x = rel_error_all, y = rel_error_spe)) +
+ggplot(compare_outliers_Ne, aes(x = rel_error_all, y = rel_error_gen)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   labs(title = "Comparaison des erreurs relatives : Ne - all vs specific",
@@ -2081,22 +2028,22 @@ ggplot(compare_outliers_Ne, aes(x = rel_error_all, y = rel_error_spe)) +
 ```{r}
 # 1. Identifier les IDs outliers
 outliers_all_Ne <- out_Ne_all %>% filter(is_outlier) %>% pull(simulation_id)
-outliers_spe_Ne <- out_Ne_spe %>% filter(is_outlier) %>% pull(simulation_id)
+outliers_gen_Ne <- out_Ne_gen %>% filter(is_outlier) %>% pull(simulation_id)
 
 # 2. Grouper les cas
-common_outliers_Ne <- intersect(outliers_all_Ne, outliers_spe_Ne)
-only_all_Ne        <- setdiff(outliers_all_Ne, outliers_spe_Ne)
-only_spe_Ne        <- setdiff(outliers_spe_Ne, outliers_all_Ne)
+common_outliers_Ne <- intersect(outliers_all_Ne, outliers_gen_Ne)
+only_all_Ne        <- setdiff(outliers_all_Ne, outliers_gen_Ne)
+only_gen_Ne        <- setdiff(outliers_gen_Ne, outliers_all_Ne)
 
 # 3. Taille des groupes
 length(common_outliers_Ne)
 length(only_all_Ne)
-length(only_spe_Ne)
+length(only_gen_Ne)
 
 # 4. Diagramme de Venn
 library(ggvenn)
 ggvenn(
-  list(all_stats = outliers_all_Ne, specific_stats = outliers_spe_Ne),
+  list(all_stats = outliers_all_Ne, specific_stats = outliers_gen_Ne),
   fill_color = c("skyblue", "salmon"),
   stroke_size = 0.5,
   text_size = 4
@@ -2105,10 +2052,10 @@ ggvenn(
 # 5. Comparaison des erreurs relatives
 compare_outliers_Ne <- out_Ne_all %>%
   select(simulation_id, rel_error_all = rel_error) %>%
-  inner_join(out_Ne_spe %>% select(simulation_id, rel_error_spe = rel_error),
+  inner_join(out_Ne_gen %>% select(simulation_id, rel_error_gen = rel_error),
              by = "simulation_id")
 
-ggplot(compare_outliers_Ne, aes(x = rel_error_all, y = rel_error_spe)) +
+ggplot(compare_outliers_Ne, aes(x = rel_error_all, y = rel_error_gen)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   labs(title = "Comparaison des erreurs relatives (Ne) : all vs specific",
@@ -2125,18 +2072,18 @@ only_all_stats_Ne <- learning_data_Ne_all %>%
   filter(simulation_id %in% only_all_Ne) %>%
   select(-Harmonic_Ne)
 
-only_spe_stats_Ne <- learning_data_Ne_spe %>%
-  filter(simulation_id %in% only_spe_Ne) %>%
+only_gen_stats_Ne <- learning_data_Ne_gen %>%
+  filter(simulation_id %in% only_gen_Ne) %>%
   select(-Harmonic_Ne)
 
 non_out_stats_Ne <- learning_data_Ne_all %>%
-  filter(!(simulation_id %in% union(outliers_all_Ne, outliers_spe_Ne))) %>%
+  filter(!(simulation_id %in% union(outliers_all_Ne, outliers_gen_Ne))) %>%
   select(-Harmonic_Ne)
 
 # 7. Moyennes
 mean_common_Ne     <- common_stats_Ne %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 mean_only_all_Ne   <- only_all_stats_Ne %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
-mean_only_spe_Ne   <- only_spe_stats_Ne %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
+mean_only_gen_Ne   <- only_gen_stats_Ne %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 mean_non_out_Ne    <- non_out_stats_Ne %>% summarise(across(where(is.numeric), mean, na.rm = TRUE))
 
 # 8. Fonction de comparaison
@@ -2155,9 +2102,9 @@ compare_to_nonout <- function(mean_out, mean_nonout, label) {
 # 9. Application
 diff_common_Ne   <- compare_to_nonout(mean_common_Ne, mean_non_out_Ne, "communs")
 diff_only_all_Ne <- compare_to_nonout(mean_only_all_Ne, mean_non_out_Ne, "all_only")
-diff_only_spe_Ne <- compare_to_nonout(mean_only_spe_Ne, mean_non_out_Ne, "spe_only")
+diff_only_gen_Ne <- compare_to_nonout(mean_only_gen_Ne, mean_non_out_Ne, "spe_only")
 
-diffs_all_Ne <- bind_rows(diff_common_Ne, diff_only_all_Ne, diff_only_spe_Ne)
+diffs_all_Ne <- bind_rows(diff_common_Ne, diff_only_all_Ne, diff_only_gen_Ne)
 
 # 10. Graphique : top stats
 top_diffs_Ne <- diffs_all_Ne %>%
@@ -2178,6 +2125,319 @@ ggplot(diffs_all_Ne %>% filter(stat %in% top_diffs_Ne),
        fill = "Groupe d'outliers") +
   scale_fill_manual(values = c("communs" = "orange", "all_only" = "skyblue", "spe_only" = "salmon")) +
   theme_minimal()
+
+```
+
+```{r}
+plot(log(learning_data_Ne_all$Harmonic_Ne), learning_data_Ne_all$MatchCount_mean)
+```
+
+```{r}
+# Nouveau dataframe avec uniquement les outliers (points rouges)
+outliers_N_all <- out_N_all %>% filter(is_outlier)
+
+# Affichage rapide pour vérifier
+head(outliers_N_all)
+
+# Nombre d’outliers
+n_outliers <- nrow(outliers_N_all)
+print(paste("Nombre d'outliers : ", n_outliers))
+
+outlier_ids <- out_N_all %>%
+  filter(is_outlier) %>%
+  pull(random_1)
+
+outlier_rows <- learning_data_N_all %>%
+  filter(random_1 %in% outlier_ids)
+
+non_outlier_rows <- learning_data_N_all %>%
+  filter(!random_1 %in% outlier_ids)
+
+all_labeled <- bind_rows(
+  outlier_rows %>% mutate(is_outlier = TRUE),
+  non_outlier_rows %>% mutate(is_outlier = FALSE)
+)
+
+library(dplyr)
+library(broom)
+
+# Sélectionner uniquement les colonnes numériques (stats résumantes)
+correlations <- all_labeled %>%
+  select(where(is.numeric), is_outlier) %>%
+  summarise(across(-is_outlier, ~ cor(.x, is_outlier, method = "pearson"))) %>%
+  pivot_longer(cols = everything(), names_to = "stat", values_to = "correlation_with_outlier") %>%
+  arrange(desc(abs(correlation_with_outlier)))
+
+print(correlations)
+
+library(ggplot2)
+
+ggplot(head(correlations, 10), aes(x = reorder(stat, correlation_with_outlier), y = correlation_with_outlier)) +
+  geom_bar(stat = "identity", fill = "#F8766D") +
+  coord_flip() +
+  labs(
+    title = "Corrélation entre les stats résumantes et l'appartenance aux outliers",
+    x = "Statistique résumante",
+    y = "Corrélation avec outlier (TRUE/FALSE)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r choix_ntree, echo=TRUE, message=FALSE}
+
+library(abcrf)
+
+# 1) Votre suite de valeurs de ntree à tester
+ntree_vals <- seq(100, 1000, by = 100)
+
+# 2) Pour chaque ntree, on construit le modèle et on prend
+#    la MSE OOB finale dans model.rf$prediction.error
+oob_errors <- sapply(ntree_vals, function(nt) {
+  model_rf_N_all <- regAbcrf(
+    as.formula(paste(target_param_N, "~ .")),
+    data  = learning_data_N_all,
+    ntree = nt
+  )
+  # on récupère la MSE OOB finale
+  model_rf_N_all$model.rf$prediction.error
+})
+
+# 3) Tracer Erreur OOB vs Nombre d’arbres
+plot(ntree_vals, oob_errors,
+     type = "b", pch = 19,
+     xlab = "Nombre d’arbres (ntree)",
+     ylab = "MSE OOB finale",
+     main = "Sélection du nombre d’arbres pour ABCRF")
+
+# 4) Identifier et annoter le minimum
+opt_nt <- ntree_vals[which.min(oob_errors)]
+abline(v = opt_nt, col = "red", lty = 2)
+legend("topright",
+       legend = sprintf("min OOB à %d arbres", opt_nt),
+       col = "red", lty = 2, bty = "n")
+
+# 5) Imprimer la valeur choisie
+cat(sprintf("MSE OOB minimale = %.4f → choix de %d arbres\n",
+            min(oob_errors), opt_nt))
+
+```
+
+```{r}
+
+# 2) Assemble tout dans un data.frame
+library(tidyr)
+library(dplyr)
+
+metrics_df <- tibble(
+  Model    = factor(rep(c("Éco seul","Gén seul","Combo"), times = 1),
+                    levels = c("Éco seul","Gén seul","Combo")),
+  Metric   = rep("R²", each = 3),
+  Value    = c(
+    r2_N_CMR,    r2_N_gen,    r2_N_all
+  )
+)
+
+# 3) Barplot facetté avec ggplot2
+library(ggplot2)
+
+ggplot(metrics_df, aes(x = Model, y = Value, fill = Model)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = ifelse(Metric %in% c("Coverage","R²"),
+                               sprintf("%.2f", Value),
+                               sprintf("%.3f", Value))),
+            vjust = -0.5, size = 3) +
+  facet_wrap(~ Metric, scales = "free_y", ncol = 3) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(x = NULL, y = NULL,
+       title = "Comparaison des indicateurs de performance\npour les trois modèles ABC-RF pour l'estimation de N") +
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+```
+
+```{r}
+
+r2_df <- data.frame(
+  Model = rep(c("Éco seul","Gén seul","Combo"), times = 2),
+  Param = factor(rep(c("N","Ne"), each = 3),
+                 levels = c("N","Ne")),
+  R2    = c(r2_N_CMR,  r2_N_gen,  r2_N_all,
+            r2_Ne_CMR, r2_Ne_gen, r2_Ne_all)
+)
+
+# 3) Barplot groupé
+ggplot(r2_df, aes(x = Model, y = R2, fill = Param)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", R2)),
+            position = position_dodge(width = 0.8),
+            vjust = -0.4, size = 3) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(values = c("steelblue", "tomato")) +
+  labs(
+    x     = "Type de modèle",
+    y     = expression(R^2),
+    fill  = "Paramètre",
+    title = "Comparaison des R² pour l’estimation de N et de Ne"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x    = element_text(angle = 15, hjust = 1),
+    legend.position = "top"
+  )
+```
+
+```{r}
+
+rmse_df <- data.frame(
+  Model = rep(c("Éco seul","Gén seul","Combo"), times = 2),
+  Param = factor(rep(c("N","Ne"), each = 3),
+                 levels = c("N","Ne")),
+  RMSE_rel    = c(rmse_re_N_CMR,  rmse_re_N_gen,  rmse_re_N_all,
+            rmse_re_Ne_CMR, rmse_re_Ne_gen, rmse_re_Ne_all)
+)
+
+# 3) Barplot groupé
+ggplot(rmse_df, aes(x = Model, y = RMSE_rel, fill = Param)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", RMSE_rel)),
+            position = position_dodge(width = 0.8),
+            vjust = -0.4, size = 3) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(values = c("steelblue", "tomato")) +
+  labs(
+    x     = "Type de modèle",
+    y     = expression(R^2),
+    fill  = "Paramètre",
+    title = "Comparaison des erreurs relatives pour l’estimation de N et de Ne"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x    = element_text(angle = 15, hjust = 1),
+    legend.position = "top"
+  )
+```
+
+```{r abcrf_repeats_compare, message=FALSE}
+library(abcrf)
+
+# Nombre de répétitions
+nrep <- 10
+ntree <- 50
+
+# Pré‐allouer les data.frames de perfs
+perf_all <- data.frame(rep = 1:nrep,
+  rmse = NA, bias = NA, r2 = NA,
+  rmse_rel = NA, bias_rel = NA, coverage = NA
+)
+perf_CMR <- perf_gen <- perf_all  # mêmes colonnes, même structure
+
+# Boucle des répétitions
+for(i in seq_len(nrep)){
+  set.seed(100 + i)
+  
+  # --- modèle ALL ---
+# Use "pop-size" as the target parameter. It will be used by the ABC-RF model to choose which resuming statistics are the most useful to predict N values.
+# Choose the parameter that will be predicted and create a new dataframe with it in the first column and the resuming stats
+target_param_N <- "pop_size"
+learning_data_N_all<- bind_cols(y = params[[target_param_N]], stats_table) %>% rename(!!target_param_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_N_all <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_all, ntree = 50)
+res_N_all <- predictOOB(model_rf_N_all, training = learning_data_N_all)
+
+# on récupère d’abord les vecteurs
+true_vals <- learning_data_N_all$pop_size
+pred_vals <- res_N_all$expectation
+
+# puis on peut construire PERF
+PERF <- list(
+  rmse_N_all      = sqrt(mean((pred_vals - true_vals)^2)),
+  bias_N_all      = mean(pred_vals - true_vals),
+  r2_N_all        = cor(pred_vals, true_vals)^2,
+  rmse_rel_N_all  = sqrt(mean(((pred_vals - true_vals)/true_vals)^2)),
+  bias_rel_N_all  = mean((pred_vals - true_vals)/true_vals),
+  coverage_N_all  = res_N_all$coverage
+)
+  perf_all[i, names(PERF)] <- unlist(PERF)
+}
+  
+  # --- modèle CMR ---
+for(i in seq_len(nrep)){
+  set.seed(100 + i)
+target_param_N <- "pop_size"
+learning_data_N_CMR<- bind_cols(y = params_N[[target_param_N]], stats_table_N) %>% rename(!!target_param_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_N_CMR <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_CMR, ntree = 50)
+res_N_CMR <- predictOOB(model_rf_N_CMR, training = learning_data_N_CMR)
+
+# on récupère d’abord les vecteurs
+true_vals <- learning_data_N_CMR$pop_size
+pred_vals <- res_N_CMR$expectation
+
+# puis on peut construire PERF
+PERF <- list(
+  rmse_N_CMR      = sqrt(mean((pred_vals - true_vals)^2)),
+  bias_N_CMR      = mean(pred_vals - true_vals),
+  r2_N_CMR        = cor(pred_vals, true_vals)^2,
+  rmse_rel_N_CMR  = sqrt(mean(((pred_vals - true_vals)/true_vals)^2)),
+  bias_rel_N_CMR  = mean((pred_vals - true_vals)/true_vals),
+  coverage_N_CMR  = res_N_CMR$coverage
+)
+
+  perf_CMR[i, names(PERF)] <- unlist(PERF)
+}  
+  # --- modèle GEN ---
+for(i in seq_len(nrep)){
+  set.seed(100 + i)
+target_param_N <- "pop_size"
+learning_data_N_gen<- bind_cols(y = params_Ne[[target_param_N]], stats_table_Ne) %>% rename(!!target_param_N := y)
+
+# Regression ABCRF that will predict the values of a parameters from the data base formed by the simulations
+model_rf_N_gen <- regAbcrf(as.formula(paste(target_param_N, "~ .")), data = learning_data_N_gen, ntree = 50)
+res_N_gen <- predictOOB(model_rf_N_gen, training = learning_data_N_gen)
+
+# on récupère d’abord les vecteurs
+true_vals <- learning_data_N_gen$pop_size
+pred_vals <- res_N_gen$expectation
+
+# puis on peut construire PERF
+PERF <- list(
+  rmse_N_gen      = sqrt(mean((pred_vals - true_vals)^2)),
+  bias_N_gen      = mean(pred_vals - true_vals),
+  r2_N_gen        = cor(pred_vals, true_vals)^2,
+  rmse_rel_N_gen  = sqrt(mean(((pred_vals - true_vals)/true_vals)^2)),
+  bias_rel_N_gen  = mean((pred_vals - true_vals)/true_vals),
+  coverage_N_gen  = res_N_gen$coverage
+)
+
+  perf_gen[i, names(PERF)] <- unlist(PERF)
+}
+# 3) T‐tests ALL vs CMR pour chaque métrique
+tests <- lapply(names(perf_all)[-1], function(metric){
+  t.res <- t.test(perf_all[[metric]], perf_CMR[[metric]])
+  data.frame(
+    metric = metric,
+    p.value = t.res$p.value,
+    mean_all = mean(perf_all[[metric]]),
+    mean_CMR = mean(perf_CMR[[metric]])
+  )
+})
+results <- do.call(rbind, tests)
+print(results)
+
+# 4) Optionnel : affichage rapide des résultats
+print("Moyennes et écarts‐types :")
+summary_df <- rbind(
+  ALL = sapply(perf_all[-1], function(x) sprintf("%.3f ± %.3f", mean(x), sd(x))),
+  CMR = sapply(perf_CMR[-1], function(x) sprintf("%.3f ± %.3f", mean(x), sd(x))),
+  GEN = sapply(perf_gen[-1], function(x) sprintf("%.3f ± %.3f", mean(x), sd(x)))
+)
+print(summary_df)
 
 ```
 

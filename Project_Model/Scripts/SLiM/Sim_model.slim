@@ -198,17 +198,11 @@ reproduction() {
     self.active = 0;
 }
 
-//early() {
-    // Individuals with an age of more than 1 tick are deleted from the pool
-   //inds = p1.individuals;
-    //inds[inds.age > 0].fitnessScaling = 0.0;
-//}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Death of individuals //
 survival() { 
-// survival is independent of fitness; parents die, offspring live 
+// survival is independent of fitness; parents die, offsprings live 
 return (individual.age == 0); 
 }
 

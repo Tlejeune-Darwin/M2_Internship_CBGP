@@ -554,6 +554,10 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     # Merge the new data
     summary_path = os.path.join(all_simulations, "summary_table.csv")
     config_dict = read_config(slim_config_file)
+    # Récupère les 3 census_N et les 3 MatchCount
+    cmr_data = parse_data_from_config_file(slim_config_file)
+    # Les fusionne dans la même config_dict
+    config_dict.update(cmr_data)
     ne_data_path = os.path.join(sim_folder, "simulation_dataNe.txt")
     if os.path.exists(ne_data_path):
         ne_stats = extract_ne_stats(ne_data_path)
@@ -657,7 +661,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
             config_dict[f"var_allele_size_pop{pop_id}"] = round(np.mean(allele_variances[pop_id]), 4)
 
     # ---___---___---___--- 12. Write summary ".txt" file ---___---___---___--- #
-
 
     ### 12.1. Write overall sections to a human-readable summary ###
     summary_txt_path = os.path.join(sim_folder, "summary.txt")

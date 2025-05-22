@@ -2,7 +2,7 @@
 
 #SBATCH -J Job_simu
 #SBATCH -p long
-#SBATCH -N 2
+#SBATCH -N 10
 #SBATCH -n 32
 #SBATCH -A stage_m2
 #SBATCH -t 2-12
