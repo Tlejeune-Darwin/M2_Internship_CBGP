@@ -1,3 +1,5 @@
+  Model              RMSE RMSE_rel      Bias Bias_rel      R2 Type                   
+   <chr>             <dbl>    <dbl>     <dbl>    <dbl>   <dbl> <chr>                  
  1 N_CMR          613.       0.0180  2.39       0.0183  0.941  prediction_directe     
  2 N_all          560.       0.0152  2.07       0.0169  0.951  prediction_directe     
  3 N_gen         1659.       8.58    7.54       0.790   0.565  prediction_directe     
@@ -16,3 +18,4 @@
 16 ratio_gen_CMR    0.0575   0.0645  0.00316    0.0405  0.782  recombinaison_pred_Ne_N
 17 ratio_gen_all    0.0551   0.0595  0.00171    0.0387  0.800  recombinaison_pred_Ne_N
 18 ratio_gen_gen    0.103    0.292  -0.0238     0.0227  0.301  recombinaison_pred_Ne_N
+> 
