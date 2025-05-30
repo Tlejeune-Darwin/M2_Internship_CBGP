@@ -8,16 +8,13 @@
 #SBATCH -t 2-12
 #SBATCH -o ./%N.out
 #SBATCH -e ./%N.err
-#SBATCH --mail-type=END
-#SBATCH --mail-user=thomas.lejeune@etu.umontpellier.fr
 
-
-# Activation de l'environnement conda
+# Conda environment activation
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate stage_m2_env
 
-# Lancement des simulations
+# Launching simulation (from the python script)
 for ((i=0; i<NUM_SIMS; i++)); do
     global_offset=$((OFFSET + i))
     echo "🚀 Simulation $global_offset in batch $BATCH_NAME"

@@ -4,11 +4,12 @@ import os
 
 # --- Detects the user desktop directory (cross-platform) --- #
 def get_desktop_path():
-    desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau")
+    desktop_fr = os.path.join(os.path.expanduser("~"), "Bureau") 
     desktop_en = os.path.join(os.path.expanduser("~"), "Desktop")
     return desktop_fr if os.path.isdir(desktop_fr) else (desktop_en if os.path.isdir(desktop_en) else os.path.expanduser("~"))
 
 # --- Fallback prompt if arguments are missing --- #
+# In cluster, this part is never showed because the bash script already got all the necessary informations. 
 def ask_if_missing(value, label, type_func=str, default=None):
     if value is not None:
         return value
@@ -17,6 +18,8 @@ def ask_if_missing(value, label, type_func=str, default=None):
     return type_func(inp) if inp else default
 
 # --- Command-line arguments --- #
+# Command lines obtained from the bash script
+# If not, refer to the names in each argument
 parser = argparse.ArgumentParser(description="Launch a batch of SLiM simulations.")
 parser.add_argument("--batch", type=str, help="Name of the subfolder grouping the batch of simulations.")
 parser.add_argument("-n", "--num_simulations", type=int, help="Number of simulations to run.")
@@ -29,12 +32,11 @@ args.batch = ask_if_missing(args.batch, "Batch name (simulation folder name)", s
 args.num_simulations = ask_if_missing(args.num_simulations, "Number of simulations", int, 1)
 
 # --- Create the base simulation folder on the desktop --- #
-# Extraire le dossier parent (nom global) et le sous-dossier batch
+# In cluster, this part is put inside the "results" folder
 global_dir, batch_dir = args.batch.split("/", 1)
 base_results_dir = os.path.expanduser(f"~/results/{global_dir}/{batch_dir}")
 os.makedirs(base_results_dir, exist_ok=True)
 sim_base_dir = base_results_dir
-
 
 # --- Run the simulations --- #
 for i in range(args.num_simulations):

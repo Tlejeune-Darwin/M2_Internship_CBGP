@@ -29,13 +29,12 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     ### 2.1. Create a global config file for later study purpose ###
     def get_global_config(simulations_dir):
-        """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
         global_config_path = os.path.join(simulations_dir, "config_global.txt")
         
         # Create the file if not done already
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
-                f.write("# Configuration générale des simulations\n")
+                f.write("# Main configuration of simulations\n")
                 f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
@@ -77,8 +76,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
-    print("Simulation lancée avec ID :", sim_id)
-    print("Tous les fichiers seront stockés dans :", sim_folder)
+    print("Simulation launched with ID :", sim_id)
+    print("All files stocked in :", sim_folder)
 
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
@@ -173,10 +172,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
     def parse_data_from_config_file(config_path):
-        """
-        Lit les lignes contenant 'census_N = ...' et 'matchCount = ...' dans slim_config.txt
-        et retourne un dictionnaire avec des clés numérotées (ex: census_N_1, matchCount_1).
-        """
         cmr_data = {}
         census_index = 1
         match_index = 1
@@ -676,7 +671,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     cmr_data = parse_data_from_config_file(slim_config_file)
     config_dict.update(cmr_data)
-    # Extraire les clés CMR dans l’ordre (triées par numéro)
+    # Extract CMr keys in order
     cmr_keys = []
     pattern = re.compile(r"^(census_N|MatchCount|Realized_Ne|Reproductive_Variance)_(\d+)$")
 

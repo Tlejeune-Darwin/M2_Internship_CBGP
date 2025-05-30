@@ -515,6 +515,444 @@ res_ratio_gen_train <- predictOOB(model_rf_ratio_gen_train, training = learning_
 ```
 
 ```{r}
+library(dplyr)
+library(tibble)
+
+# ---- Chargement des packages ----
+library(abcrf)
+library(dplyr)
+library(tibble)
+library(stringr)
+library(forcats)
+library(ggplot2)
+
+# ---- Fonction d’extraction des top variables depuis un modèle abcrf ----
+extract_top_from_abcrf <- function(model_obj, label, top_n = 5) {
+  if (!is.null(model_obj$model.rf$variable.importance)) {
+    varimp <- model_obj$model.rf$variable.importance
+    top_stats <- sort(varimp, decreasing = TRUE)[1:min(top_n, length(varimp))]
+    
+    tibble(
+      model = label,
+      stat = names(top_stats),
+      importance = as.numeric(top_stats),
+      rank = seq_along(top_stats)
+    )
+  } else {
+    NULL
+  }
+}
+
+# ---- Récupération de tous les modèles regAbcrf sauf ratio_post ----
+all_model_names <- ls(pattern = "^model_rf_")
+model_names_direct <- all_model_names[!grepl("ratio_post_", all_model_names)]
+
+# ---- Extraction des variables importantes ----
+importance_df <- tibble()
+
+for (label in model_names_direct) {
+  if (exists(label)) {
+    model_obj <- get(label)
+    extracted <- extract_top_from_abcrf(model_obj, label)
+    if (!is.null(extracted)) {
+      importance_df <- bind_rows(importance_df, extracted)
+    }
+  }
+}
+
+# ---- Classification des statistiques ----
+importance_df <- importance_df %>%
+  mutate(
+    stat_type = case_when(
+      str_detect(stat, "Match")     ~ "CMR",
+      str_detect(stat, "FST|He|Ho") ~ "gen",
+      str_detect(stat, "random")    ~ "random",
+      TRUE                          ~ "other"
+    )
+  )
+
+importance_summary <- importance_df %>%
+  group_by(stat_type, model) %>%
+  summarise(total_importance = sum(importance), .groups = "drop")
+library(ggplot2)
+
+ggplot(importance_summary, aes(x = stat_type, y = total_importance, fill = model)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  facet_wrap(~ stat_type, scales = "free_y") +
+  labs(
+    title = "Répartition des importances par type de statistique et modèle",
+    x = NULL, y = NULL, fill = "Modèle"
+  ) +
+  theme_void() +
+  theme(
+    strip.text = element_text(face = "bold", size = 12),
+    legend.position = "right"
+  )
+
+
+
+```
+
+```{r}
+# Regrouper les modèles par paramètre + type + stat_type
+importance_simplified <- importance_df %>%
+  filter(stat_type %in% c("CMR", "gen", "random")) %>%
+  mutate(
+    model_type = case_when(
+      str_detect(model, "_CMR_") ~ "écologique",
+      str_detect(model, "_gen_") ~ "génétique",
+      str_detect(model, "_all_") ~ "combiné",
+      TRUE ~ NA_character_
+    ),
+    param = str_extract(model, "model_rf_([^_]+)") %>% str_remove("model_rf_")
+  ) %>%
+  filter(!is.na(model_type), !is.na(param)) %>%
+  group_by(param, model_type, stat_type) %>%
+  summarise(total_importance = sum(importance), .groups = "drop")
+
+# Graphique stacked barplot
+ggplot(importance_simplified, aes(x = model_type, y = total_importance, fill = stat_type)) +
+  geom_col(position = "fill") +
+  facet_wrap(~ param) +
+  scale_fill_manual(values = c(
+    CMR = "#E69F00",
+    gen = "#009E73",
+    random = "#D55E00"
+  )) +
+  labs(
+    title = "Distribution des types de statistiques par type de modèle et paramètre estimé",
+    x = "Type de modèle",
+    y = "Proportion d'importance",
+    fill = "Type de statistique"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(face = "bold")
+  )
+
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+# Fonction de groupe
+group_stat <- function(stat_name) {
+  case_when(
+    grepl("random", stat_name)                           ~ "Autre",
+    grepl("Coan|r2|He_weighted|mean_exp_het", stat_name) ~ "Statistiques interlocus",
+    grepl("He|Ho|mean_alleles|sum_alleles|var_alleles|mean_obs", stat_name) ~ "Indices de diversité",
+    grepl("_Fk|_Fc|_Fs|_F_", stat_name)                  ~ "Méthode temporelle",
+    grepl("MatchCount|recaptures", stat_name)            ~ "CMR",
+    TRUE                                                 ~ "Autre"
+  )
+}
+
+# Extraction
+extract_model_top20_relative <- function(model_obj, model_label, top_n = 20) {
+  varimp <- model_obj$model.rf$variable.importance
+  top_stats <- sort(varimp, decreasing = TRUE)[1:min(top_n, length(varimp))]
+  total_importance <- sum(top_stats)
+
+  data.frame(
+    model = model_label,
+    stat = names(top_stats),
+    importance = as.numeric(top_stats),
+    importance_rel = as.numeric(top_stats) / total_importance * 100,
+    rank = seq_along(top_stats),
+    group = group_stat(names(top_stats))
+  )
+}
+
+# Appliquer aux deux modèles
+df_N  <- extract_model_top20_relative(model_rf_N_all_ref,  "Modèle N")
+df_Ne <- extract_model_top20_relative(model_rf_Ne_all_ref, "Modèle Ne")
+df_plot <- bind_rows(df_N, df_Ne)
+
+# Créer le graphique avec linetype
+ggplot(df_plot, aes(x = rank, y = importance_rel, fill = group, linetype = model)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7, color = "black", size = 0.3) +
+  scale_fill_manual(values = c(
+    "CMR"                      = "#E69F00",
+    "Indices de diversité"    = "#009E73",
+    "Statistiques interlocus" = "#56B4E9",
+    "Méthode temporelle"      = "#D55E00",
+    "Autre"                   = "grey60"
+  )) +
+  scale_linetype_manual(values = c("Modèle N" = "solid", "Modèle Ne" = "dashed")) +
+  scale_x_continuous(breaks = 1:20) +
+  labs(
+    title = "Comparaison des 20 statistiques principales",
+    subtitle = "Couleur : type de statistique • Trait : modèle N (plein) vs Ne (pointillé)",
+    x = "Rang (1 = plus important)",
+    y = "Importance relative (%)",
+    fill = "Groupe de statistique",
+    linetype = "Modèle"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(size = 10),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(tidyr)
+
+# 1) Fonction pour classer les stats en groupes
+group_stat <- function(stat_name) {
+  case_when(
+    # Méthode temporelle : Fk, Fc, Fs, F_ (Y compris P_Fk, N_Fk, etc.) et Fprime
+    grepl("Fk|Fc|Fs|_F_|Fprime", stat_name, ignore.case = TRUE) ~ "Méthode temporelle",
+
+    # Les autres groupes...
+    grepl("random", stat_name, ignore.case = TRUE)                           ~ "Autre",
+    grepl("Coan|r2|He_weighted|mean_exp_het|LD|fst", stat_name, ignore.case = TRUE)
+                                                                              ~ "Statistiques interlocus",
+    grepl("He|Ho|mean_alleles|sum_alleles|var_alleles|mean_obs", stat_name, ignore.case = TRUE)
+                                                                              ~ "Indices de diversité",
+    grepl("MatchCount|recaptures|recap", stat_name, ignore.case = TRUE)       ~ "CMR",
+    TRUE                                                                      ~ "Autre"
+  )
+}
+
+
+# 2) Extraction top 20 + importance relative
+extract_top20 <- function(model_obj, model_label, top_n = 20) {
+  varimp     <- model_obj$model.rf$variable.importance
+  top_stats  <- sort(varimp, decreasing = TRUE)[1:min(top_n, length(varimp))]
+  total      <- sum(top_stats)
+  tibble::tibble(
+    model          = model_label,
+    stat           = names(top_stats),
+    importance     = as.numeric(top_stats),
+    importance_rel = importance / total * 100,
+    rank           = seq_along(top_stats),
+    group          = group_stat(names(top_stats))
+  )
+}
+
+# 3) Récupération des deux modèles
+df_N   <- extract_top20(model_rf_N_all_ref,  "Modèle N")
+df_Ne  <- extract_top20(model_rf_Ne_all_ref, "Modèle Ne")
+df_raw <- bind_rows(df_N, df_Ne)
+
+# 4) Grille complète rang × modèle
+full_grid <- expand_grid(
+  model = c("Modèle N", "Modèle Ne"),
+  rank  = 1:20
+)
+
+# 5) Jointure et remplissage des manquants
+df_plot <- full_grid %>%
+  left_join(df_raw, by = c("model", "rank")) %>%
+  replace_na(list(
+    importance     = 0,
+    importance_rel = 0,
+    stat           = NA_character_,
+    group          = "Autre"
+  ))
+
+# 6) Ordre des facteurs
+df_plot <- df_plot %>%
+  mutate(
+    model = factor(model, levels = c("Modèle N", "Modèle Ne")),
+    group = factor(group, levels = c("CMR","Indices de diversité","Statistiques interlocus","Méthode temporelle","Autre"))
+  )
+
+# 7) Couleurs par groupe
+group_colors <- c(
+  "CMR"                     = "#E69F00",
+  "Indices de diversité"    = "#009E73",
+  "Statistiques interlocus" = "#56B4E9",
+  "Méthode temporelle"      = "#D55E00",
+  "Autre"                   = "grey70"
+)
+
+# 8) Plot final :  
+#    - fill = groupe de stat  
+#    - linetype = modèle (plein vs pointillé)  
+#    - color = noir pour le contour
+ggplot(df_plot, aes(x = factor(rank), 
+                    y = importance_rel, 
+                    fill = group, 
+                    linetype = model, 
+                    group = model)) +
+  geom_col(
+    position  = position_dodge(width = 0.8),
+    width     = 0.7,
+    color     = "black",
+    size      = 0.3
+  ) +
+  scale_fill_manual(values = group_colors) +
+  scale_linetype_manual(values = c("Modèle N" = "solid",  
+                                   "Modèle Ne"= "dashed")) +
+  scale_x_discrete(breaks = 1:20) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  labs(
+    title    = "Comparaison des 20 principales statistiques",
+    subtitle = "Barre gauche = N (trait plein), barre droite = Ne (trait pointillé)",
+    x        = "Rang d'importance (1 = plus important)",
+    y        = "Importance relative (%)",
+    fill     = "Groupe de statistique",
+    linetype = "Modèle"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position  = "bottom",
+    axis.text.x      = element_text(size = 9),
+    panel.grid.minor = element_blank()
+  )
+
+
+
+```
+
+```{r}
+# ─── 1) Packages nécessaires ────────────────────────────────────────────────────
+library(abcrf)
+
+# ─── 2) Fonction d’indicateurs de performance ───────────────────────────────────
+calculate_performance <- function(true_values, predicted_values) {
+  rmse     <- sqrt(mean((true_values - predicted_values)^2))
+  rmse_rel <- rmse / mean(true_values)
+  bias     <- mean(predicted_values - true_values)
+  bias_rel <- bias / mean(true_values)
+  r2       <- cor(true_values, predicted_values)^2
+  c(
+    RMSE      = rmse,
+    RMSE_rel  = rmse_rel,
+    Bias      = bias,
+    Bias_rel  = bias_rel,
+    R2        = r2
+  )
+}
+
+# ─── 1) Entraînement du modèle ratio All sur le jeu REF ───────────────────────────
+model_rf_ratio_CMR_ref <- regAbcrf(
+  Ne_N_ratio ~ .,
+  data  = learning_data_ratio_CMR_ref,
+  ntree = 100
+)
+
+# ─── 2) Prédiction CROISÉE (ref → train) ────────────────────────────────────────
+res_ratio_CMR_crossed <- predict(
+  object   = model_rf_ratio_CMR_ref,           # <— on passe le modèle en 'object'
+  obs      = learning_data_ratio_CMR_train,    # <— les nouvelles obs à prédire
+  training = learning_data_ratio_CMR_ref       # <— le jeu ref d’entraînement
+)
+
+# ─── 3) Extraction des valeurs vraies et prédites ───────────────────────────────
+true_vals <- learning_data_ratio_CMR_train$Ne_N_ratio
+pred_vals <- res_ratio_CMR_crossed$expectation
+
+# ─── 4) Calcul des indicateurs de performance ──────────────────────────────────
+calculate_performance <- function(true, pred) {
+  rmse     <- sqrt(mean((true - pred)^2))
+  rmse_rel <- rmse / mean(true)
+  bias     <- mean(pred - true)
+  bias_rel <- bias / mean(true)
+  r2       <- cor(true, pred)^2
+  c(RMSE = rmse, RMSE_rel = rmse_rel, Bias = bias, Bias_rel = bias_rel, R2 = r2)
+}
+
+perf_vec <- calculate_performance(true_vals, pred_vals)
+
+performance_ratio_CMR_crossed <- data.frame(
+  model     = "res_ratio_CMR_crossed",
+  t(perf_vec),
+  row.names = NULL
+)
+
+# ─── 5) Affichage ────────────────────────────────────────────────────────────────
+print(performance_ratio_CMR_crossed)
+
+```
+
+```{r}
+# ─── Packages nécessaires ───────────────────────────────────────────────────────
+library(abcrf)
+
+# ─── 1) MODELE Ne sur données génétiques ────────────────────────────────────────
+# formule : Harmonic_Ne ~ toutes les autres colonnes
+model_rf_Ne_gen_ref <- regAbcrf(
+  Harmonic_Ne ~ .,
+  data   = learning_data_Ne_gen_ref,
+  ntree  = 100
+)
+
+# OOB sur le même jeu « gen_ref »
+res_Ne_gen_ref <- predictOOB(
+  object   = model_rf_Ne_gen_ref,           # <— on passe le modèle en 'object'
+  obs      = learning_data_Ne_gen_ref,    # <— les nouvelles obs à prédire
+  training = learning_data_Ne_gen_ref       # <— le jeu ref d’entraînement
+)
+
+# ─── 2) MODELE N sur données CMR ─────────────────────────────────────────────────
+# formule : pop_size ~ toutes les autres colonnes
+model_rf_N_CMR_ref <- regAbcrf(
+  pop_size ~ .,
+  data   = learning_data_N_CMR_ref,
+  ntree  = 100
+)
+
+# OOB sur le même jeu « CMR_ref »
+res_N_CMR_ref <- predictOOB(
+  object   = model_rf_N_CMR_ref,           # <— on passe le modèle en 'object'
+  obs      = learning_data_N_CMR_ref ,    # <— les nouvelles obs à prédire
+  training = learning_data_N_CMR_ref       # <— le jeu ref d’entraînement
+)
+
+
+# ─── 3) EXTRACTION des vraies valeurs et des prédictions ─────────────────────────
+true_Ne <- learning_data_Ne_gen_ref$Harmonic_Ne
+pred_Ne <- res_Ne_gen_ref$expectation
+
+true_N  <- learning_data_N_CMR_ref$pop_size
+pred_N  <- res_N_CMR_ref$expectation
+
+# ─── 4) CALCUL du ratio pred Ne/N et ratio VRAI ─────────────────────────────────
+ratio_true <- true_Ne / true_N
+ratio_pred <- pred_Ne / pred_N
+
+# ─── 5) Fonction indicateurs ────────────────────────────────────────────────────
+calculate_performance <- function(true, pred) {
+  rmse     <- sqrt(mean((true - pred)^2))
+  rmse_rel <- rmse / mean(true)
+  bias     <- mean(pred - true)
+  bias_rel <- bias / mean(true)
+  r2       <- cor(true, pred)^2
+  c(RMSE = rmse, RMSE_rel = rmse_rel, Bias = bias, Bias_rel = bias_rel, R2 = r2)
+}
+
+# ─── 6) Calcul des performances pour chaque cible ────────────────────────────────
+perf_Ne  <- calculate_performance(true_Ne,  pred_Ne)
+perf_N   <- calculate_performance(true_N,   pred_N)
+perf_rat <- calculate_performance(ratio_true, ratio_pred)
+
+# ─── 7) Mise en forme et affichage ───────────────────────────────────────────────
+performance_df <- rbind(
+  `Ne_gen_OOB`  = perf_Ne,
+  `N_CMR_OOB`   = perf_N,
+  `ratio_cross` = perf_rat
+) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("model")
+
+print(performance_df)
+x
+```
+
+```{r}
 params <- c("N", "Ne", "ratio")
 types  <- c("all", "CMR", "gen")
 
