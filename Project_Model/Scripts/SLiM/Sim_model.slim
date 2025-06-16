@@ -13,11 +13,9 @@ initialize() {
      defineGlobal("sample_size_Ne_1", 50);
      defineGlobal("sample_size_CMR_0", 50);
      defineGlobal("sample_size_CMR_1", 50);
-     
-
-
   }else{
-// your code to read the file
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Read the config file made by python
     config_data = paste(readFile(config_file), sep="/n");
@@ -44,6 +42,8 @@ initialize() {
     defineGlobal("mutation_rate", asFloat(params.getValue("mutation_rate")));
     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
     defineGlobal("output_folder", params.getValue("output_folder"));
+	 defineGlobal("max_value", asFloat(params.getValue("max_value")));
+	 defineGlobal("Ne_values", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
@@ -57,8 +57,12 @@ initialize() {
 	  defineConstant("end_generation", sample1_generation + sample2_generation);
 
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
+	 initializeSLiMOptions(keepPedigrees = T);
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
     initializeGenomicElementType("g1", m1, 1);
@@ -69,18 +73,25 @@ initialize() {
     initializeTreeSeq(retainCoalescentOnly=F);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Pop Creation //
 1 early() {
 
-    sim.addSubpop("p1", pop_size); // Pop creation
+    sim.addSubpop("p1", pop_size);
 }
 
+///////////////////
+
+// Gen sample 1 //
 (sample1_gen - 1) late() {
 
 	 // First sample
     // Verify that there is enough individuals to sample
+	 K = pop_size;
     if (size(p1.individuals) >= sample_size_Ne_0) {
         sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
-		  catn("[Sample 1] Echantillonnage à la génération " + sim.cycle);
+		  catn("[Sample 1] Sampling at generation " + sim.cycle);
 
         // Mark this individuals as "Remembered"
         for (ind in sampled_first_gen) {
@@ -89,31 +100,33 @@ initialize() {
 
     } else {
         catn("Not enough individuals for the first sample");
-
-// Premier échantillon génétique déjà fait à sample1_gen - 1
 		}
+
 }
 
-// Capture-Marquage-Recapture à chaque génération suivante jusqu'au second sample
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// CMR //
 late() {
-    // Numéro relatif de génération depuis t1
+    // Relative number of generations
     i = sim.cycle - sample1_gen + 2;
 
-    // Si on n’est pas dans l’intervalle, on sort
+    // The counter starts only during the sample sessions
     if (i < 1 | i > end_generation)
         return;
 
-    // Taille de la population
+    // Pop size
     N = p1.individualCount;
 
-    // Premier échantillon (à la génération i-1)
+    // First sample - marking of individuals
     sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Deuxième échantillon (à la même génération ici, simplification)
+    // Second sample
     sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Comptage des recaptures
+    // Match count for second sample
     matchCount = 0;
     for (ind1 in sample1) {
         for (ind2 in sample2) {
@@ -123,48 +136,83 @@ late() {
         }
     }
 
-    // Estimation de la taille de population avec estimateur de Lincoln-Petersen modifié
+    // Pop size estimation from match count
     if (matchCount > 0) {
         census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
     } else {
         census_N = "Infinite";
-    }
+}
 
+///////////////////
+
+// Writing in log file //
 writeFile(config_file, paste("Index =", i), append=T);
 writeFile(config_file, paste("census_N =", census_N), append=T);
 writeFile(config_file, paste("MatchCount =", matchCount), append=T);
-writeFile(config_file, "", append=T); // saut de ligne
+writeFile(config_file, "", append=T);
 
 	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", census_N = " + census_N);
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Realized Ne //
+late() {
+    // Numéro relatif de génération depuis le début de l’intervalle
+    generation_index = sim.cycle - sample1_gen + 2;
+
+    // Vérification que l'on se situe bien dans l'intervalle d'estimation
+    if (generation_index < 1 | generation_index > end_generation)
+        return;
+
+    // Calcul des statistiques pour la génération courante
+    census_size = p1.individualCount;
+    reproductive_variance = var(p1.lifetimeReproductiveOutput);
+    realized_Ne = (2.0 * census_size - 1.0) / (1.0 + (reproductive_variance / 2.0));
+
+    // Affichage console
+    catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne + 
+         " (var_k = " + reproductive_variance + ")");
+
+    // Préparation de la ligne à écrire dans le fichier de configuration
+    log_line = "Index = " + generation_index + "\n" +
+               "Realized_Ne = " + realized_Ne + "\n" +
+               "Reproductive_Variance = " + reproductive_variance + "\n";
+
+    writeFile(config_file, log_line, append=T);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Reproduction assets //
 reproduction() {
     K = pop_size;
-    parents1 = p1.sampleIndividuals(K, replace=T);
-    parents2 = p1.sampleIndividuals(K, replace=T);
+	 inds = p1.individuals;
+	 fecundity = 10^(runif(p1.individualCount, 0,max_value));
+	 parents1 = sample(inds, K, replace = T, weights = fecundity);
+	 parents2 = sample(inds, K, replace = T, weights = fecundity);
 
     for (i in seqLen(K))
-        p1.addCrossed(parents1[i], parents2[i]);
-
+    	 p1.addCrossed(parents1[i], parents2[i]);
     self.active = 0;
 }
 
-//early() {
-    // Individuals with an age of more than 1 tick are deleted from the pool
-   //inds = p1.individuals;
-    //inds[inds.age > 0].fitnessScaling = 0.0;
-//}
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Death of individuals //
 survival() { 
-// survival is independent of fitness; parents die, offspring live 
+// survival is independent of fitness; parents die, offsprings live 
 return (individual.age == 0); 
 }
 
-// Generation number is determined by pythono script
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Gen sample 2 //
 (end_generation - 1) late() {
 
     // Verify that there is enough individuals to sample
+	 K = pop_size;
     if (size(p1.individuals) >= sample_size_Ne_1) {
         sampled_last_gen = sample(p1.individuals, sample_size_Ne_1, replace=F);
         catn("[Sample 2] Echantillonnage à la génération " + sim.cycle);
@@ -175,31 +223,30 @@ return (individual.age == 0);
         }
     } else {
         catn("Not enough individuals for the last sample");
-    }
 
-if (!exists("slimgui")) {
-    // Output Folder
-    output_folder = paste(strsplit(output_folder, " "), sep="");
-
-    // Creating .trees file 
-tree_file = output_folder + "/simulation.trees";
-sim.treeSeqOutput(tree_file);
-
-// Making of the path to the log file
-log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
-
-// Merge the new file with the old one containing the parameters
-appendLine = "log_file=" + log_file;
-writeFile(config_file, appendLine + "\n", append=T);
-
-if (sim.cycle == sample1_generation + sample2_generation) {
 }
 
-	writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
-	writeFile(config_file, paste("Final tree file:", tree_file), append=T);
-	writeFile(config_file, "------------------------", append=T);
-}else{
-	sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
-}
+	if (!exists("slimgui")) {
+      // Output Folder
+   	output_folder = paste(strsplit(output_folder, " "), sep="");
+
+      // Creating .trees file 
+		tree_file = output_folder + "/simulation.trees";
+		sim.treeSeqOutput(tree_file);
+
+      // Making of the path to the log file
+		log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
+
+		// Merge the new file with the old one containing the parameters
+		appendLine = "log_file=" + log_file;
+		writeFile(config_file, appendLine + "\n", append=T);
+
+		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
+		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
+		writeFile(config_file, "------------------------", append=T);
+	}else{
+		sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
+	}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////

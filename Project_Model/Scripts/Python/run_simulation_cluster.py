@@ -13,6 +13,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     import random
     import warnings
     import shutil
+    import math
     import pandas as pd                     # type: ignore
     import re
     from datetime import datetime
@@ -28,22 +29,23 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     ### 2.1. Create a global config file for later study purpose ###
     def get_global_config(simulations_dir):
-        """Vérifie si le fichier config_global.txt existe, le crée sinon, puis le lit"""
         global_config_path = os.path.join(simulations_dir, "config_global.txt")
         
         # Create the file if not done already
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
-                f.write("# Configuration générale des simulations\n")
+                f.write("# Main configuration of simulations\n")
                 f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
-                f.write(f"{better_names['mutation_rate']} = 0.00001, 0.001\n")
+                f.write(f"{better_names['mutation_rate']} = 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
+                f.write(f"{better_names['fecundity_max']} = 0,10\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
                 f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
+                f.write(f"{better_names['recap_Ne']} = 5000\n")
 
         # Reading the file
         config = {}
@@ -74,8 +76,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     sim_folder = os.path.join(all_simulations, sim_id)
     os.makedirs(sim_folder, exist_ok=True)
 
-    print("Simulation lancée avec ID :", sim_id)
-    print("Tous les fichiers seront stockés dans :", sim_folder)
+    print("Simulation launched with ID :", sim_id)
+    print("All files stocked in :", sim_folder)
 
     # ---___---___---___--- 3. Config File Generation ---___---___---___--- #
 
@@ -84,22 +86,21 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     if pop_size is None:
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
-        log_mu_low = np.log(1e-5)
-        log_mu_high = np.log(1e-3)
-        mutation_rate = float(np.exp(np.random.uniform(log_mu_low, log_mu_high)))
+        max_value = np.random.uniform(0, 80)
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
         "pop_size" : pop_size,                                                                  # Size of the population
-        "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM   
+        "num_loci" : int(global_config["num_loci"]),                                            # Number of loci used in SLiM
+        "max_value" : max_value,                                                                # Value used in SLiM to calculate the fecundity weight (other than 0 on the second value allows reproductive variance)
         "sample1_generation" : int(global_config["sample1_generation"]),                        # Number n of generations before the first genetic sample is taken
         "sample2_generation" : int(global_config["sample2_generation"]),                        # Number n of generations between the two genetic samples
         "sample_sizes_Ne" : list(map(int, global_config["sample_sizes_Ne"].split(","))),        # Size in individuals of the genetic samples   
         "sample_sizes_CMR" : int(global_config["sample_sizes_CMR"]),                            # Size in individuals of the demographic samples
         "low_repeats" : int(global_config["low_repeats"]),                                      # Lowest number of repeats for simulation of mutation processes
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
-        "mutation_rate" : mutation_rate,                                                        # Mutation rate used during mutation simulation
-        "recap_Ne" : pop_size,                                                                  # Effective size attributed for the recapitation
+        "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
+        "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
         "seed" : random.randint(1, 10**6)                                                       # For analysis purpose
@@ -170,14 +171,12 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     # Delete the TimeUnitMismatch Warning 
     warnings.simplefilter("ignore", msprime.TimeUnitsMismatchWarning)
 
-    def parse_cmr_from_config_file(config_path):
-        """
-        Lit les lignes contenant 'census_N = ...' et 'matchCount = ...' dans slim_config.txt
-        et retourne un dictionnaire avec des clés numérotées (ex: census_N_1, matchCount_1).
-        """
+    def parse_data_from_config_file(config_path):
         cmr_data = {}
         census_index = 1
         match_index = 1
+        ne_index = 1
+        var_index = 1
 
         with open(config_path, "r") as f:
             for line in f:
@@ -197,6 +196,26 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                         value = None
                     cmr_data[f"MatchCount_{match_index}"] = value
                     match_index += 1
+
+        
+        with open(config_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("Realized_Ne"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"Realized_Ne_{ne_index}"] = value
+                    ne_index += 1
+
+                elif line.startswith("Reproductive_Variance"):
+                    try:
+                        value = float(line.split("=")[1].strip())
+                    except ValueError:
+                        value = None
+                    cmr_data[f"Reproductive_Variance_{var_index}"] = value
+                    var_index += 1
 
         return cmr_data
 
@@ -223,7 +242,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     demography.add_population(name="p1", initial_size=config["recap_Ne"])
     
     ### 6.2. Recapitate ###
-    recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=1e-8, demography=demography)
+    recap_ts = pyslim.recapitate(filtered_ts, recombination_rate=math.log(2), demography=demography)
 
     # ---___---___---___--- 7. Simulate Mutations ---___---___---___--- #
 
@@ -530,6 +549,10 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     # Merge the new data
     summary_path = os.path.join(all_simulations, "summary_table.csv")
     config_dict = read_config(slim_config_file)
+    # Récupère les 3 census_N et les 3 MatchCount
+    cmr_data = parse_data_from_config_file(slim_config_file)
+    # Les fusionne dans la même config_dict
+    config_dict.update(cmr_data)
     ne_data_path = os.path.join(sim_folder, "simulation_dataNe.txt")
     if os.path.exists(ne_data_path):
         ne_stats = extract_ne_stats(ne_data_path)
@@ -634,7 +657,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     # ---___---___---___--- 12. Write summary ".txt" file ---___---___---___--- #
 
-
     ### 12.1. Write overall sections to a human-readable summary ###
     summary_txt_path = os.path.join(sim_folder, "summary.txt")
     with open(summary_txt_path, "w") as f:
@@ -647,11 +669,11 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
             for key in filtered_keys:
                 file_handle.write(f"{key:<{max_key_len}} = {config_dict[key]}\n")
 
-    cmr_data = parse_cmr_from_config_file(slim_config_file)
+    cmr_data = parse_data_from_config_file(slim_config_file)
     config_dict.update(cmr_data)
-    # Extraire les clés CMR dans l’ordre (triées par numéro)
+    # Extract CMr keys in order
     cmr_keys = []
-    pattern = re.compile(r"^(census_N|MatchCount)_(\d+)$")
+    pattern = re.compile(r"^(census_N|MatchCount|Realized_Ne|Reproductive_Variance)_(\d+)$")
 
     for k in config_dict:
         match = pattern.match(k)
@@ -663,7 +685,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
-        write_section("Model Parameters", ["pop_size", "num_loci", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
+        write_section("Model Parameters", ["pop_size", "num_loci", "max_value", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample_sizes_CMR"], f)
         write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
@@ -782,7 +804,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "simulation_dataLoc.txt",
         "simulation_data.gen",
         "simulation.trees",
-        "slim_config.txt",
+        #"slim_config.txt",
         #"slim.log"
     ]
 
