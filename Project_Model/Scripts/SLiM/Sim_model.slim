@@ -110,23 +110,23 @@ initialize() {
 
 // CMR //
 late() {
-    // Numéro relatif de génération depuis t1
+    // Relative number of generations
     i = sim.cycle - sample1_gen + 2;
 
-    // Si on n’est pas dans l’intervalle, on sort
+    // The counter starts only during the sample sessions
     if (i < 1 | i > end_generation)
         return;
 
-    // Taille de la population
+    // Pop size
     N = p1.individualCount;
 
-    // Premier échantillon (à la génération i-1)
+    // First sample - marking of individuals
     sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Deuxième échantillon (à la même génération ici, simplification)
+    // Second sample
     sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Comptage des recaptures
+    // Match count for second sample
     matchCount = 0;
     for (ind1 in sample1) {
         for (ind2 in sample2) {
@@ -136,7 +136,7 @@ late() {
         }
     }
 
-    // Estimation de la taille de population avec estimateur de Lincoln-Petersen modifié
+    // Pop size estimation from match count
     if (matchCount > 0) {
         census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
     } else {
@@ -149,7 +149,7 @@ late() {
 writeFile(config_file, paste("Index =", i), append=T);
 writeFile(config_file, paste("census_N =", census_N), append=T);
 writeFile(config_file, paste("MatchCount =", matchCount), append=T);
-writeFile(config_file, "", append=T); // saut de ligne
+writeFile(config_file, "", append=T);
 
 	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", census_N = " + census_N);
 
