@@ -237,19 +237,24 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     ### 5.4. Purge des mutations SLiM avant recapitation ###
 
-    # 1) Récupérer la TableCollection modifiable
+    # 1) Récupérer les tables modifiables
     tables = filtered_ts.dump_tables()
 
-    # 2) Lister tous les IDs de mutations à supprimer
-    #    filtered_ts.mutations() renvoie des objets tskit.Mutation
+    # 2) Lister tous les IDs de mutations et de sites à supprimer
     muts_to_remove = [m.id for m in filtered_ts.mutations()]
+    sites_to_remove = {m.site for m in filtered_ts.mutations()}
 
-    # 3) Supprimer en ordre inverse pour conserver l'intégrité des indices
+    # 3) Supprimer les mutations en ordre inverse
     for mut_id in sorted(muts_to_remove, reverse=True):
-        tables.delete_mutation(mut_id)
+        tables.mutations.delete_row(mut_id)
 
-    # 4) Reconstruire le TreeSequence sans AUCUNE mutation SLiM
+    # 4) Supprimer les sites vides en ordre inverse
+    for site_id in sorted(sites_to_remove, reverse=True):
+        tables.sites.delete_row(site_id)
+
+    # 5) Reconstruire le TreeSequence sans aucune mutation SLiM
     filtered_ts = tables.tree_sequence()
+
 
 
     # ---___---___---___--- 6. Recapitation ---___---___---___--- #
