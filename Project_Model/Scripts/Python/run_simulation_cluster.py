@@ -235,27 +235,20 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     ### 5.3. Simplify the tree sequence to reduce memory and noise ###
     filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
 
-    ### 5.4. Remove neutral SLiM mutations (type m1) before recapitation ###
+    ### 5.4. Purge des mutations SLiM avant recapitation ###
 
-    # 1) Repérer les mutations à supprimer
-    muts_to_remove = []
-    sites_to_remove = set()
-    for m in filtered_ts.mutations():
-        # m.metadata est déjà un dict décodé par pyslim/tskit
-        if m.metadata["mutation_list"][0]["mutation_type"] == 0:  # type 0 = m1
-            muts_to_remove.append(m.id)
-            sites_to_remove.add(m.site)
-
-    # 2) Charger les tables pour modification
+    # 1) Récupérer la TableCollection modifiable
     tables = filtered_ts.dump_tables()
 
-    # 3) Supprimer les mutations et les sites en ordre inverse
-    for mut_idx in sorted(muts_to_remove, reverse=True):
-        tables.delete_mutation(mut_idx)
-    for site_idx in sorted(sites_to_remove, reverse=True):
-        tables.delete_site(site_idx)
+    # 2) Lister tous les IDs de mutations à supprimer
+    #    filtered_ts.mutations() renvoie des objets tskit.Mutation
+    muts_to_remove = [m.id for m in filtered_ts.mutations()]
 
-    # 4) Reconstruire le TreeSequence sans les m1
+    # 3) Supprimer en ordre inverse pour conserver l'intégrité des indices
+    for mut_id in sorted(muts_to_remove, reverse=True):
+        tables.delete_mutation(mut_id)
+
+    # 4) Reconstruire le TreeSequence sans AUCUNE mutation SLiM
     filtered_ts = tables.tree_sequence()
 
 
