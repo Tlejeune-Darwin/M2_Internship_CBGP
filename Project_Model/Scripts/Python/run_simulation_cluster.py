@@ -273,7 +273,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     mut_model = msprime.SMM(lo=lo_repeat, hi=hi_repeat, root_distribution = root_dist)
 
     ### 7.2. Simulate mutation process ###
-    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"], keep=True)
+    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"])
 
     # ---___---___---___--- 8. Format Data for NeEstimator (GENEPOP) ---___---___---___--- #
 
