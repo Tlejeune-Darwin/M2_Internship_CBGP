@@ -236,30 +236,28 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
 
     ### 5.4. Remove neutral mutations (m1) introduced in SLiM ###
-    # Dump tables to edit them
+
+    from pyslim import decode 
+
+    # On récupère la TableCollection
     tables = filtered_ts.dump_tables()
     mutations_to_remove = []
     sites_to_remove = set()
 
-    for i, mut in enumerate(tables.mutations):
-        try:
-            # SLiM mutation metadata is in mutation_list[0]['mutation_type']
-            mut_type = tables.mutation_metadata[i]["mutation_list"][0]["mutation_type"]
-            if mut_type == 0:  # 0 corresponds to "m1" (neutral)
-                mutations_to_remove.append(i)
-                sites_to_remove.add(tables.mutations[i].site)
-        except:
-            pass  # skip if not a SLiM mutation
+    # Parcours des mutations, décodage correct de la métadonnée SLiM
+    for i in range(tables.mutations.num_rows):
+        meta = decode(tables.mutations.metadata[i], 'mutation')
+        if meta['mutation_list'][0]['mutation_type'] == 0:  # m1 → neutral
+            mutations_to_remove.append(i)
+            sites_to_remove.add(tables.mutations[i].site)
 
-    # Delete mutations (must be in reverse order)
-    for idx in sorted(mutations_to_remove, reverse=True):
-        tables.delete_mutation(idx)
+    # Suppression en ordre inverse pour ne pas casser les indices
+    for mut_idx in sorted(mutations_to_remove, reverse=True):
+        tables.delete_mutation(mut_idx)
+    for site_idx in sorted(sites_to_remove, reverse=True):
+        tables.delete_site(site_idx)
 
-    # Delete sites (must also be in reverse order)
-    for idx in sorted(sites_to_remove, reverse=True):
-        tables.delete_site(idx)
-
-    # Rebuild cleaned TreeSequence
+    # Reconstruction du TreeSequence filtré
     filtered_ts = tables.tree_sequence()
 
     # ---___---___---___--- 6. Recapitation ---___---___---___--- #
