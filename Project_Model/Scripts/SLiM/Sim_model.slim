@@ -1,5 +1,9 @@
 initialize() {
     
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+	// If using SLiMGUI, activates this part (To test the simulation and check bugs)
+	
   if (exists("slimgui")){
 	  defineGlobal("simulation_id", 1111);
      defineGlobal("output_folder", "test");
@@ -65,8 +69,11 @@ initialize() {
 	 initializeSLiMOptions(keepPedigrees = T);
     initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
+	 initializeMutationType("m2", 0.5, "f", 0.1);
     initializeGenomicElementType("g1", m1, 1);
+	 initializeGenomicElementType("g2", m2, 1);
     initializeGenomicElement(g1, 0, num_loci);
+	 initializeGenomicElement(g2, 21, 22);
     initializeRecombinationRate(0.5);
 
     // Tree Sequence Recording activation
