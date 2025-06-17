@@ -67,7 +67,7 @@ initialize() {
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
 	 initializeSLiMOptions(keepPedigrees = T);
-    initializeMutationRate(0);
+    initializeMutationRate(1e-3);
     initializeMutationType("m1", 0.5, "f", 0.0);
 	 initializeMutationType("m2", 0.5, "f", 0.1);
     initializeGenomicElementType("g1", m1, 1);
@@ -110,8 +110,6 @@ initialize() {
 		}
 
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

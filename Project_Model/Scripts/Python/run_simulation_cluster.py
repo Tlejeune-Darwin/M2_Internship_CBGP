@@ -235,6 +235,33 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     ### 5.3. Simplify the tree sequence to reduce memory and noise ###
     filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
 
+    ### 5.4. Remove neutral mutations (m1) introduced in SLiM ###
+    # Dump tables to edit them
+    tables = filtered_ts.dump_tables()
+    mutations_to_remove = []
+    sites_to_remove = set()
+
+    for i, mut in enumerate(tables.mutations):
+        try:
+            # SLiM mutation metadata is in mutation_list[0]['mutation_type']
+            mut_type = tables.mutation_metadata[i]["mutation_list"][0]["mutation_type"]
+            if mut_type == 0:  # 0 corresponds to "m1" (neutral)
+                mutations_to_remove.append(i)
+                sites_to_remove.add(tables.mutations[i].site)
+        except:
+            pass  # skip if not a SLiM mutation
+
+    # Delete mutations (must be in reverse order)
+    for idx in sorted(mutations_to_remove, reverse=True):
+        tables.delete_mutation(idx)
+
+    # Delete sites (must also be in reverse order)
+    for idx in sorted(sites_to_remove, reverse=True):
+        tables.delete_site(idx)
+
+    # Rebuild cleaned TreeSequence
+    filtered_ts = tables.tree_sequence()
+
     # ---___---___---___--- 6. Recapitation ---___---___---___--- #
 
     ### 6.1. Create the demographic model ###
@@ -254,7 +281,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     mut_model = msprime.SMM(lo=lo_repeat, hi=hi_repeat, root_distribution = root_dist)
 
     ### 7.2. Simulate mutation process ###
-    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"])
+    mut_ts = msprime.sim_mutations(recap_ts, rate=config["mutation_rate"], model=mut_model, random_seed=config["seed"], keep=True)
 
     # ---___---___---___--- 8. Format Data for NeEstimator (GENEPOP) ---___---___---___--- #
 
