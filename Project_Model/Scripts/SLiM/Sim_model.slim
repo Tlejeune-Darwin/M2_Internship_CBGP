@@ -67,18 +67,46 @@ initialize() {
     // SLiM model initialization
     initializeSLiMModelType("nonWF");
 	 initializeSLiMOptions(keepPedigrees = T);
-    initializeMutationRate(1e-3);
+    initializeMutationRate(0);
     initializeMutationType("m1", 0.5, "f", 0.0);
 	 initializeMutationType("m2", 0.5, "f", 0.1);
     initializeGenomicElementType("g1", m1, 1);
 	 initializeGenomicElementType("g2", m2, 1);
     initializeGenomicElement(g1, 0, num_loci);
-	 initializeGenomicElement(g2, 21, 22);
+	 initializeGenomicElement(g2, 21, 40);
     initializeRecombinationRate(0.5);
 
     // Tree Sequence Recording activation
     initializeTreeSeq(retainCoalescentOnly=F);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+1 early() {
+    // Récupérer le mutationType et la pop
+    m2 = sim.mutationTypes["m2"];
+    pop = sim.subpopulations["p1"];
+
+    // Les 20 positions sous sélection
+    positions = 21:40;
+
+    totalGenomes = pop.genomes.size();
+
+    // Boucle correcte en Eidos
+    for (pos in positions) {
+        // 1) Tirer f ∈ [0,1]
+        f = runif(1, 0.0, 1.0)[0];
+        // 2) Combien de génomes muter
+        n = asInteger(f * totalGenomes);
+        // 3) Échantillonner n génomes
+        targets = pop.genomes.sample(n);
+        // 4) Injecter la mutation m2 à pos
+        for (g in targets) {
+            g.addNewMutation(m2, pos);
+        }
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
