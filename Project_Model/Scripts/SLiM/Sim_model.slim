@@ -50,28 +50,30 @@ initialize() {
 	 defineGlobal("Ne_values", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
-		// ─── Parse des loci sous sélection passés depuis Python ───────────────
-	 pos_str  = params.getValue("positions_sel");   // "21,22,23,…"
-	 vector<string> pos_chunks = strsplit(pos_str, ",");
+// 1) découpe de la chaîne de positions en vecteur de chaînes
+string pos_str = params.getValue("positions_sel");    // "21,22,23,…"
+string[] pos_chunks = strsplit(pos_str, ",");
 
-	 vector<int> positions_sel = integer(length(pos_chunks));
-	 for (j in seqLen(length(pos_chunks))) {
-    	 positions_sel[j] = asInteger(pos_chunks[j]);
-	 }
+// 2) conversion en vecteur d’entiers
+integer[] positions_sel = integer(length(pos_chunks));
+for (j in seqLen(length(pos_chunks))) {
+    positions_sel[j] = asInteger(pos_chunks[j]);
+}
 
-		// ─── Parse des fréquences associées ────────────────────────────────
-	 freq_str = params.getValue("freqs_sel");       // "0.12,0.87,…"
-	 vector<string> freq_chunks = strsplit(freq_str, ",");
+// 3) découpe de la chaîne de fréquences en vecteur de chaînes
+string freq_str = params.getValue("freqs_sel");       // "0.12,0.87,…"
+string[] freq_chunks = strsplit(freq_str, ",");
 
-	 vector<float> freqs_sel = float(length(freq_chunks));
-	 for (j in seqLen(length(freq_chunks))) {
-    	 freqs_sel[j] = asFloat(freq_chunks[j]);
-	 }
+// 4) conversion en vecteur de réels
+float[] freqs_sel = float(length(freq_chunks));
+for (j in seqLen(length(freq_chunks))) {
+    freqs_sel[j] = asFloat(freq_chunks[j]);
+}
 
-		// ─── Déclaration globales pour tout le script ──────────────────────
-	 defineConstant("positions_sel", positions_sel);
-	 defineConstant("freqs_sel"    , freqs_sel);
-	 defineConstant("num_loci_sel" , length(positions_sel));
+// 5) déclarer les constantes globales
+defineConstant("positions_sel", positions_sel);
+defineConstant("freqs_sel"    , freqs_sel);
+defineConstant("num_loci_sel" , length(positions_sel));
 
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
