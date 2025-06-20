@@ -49,6 +49,11 @@ initialize() {
 	 defineGlobal("max_value", asFloat(params.getValue("max_value")));
 	 defineGlobal("Ne_values", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
+		// Parse la chaîne "c(...)" en vecteur Eidos
+	 defineConstant("positions"   , eval(params.getValue("positions")));
+	 defineConstant("freqs"       , eval(params.getValue("freqs")));
+		// Maintenant que positions est un vrai vecteur, on peut en prendre la longueur
+	 defineConstant("num_loci_sel", length(positions));
 
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
     defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
@@ -57,8 +62,8 @@ initialize() {
     sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); // samples 
     defineGlobal("sample_size_CMR", asInteger(sizes_CMR));
 
-	  defineConstant("sample1_gen", sample1_generation);
-	  defineConstant("end_generation", sample1_generation + sample2_generation);
+	 defineConstant("sample1_gen", sample1_generation);
+	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
 }
 
@@ -82,39 +87,35 @@ initialize() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-1 early() {
-    // Récupérer le mutationType et la pop
-    m2 = sim.mutationTypes["m2"];
-    pop = sim.subpopulations["p1"];
-
-    // Les 20 positions sous sélection
-    positions = 21:40;
-
-    totalGenomes = pop.genomes.size();
-
-    // Boucle correcte en Eidos
-    for (pos in positions) {
-        // 1) Tirer f ∈ [0,1]
-        f = runif(1, 0.0, 1.0)[0];
-        // 2) Combien de génomes muter
-        n = asInteger(f * totalGenomes);
-        // 3) Échantillonner n génomes
-        targets = pop.genomes.sample(n);
-        // 4) Injecter la mutation m2 à pos
-        for (g in targets) {
-            g.addNewMutation(m2, pos);
-        }
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
 // Pop Creation //
 1 early() {
 
     sim.addSubpop("p1", pop_size);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+1 early() {
+    totalGenomes = p1.genomes.size();
+
+    // pour chaque indice i = 1…num_loci_sel
+    for (i in seqLen(num_loci_sel)) {
+        pos = positions[i];   // locus à muter
+        f   = freqs[i];       // fréquence souhaitée
+
+        n = asInteger(f * totalGenomes);
+        if (n > 0) {
+            // échantillonne n génomes
+            targets = p1.genomes.sample(n);
+            // injecte m2 sur chacun à la position pos
+            targets.addNewMutation(m2, 0.1, pos);
+        }
+    }
+
+    // (optionnel) recalculer le fitness
+    sim.species.recalculateFitness(p1);
+}
+
 
 ///////////////////
 

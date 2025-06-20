@@ -46,6 +46,9 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
                 f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
                 f.write(f"{better_names['recap_Ne']} = 5000\n")
+                f.write(f"{better_names['num_loci_sel']} = 20\n")
+                f.write(f"{better_names['first_locus']} = 21\n")
+
 
         # Reading the file
         config = {}
@@ -84,9 +87,13 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     ### 3.1. Create the simulation parameter dictionary "config_file" ###
     global_config = get_global_config(all_simulations)
     if pop_size is None:
+        num_loci_sel = 20
+        first_locus = 21
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
         max_value = np.random.uniform(0, 0)
+        freqs = [random.random() for _ in range(num_loci_sel)]
+        positions = list(range(first_locus, first_locus + num_loci_sel))
 
     config = {
         "simulation_id" : sim_id,                                                               # Name of this specific simulation
@@ -101,6 +108,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
         "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
+        "positions_sel" : positions,   # les loci soumis à la sélection
+        "freqs_sel" : freqs,       # leurs fréquences initiales
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
         "seed" : random.randint(1, 10**6)                                                       # For analysis purpose
@@ -704,7 +713,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     with open(summary_txt_path, "w") as f:
         write_section("Simulation Info", ["simulation_id", "timestamp", "seed", "output_folder"], f)
-        write_section("Model Parameters", ["pop_size", "num_loci", "max_value", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne"], f)
+        write_section("Model Parameters", ["pop_size", "num_loci", "max_value", "sample1_generation", "sample2_generation", "low_repeats", "high_repeats", "mutation_rate", "recap_Ne", "positions_sel", "freqs_sel"], f)
         write_section("Sampling Design", ["sample1_size_Ne", "sample2_size_Ne", "sample_sizes_CMR"], f)
         write_section("Capture-Mark-Recapture", cmr_keys_sorted, f)
 
