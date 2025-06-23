@@ -130,8 +130,8 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
         if (n > 0) {
             selected_inds = sample(inds, n, replace=F);
             
-            g1 = sapply(selected_inds, "genome1");
-            g2 = sapply(selected_inds, "genome2");
+            g1 = genomes[0]);
+            g2 = genomes[1]);
 
             g1.addNewMutation(m2, pos);
             g2.addNewMutation(m2, pos);
