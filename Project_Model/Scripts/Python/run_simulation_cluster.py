@@ -89,9 +89,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     if pop_size is None:
         num_loci_sel = 20
         positions_sel = list(range(21, 21 + num_loci_sel))
-        freq_sel = np.random.uniform(0.0, 1.0)
-        num_selected = int(freq_sel * len(positions_sel))
-        selected_loci = random.sample(positions_sel, num_selected)
+        freqs_sel = [round(random.uniform(0.05, 0.95), 3) for _ in positions_sel]
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
         max_value = np.random.uniform(0, 0)
@@ -110,9 +108,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
         "positions_sel" : positions_sel,   # les loci soumis à la sélection
-        "freq_sel" : freq_sel,       # leurs fréquences initiales
-        "selected_loci" : selected_loci,
-        "num_loci_sel" : num_loci_sel,
+        "freq_sel" : freqs_sel,       # leurs fréquences initiales
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
         "seed" : random.randint(1, 10**6)                                                       # For analysis purpose

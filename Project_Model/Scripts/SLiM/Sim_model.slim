@@ -60,22 +60,32 @@ initialize() {
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
-catn("DEBUG selected_loci brut : " + asString(params.getValue("selected_loci")));
-loci_str = asString(params.getValue("selected_loci"));
-catn("DEBUG loci_str : " + loci_str);
 
-loci_chunks = strsplit(loci_str, ",");
-catn("DEBUG loci_chunks[0] : " + loci_chunks[0]);  // premier élément
-catn("DEBUG loci_chunks size : " + asString(length(loci_chunks)));  // converti en string avant affichage
+// extraction des positions et fréquences
+pos_str = asString(params.getValue("positions_sel"));
+freq_str = asString(params.getValue("freqs_sel"));
+catn("DEBUG pos_str : " + pos_str);
+catn("DEBUG freq_str : " + freq_str);
 
+pos_chunks = strsplit(pos_str, ",");
+freq_chunks = strsplit(freq_str, ",");
+catn("DEBUG pos_chunks size : " + asString(length(pos_chunks)));
+catn("DEBUG freq_chunks size : " + asString(length(freq_chunks)));
 
-num_loci_sel = length(loci_chunks);                          // int
+positions_sel = integer(length(pos_chunks));
+freqs_sel     = float(length(freq_chunks));
 
-selected_loci = integer(num_loci_sel); 
-for (i in seqLen(num_loci_sel)) {
-    selected_loci[i] = asInteger(loci_chunks[i]);
-	}
+for (i in seqLen(length(pos_chunks))) {
+    positions_sel[i] = asInteger(pos_chunks[i]);
+    freqs_sel[i]     = asFloat(freq_chunks[i]);
+	 catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" + freqs_sel[i]);
 }
+
+// éventuellement : defineConstant ou defineGlobal
+defineGlobal("positions_sel", positions_sel);
+defineGlobal("freqs_sel", freqs_sel);
+defineGlobal("num_loci_sel", length(positions_sel));
+catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
