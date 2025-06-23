@@ -115,32 +115,33 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-1 early () {
+1 early() {
     inds = p1.individuals;
-    genomes = sapply(inds, "genome1") + sapply(inds, "genome2");
-    totalGenomes = size(genomes);
+    Ninds = size(inds);
 
-    // DEBUG
-    catn("Nombre total de génomes : " + totalGenomes);
-    catn("Loci sous sélection : " + selected_loci);
-    catn("Fréquences alléliques cibles : " + freqs_sel);
+    catn("DEBUG : Nb d'individus = " + Ninds);
+    catn("DEBUG : Loci = " + selected_loci);
+    catn("DEBUG : Fréquences = " + freqs_sel);
 
-    // Pour chaque locus sous sélection
     for (i in seqLen(length(selected_loci))) {
         pos = selected_loci[i];
         freq = freqs_sel[i];
 
-        // Nombre de génomes à muter à cette position
-        n = asInteger(freq * totalGenomes);
+        // Nombre d’individus à muter (selon fréquence allélique cible)
+        n = asInteger(freq * Ninds);
 
         if (n > 0) {
-            genomes.sample(n).addNewMutation(m2, pos);
-            catn("Mutation m2 ajoutée à la position " + pos + " sur " + n + " génomes.");
+            sampled_inds = sample(inds, n, replace=F);
+            for (ind in sampled_inds)
+                ind.genomes.addNewMutation(m2, pos);
+
+            catn("Ajout mutation sur " + n + " individus à locus " + pos + " (fréquence = " + freq + ")");
         } else {
-            catn("Fréquence trop faible pour ajouter mutation à locus " + pos);
+            catn("Locus " + pos + " ignoré : fréquence trop faible (" + freq + ")");
         }
     }
 }
+
 
 ///////////////////
 
