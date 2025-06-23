@@ -79,15 +79,13 @@ for (i in seqLen(length(pos_chunks))) {
     positions_sel[i] = asInteger(pos_chunks[i]);
     freqs_sel[i]     = asFloat(freq_chunks[i]);
 	 catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" + freqs_sel[i]);
-}
 
 // éventuellement : defineConstant ou defineGlobal
 defineGlobal("positions_sel", positions_sel);
 defineGlobal("freqs_sel", freqs_sel);
 defineGlobal("num_loci_sel", length(positions_sel));
 catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
-
-
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
