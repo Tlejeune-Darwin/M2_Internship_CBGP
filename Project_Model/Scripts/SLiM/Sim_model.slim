@@ -107,18 +107,18 @@ for (i in seqLen(num_loci_sel)) {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 early() {
-    totalGenomes = p1.genomes.size();    // suppose que ta pop est dans p1
+inds = p1.individuals;
+genomes = inds.genomes;
+totalGenomes = size(genomes);
 
-    for (i in seqLen(selected_loci)) {
-        pos = selected_loci[i];
-        // Pour chaque locus sélectionné, ajouter la mutation à f% des individus
-        f = asFloat(params.getValue("freq_sel"));    // fréquence globale appliquée à chaque locus
-        n = asInteger(f * totalGenomes);
-        if (n > 0) {
-            p1.genomes.sample(n).addNewMutation(m2, pos);
-        }
+for (i in seqLen(length(selected_loci))) {
+    pos = selected_loci[i];
+    n = asInteger(freq_sel * totalGenomes);
+    if (n > 0) {
+        genomes.sample(n).addNewMutation(m2, pos);
     }
 }
+
 
 
 ///////////////////
