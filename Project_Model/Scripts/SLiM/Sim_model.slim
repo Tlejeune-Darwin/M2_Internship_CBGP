@@ -74,11 +74,7 @@ num_loci_sel = length(loci_chunks);                          // int
 selected_loci = integer(num_loci_sel); 
 for (i in seqLen(num_loci_sel)) {
     selected_loci[i] = asInteger(loci_chunks[i]);
-}
-
-// Définition des constantes pour le reste du script
-defineConstant("num_loci_sel", num_loci_sel);
-
+	}
 }
 
 
