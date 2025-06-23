@@ -102,12 +102,7 @@ for (i in seqLen(num_loci_sel)) {
 1 early() {
 
     sim.addSubpop("p1", pop_size);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-early() {
-inds = p1.individuals;
+    inds = p1.individuals;
 genomes = sapply(inds, "genome1") + sapply(inds, "genome2");
 totalGenomes = size(genomes);
 
@@ -119,6 +114,8 @@ for (i in seqLen(length(selected_loci))) {
     	}
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////
