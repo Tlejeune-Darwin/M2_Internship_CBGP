@@ -242,26 +242,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
 
     ### 5.3. Simplify the tree sequence to reduce memory and noise ###
     filtered_ts = tree_sequence.simplify(kept_nodes, keep_input_roots=True)
-
-    ### 5.4. Purge des mutations SLiM avant recapitation ###
-
-    # 1) Récupérer les mutations et les sites à supprimer
-    muts_to_remove = [m.id for m in filtered_ts.mutations()]
-    sites_to_remove = {m.site for m in filtered_ts.mutations()}
-
-    # 2) Passer en TableCollection
-    tables = filtered_ts.dump_tables()
-
-    # 3) Supprimer toutes les mutations d’un coup
-    tables.mutations.remove_rows(sorted(muts_to_remove))
-
-    # 4) Supprimer ensuite tous les sites correspondants
-    tables.sites.remove_rows(sorted(sites_to_remove))
-
-    # 5) Reconstruire le TreeSequence nettoyé
-    filtered_ts = tables.tree_sequence()
-
-
+    
     # ---___---___---___--- 6. Recapitation ---___---___---___--- #
 
     ### 6.1. Create the demographic model ###
