@@ -60,13 +60,14 @@ initialize() {
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
-catn("DEBUG selected_loci brut : ", params.getValue("selected_loci"));  // Vérifie que la chaîne est bien au format "12,23,34"
+catn("DEBUG selected_loci brut : " + asString(params.getValue("selected_loci")));
 loci_str = asString(params.getValue("selected_loci"));
-catn("DEBUG loci_str : ", loci_str);
+catn("DEBUG loci_str : " + loci_str);
 
 loci_chunks = strsplit(loci_str, ",");
-catn("DEBUG loci_chunks[0] : ", loci_chunks[0]);      // Affiche le premier élément
-catn("DEBUG loci_chunks size : ", length(loci_chunks));  // Vérifie que c'est bien interprété comme un vecteur
+catn("DEBUG loci_chunks[0] : " + loci_chunks[0]);  // premier élément
+catn("DEBUG loci_chunks size : " + asString(length(loci_chunks)));  // converti en string avant affichage
+
 
 num_loci_sel = length(loci_chunks);                          // int
 
