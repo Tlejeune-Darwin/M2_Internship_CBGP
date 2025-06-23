@@ -116,25 +116,20 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 1 early() {
-inds = p1.individuals;
-nb_inds = size(inds);
-catn("DEBUG : Nb d'individus = " + nb_inds);
-catn("DEBUG : Nb de loci = " + num_loci_sel);
+genomes = p1.genomes;
 
 for (j in seqLen(num_loci_sel)) {
     pos = positions_sel[j];
     freq = freqs_sel[j];
-    n = asInteger(freq * nb_inds);
+    n = asInteger(freq * size(genomes));  // nombre de génomes à muter
+
     catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
 
     if (n > 0) {
-        inds_sample = sample(inds, n, replace=F);
-        for (ind in inds_sample) {
-            ind.genomes[0].addNewMutation(m2, pos);
-            ind.genomes[1].addNewMutation(m2, pos);
-        }
+        genomes.sample(n).addNewMutation(m2, pos);
     }
 }
+
 
 }
 
