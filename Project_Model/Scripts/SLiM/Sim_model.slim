@@ -116,26 +116,26 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 1 early() {
-    inds = p1.individuals;
-    total_ind = size(inds);
-    catn("DEBUG : Nb d'individus = " + total_ind);
-    catn("DEBUG : Nb de loci = " + length(positions_sel));
+inds = p1.individuals;
+nb_inds = size(inds);
+catn("DEBUG : Nb d'individus = " + nb_inds);
+catn("DEBUG : Nb de loci = " + num_loci_sel);
 
-    for (i in seqLen(length(positions_sel))) {
-        pos = positions_sel[i];
-        freq = freqs_sel[i];
-        n = asInteger(freq * total_ind);
+for (j in seqLen(num_loci_sel)) {
+    pos = positions_sel[j];
+    freq = freqs_sel[j];
+    n = asInteger(freq * nb_inds);
+    catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
 
-        catn("Locus " + pos + " ➝ fréquence = " + freq + " ➝ n = " + n);
-
-        if (n > 0) {
-            sampled = sample(inds, n, replace = F);
-            for (j in seqLen(n)) {
-                sampled[j].genome1.addNewMutation(m2, pos);
-                sampled[j].genome2.addNewMutation(m2, pos);
-            }
+    if (n > 0) {
+        inds_sample = sample(inds, n, replace=F);
+        for (ind in inds_sample) {
+            ind.genomes[0].addNewMutation(m2, pos);
+            ind.genomes[1].addNewMutation(m2, pos);
         }
     }
+}
+
 }
 
 
