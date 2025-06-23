@@ -129,15 +129,16 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
         if (n > 0) {
             selected_inds = sample(inds, n, replace=F);
-            for (ind in selected_inds) {
-                genomes = ind.genomes;
-                for (g in genomes) {
-                    g.addNewMutation(m2, pos);
-                }
-            }
+
+            // méthode compatible : mutation sur tous les génomes des individus
+            genomes = sapply(selected_inds, "genome1") + sapply(selected_inds, "genome2");
+            genomes.addNewMutation(m2, pos);
+
+            catn("Mutations ajoutées à " + n + " individus au locus " + pos);
         }
     }
 }
+
 
 
 
