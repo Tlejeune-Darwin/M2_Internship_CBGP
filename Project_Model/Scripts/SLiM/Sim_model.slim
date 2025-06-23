@@ -65,9 +65,10 @@ loci_chunks = strsplit(loci_str, ",");
 selected_loci = integer(length(loci_chunks));
 for (i in seqLen(loci_chunks)) {
     selected_loci[i] = asInteger(loci_chunks[i]);
+}
 defineConstant("selected_loci", selected_loci);
 defineConstant("num_loci_sel", length(selected_loci));
-	}
+	
 }
 
 
