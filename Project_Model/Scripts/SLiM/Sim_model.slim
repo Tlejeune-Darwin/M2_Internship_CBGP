@@ -60,15 +60,20 @@ initialize() {
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
-loci_str = asString(params.getValue("selected_loci"));
-loci_chunks = strsplit(loci_str, ",");
-selected_loci = integer(length(loci_chunks));
-for (i in seqLen(loci_chunks)) {
+// Lecture et découpe de la chaîne de loci sous sélection
+loci_str = asString(params.getValue("selected_loci"));       // "26,25,35,..."
+loci_chunks = strsplit(loci_str, ",");                       // vector<string>
+num_loci_sel = length(loci_chunks);                          // int
+
+selected_loci = integer(num_loci_sel);                       // init vecteur int
+for (i in seqLen(num_loci_sel)) {
     selected_loci[i] = asInteger(loci_chunks[i]);
 }
+
+// Définition des constantes pour le reste du script
 defineConstant("selected_loci", selected_loci);
-defineConstant("num_loci_sel", length(selected_loci));
-	
+defineConstant("num_loci_sel", num_loci_sel);
+
 }
 
 
