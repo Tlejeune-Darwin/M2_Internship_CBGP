@@ -60,22 +60,14 @@ initialize() {
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
-    // 1. Convertir la chaîne Python "21,22,23" en vecteur
-    pos_chunks = strsplit(params.getValue("positions_sel"), ",");
-    positions_sel = integer(length(pos_chunks));
-    for (i in seqLen(length(pos_chunks))) {
-        positions_sel[i] = asInteger(pos_chunks[i]);
-    }
-
-    // 2. Calculer la longueur sans defineConstant
-    num_loci_sel = 0;
-    for (x in positions_sel) {
-        num_loci_sel = num_loci_sel + 1;
-    }
-
-    // 3. Sauver ce nombre comme global (mais pas constant)
-    defineGlobal("num_loci_sel", num_loci_sel);
-    defineConstant("positions_sel", positions_sel);
+loci_str = asString(params.getValue("selected_loci"));
+loci_chunks = strsplit(loci_str, ",");
+selected_loci = integer(length(loci_chunks));
+for (i in seqLen(loci_chunks)) {
+    selected_loci[i] = asInteger(loci_chunks[i]);
+defineConstant("selected_loci", selected_loci);
+defineConstant("num_loci_sel", length(selected_loci));
+	}
 }
 
 
@@ -107,17 +99,20 @@ initialize() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-1 early() {
-    totalGenomes = p1.genomes.size();
-    for (i in seqLen(num_loci_sel)) {
-        pos = positions_sel[i];            // récupère la position i-ème
-        n   = asInteger(f_sel[i] * totalGenomes);  // fréquence associée
+early() {
+    totalGenomes = p1.genomes.size();    // suppose que ta pop est dans p1
+
+    for (i in seqLen(selected_loci)) {
+        pos = selected_loci[i];
+        // Pour chaque locus sélectionné, ajouter la mutation à f% des individus
+        f = asFloat(params.getValue("freq_sel"));    // fréquence globale appliquée à chaque locus
+        n = asInteger(f * totalGenomes);
         if (n > 0) {
             p1.genomes.sample(n).addNewMutation(m2, pos);
         }
     }
-    sim.species.recalculateFitness(p1);
 }
+
 
 ///////////////////
 
