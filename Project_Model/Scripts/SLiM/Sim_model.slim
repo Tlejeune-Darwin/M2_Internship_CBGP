@@ -60,19 +60,17 @@ initialize() {
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
-// Lecture et découpe de la chaîne de loci sous sélection
-loci_str = asString(params.getValue("selected_loci"));       // "26,25,35,..."
-loci_chunks = strsplit(loci_str, ",");                       // vector<string>
+catn("DEBUG selected_loci brut : ", params.getValue("selected_loci"));  // Vérifie que la chaîne est bien au format "12,23,34"
+loci_str = asString(params.getValue("selected_loci"));
+catn("DEBUG loci_str : ", loci_str);
+
+loci_chunks = strsplit(loci_str, ",");
+catn("DEBUG loci_chunks[0] : ", loci_chunks[0]);      // Affiche le premier élément
+catn("DEBUG loci_chunks size : ", length(loci_chunks));  // Vérifie que c'est bien interprété comme un vecteur
+
 num_loci_sel = length(loci_chunks);                          // int
 
 selected_loci = integer(num_loci_sel); 
-
-catn("DEBUG : selected_loci brut = ", params.getValue("selected_loci"));  // Devrait être une chaîne : "26,27,29,..."
-catn("DEBUG : loci_str type = ", typeof(loci_str));                       // Doit être string
-catn("DEBUG : loci_chunks type = ", typeof(loci_chunks));                 // Doit être vector
-catn("DEBUG : length chunks = ", length(loci_chunks));                    // Doit être un entier > 0
-
-                      // init vecteur int
 for (i in seqLen(num_loci_sel)) {
     selected_loci[i] = asInteger(loci_chunks[i]);
 }
