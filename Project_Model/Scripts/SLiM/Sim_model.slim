@@ -129,16 +129,18 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
         if (n > 0) {
             selected_inds = sample(inds, n, replace=F);
-
+            
             for (ind in selected_inds) {
-                ind.genome1.addNewMutation(m2, pos);
-                ind.genome2.addNewMutation(m2, pos);
+                g = ind.genomes();
+                g[0].addNewMutation(m2, pos);
+                g[1].addNewMutation(m2, pos);
             }
 
-            catn("Mutations ajoutées à " + n + " individus (2 génomes chacun) au locus " + pos);
+            catn("Mutations ajoutées à " + n + " individus au locus " + pos);
         }
     }
 }
+
  	
 
 ///////////////////
