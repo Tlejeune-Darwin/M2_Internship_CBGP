@@ -86,6 +86,7 @@ defineGlobal("freqs_sel", freqs_sel);
 defineGlobal("num_loci_sel", length(positions_sel));
 catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -109,8 +110,7 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
 // Pop Creation //
 1 early() {
-
-    sim.addSubpop("p1", pop_size);
+		sim.addSubpop("p1", pop_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
