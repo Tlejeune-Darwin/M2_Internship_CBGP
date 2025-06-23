@@ -50,32 +50,6 @@ initialize() {
 	 defineGlobal("Ne_values", c());
     defineGlobal("seed", asInteger(params.getValue("seed")));
 
-// 1) découpe de la chaîne de positions en vecteur de chaînes
-pos_str = params.getValue("positions_sel");    // "21,22,23,…"
-pos_chunks = strsplit(pos_str, ",");
-
-// 2) conversion en vecteur d’entiers
-positions_sel = integer(length(pos_chunks));
-for (j in seqLen(length(pos_chunks))) {
-    positions_sel[j] = asInteger(pos_chunks[j]);
-}
-
-// 3) découpe de la chaîne de fréquences en vecteur de chaînes
-freq_str = params.getValue("freqs_sel");       // "0.12,0.87,…"
-freq_chunks = strsplit(freq_str, ",");
-
-// 4) conversion en vecteur de réels
-freqs_sel = float(length(freq_chunks));
-for (j in seqLen(length(freq_chunks))) {
-    freqs_sel[j] = asFloat(freq_chunks[j]);
-}
-
-// 5) déclarer les constantes globales
-defineConstant("positions_sel", positions_sel);
-defineConstant("freqs_sel"    , freqs_sel);
-defineConstant("num_loci_sel" , length(positions_sel));
-
-
     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
     defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
     defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
@@ -86,7 +60,24 @@ defineConstant("num_loci_sel" , length(positions_sel));
 	 defineConstant("sample1_gen", sample1_generation);
 	 defineConstant("end_generation", sample1_generation + sample2_generation);
 
+    // 1. Convertir la chaîne Python "21,22,23" en vecteur
+    pos_chunks = strsplit(params.getValue("positions_sel"), ",");
+    positions_sel = integer(length(pos_chunks));
+    for (i in seqLen(length(pos_chunks))) {
+        positions_sel[i] = asInteger(pos_chunks[i]);
+    }
+
+    // 2. Calculer la longueur sans defineConstant
+    num_loci_sel = 0;
+    for (x in positions_sel) {
+        num_loci_sel = num_loci_sel + 1;
+    }
+
+    // 3. Sauver ce nombre comme global (mais pas constant)
+    defineGlobal("num_loci_sel", num_loci_sel);
+    defineConstant("positions_sel", positions_sel);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -118,25 +109,15 @@ defineConstant("num_loci_sel" , length(positions_sel));
 
 1 early() {
     totalGenomes = p1.genomes.size();
-
-    // pour chaque indice i = 1…num_loci_sel
     for (i in seqLen(num_loci_sel)) {
-        pos = positions[i];   // locus à muter
-        f   = freqs[i];       // fréquence souhaitée
-
-        n = asInteger(f * totalGenomes);
+        pos = positions_sel[i];            // récupère la position i-ème
+        n   = asInteger(f_sel[i] * totalGenomes);  // fréquence associée
         if (n > 0) {
-            // échantillonne n génomes
-            targets = p1.genomes.sample(n);
-            // injecte m2 sur chacun à la position pos
-            targets.addNewMutation(m2, 0.1, pos);
+            p1.genomes.sample(n).addNewMutation(m2, pos);
         }
     }
-
-    // (optionnel) recalculer le fitness
     sim.species.recalculateFitness(p1);
 }
-
 
 ///////////////////
 
