@@ -127,18 +127,22 @@ catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
 
         catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
 
-        if (n > 0) {
-            selected_inds = sample(inds, n, replace=F);
+if (n > 0) {
+    selected_inds = sample(inds, n, replace=F);
 
-            // méthode compatible : mutation sur tous les génomes des individus
-            genomes = sapply(selected_inds, "genome1") + sapply(selected_inds, "genome2");
-            genomes.addNewMutation(m2, pos);
-
-            catn("Mutations ajoutées à " + n + " individus au locus " + pos);
-        }
+    // Ajouter la mutation sur chaque génome des individus sélectionnés
+    for (ind in selected_inds) {
+        ind.genome1.addNewMutation(m2, pos);
+        ind.genome2.addNewMutation(m2, pos);
     }
+
+    catn("Mutations ajoutées à " + n + " individus au locus " + pos);
 }
 
+        }
+    }
+
+	
 
 
 
