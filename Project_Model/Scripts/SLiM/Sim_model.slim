@@ -125,7 +125,7 @@ initialize() {
         n = asInteger(freq * size(inds));
 
         catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
-		 g = sim.subpopulation.genomes;
+		 g = sim.subpopulations.genomes;
 		 withMutation = asLogical(rbinom(size(g), freq_sel[j]));
 		 g[withMutation].addNewMutation(m2, pos);
     }
