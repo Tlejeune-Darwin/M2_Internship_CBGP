@@ -3,14 +3,12 @@ initialize() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-        // If using SLiMGUI, activates this part (To test the simulation and
-check bugs)
+        // If using SLiMGUI, activates this part (To test the simulation and check bugs)
         
    if (exists("slimgui")){
           defineGlobal("simulation_id", 1111);
       defineGlobal("output_folder", "test");
-      defineGlobal("simulation_path", paste(output_folder, "/",
-simulation_id));
+      defineGlobal("simulation_path", paste(output_folder, "/",simulation_id));
       defineGlobal("pop_size", 200);
       defineGlobal("num_loci", 40);
       defineGlobal("mutation_rate", 0.001);
@@ -46,32 +44,26 @@ simulation_id));
          }
      }
 
-     defineGlobal("params", p); // Get the parameters accessible to all
-script
+     defineGlobal("params", p); // Get the parameters accessible to all script
          defineGlobal("simulation_id", params.getValue("simulation_id"));
          defineGlobal("output_folder", params.getValue("output_folder"));
          defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
      defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
      defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
-     defineGlobal("sample1_generation",
-asInteger(params.getValue("sample1_generation")));
-     defineGlobal("sample2_generation",
-asInteger(params.getValue("sample2_generation")));
-     defineGlobal("mutation_rate",
-asFloat(params.getValue("mutation_rate")));
+     defineGlobal("sample1_generation",asInteger(params.getValue("sample1_generation")));
+     defineGlobal("sample2_generation",asInteger(params.getValue("sample2_generation")));
+     defineGlobal("mutation_rate",asFloat(params.getValue("mutation_rate")));
      defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
      defineGlobal("output_folder", params.getValue("output_folder"));
          defineGlobal("max_value", asFloat(params.getValue("max_value")));
          defineGlobal("Ne_values", c());
      defineGlobal("seed", asInteger(params.getValue("seed")));
 
-     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); //
-samples
+     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); //samples
      defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
      defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
 
-     sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); //
-samples
+     sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); //samples
      defineGlobal("sample_size_CMR", asInteger(sizes_CMR));
 
          defineConstant("sample1_gen", sample1_generation);
@@ -93,8 +85,7 @@ samples
                  for (i in seqLen(length(pos_chunks))) {
               positions_sel[i] = asInteger(pos_chunks[i]);
               freqs_sel[i]     = asFloat(freq_chunks[i]);
-                  catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" +
-freqs_sel[i]);
+                  catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" + freqs_sel[i]);
 
   // Define as global value each paramater
                   defineGlobal("positions_sel", positions_sel);
