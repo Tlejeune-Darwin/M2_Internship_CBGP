@@ -1,156 +1,174 @@
+
 initialize() {
-    
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-	// If using SLiMGUI, activates this part (To test the simulation and check bugs)
-	
-  if (exists("slimgui")){
-	  defineGlobal("simulation_id", 1111);
-     defineGlobal("output_folder", "test");
-     defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
-     defineGlobal("pop_size", 200);
-     defineGlobal("num_loci", 2);
-     defineGlobal("mutation_rate", 0.001);
-     defineGlobal("recap_Ne", 200);
-     defineGlobal("seed", 123456);
-     defineGlobal("sample_size_Ne_0", 50);
-     defineGlobal("sample_size_Ne_1", 50);
-     defineGlobal("sample_size_CMR_0", 50);
-     defineGlobal("sample_size_CMR_1", 50);
-	  defineGlobal("num_loci_sel", 20);
+        // If using SLiMGUI, activates this part (To test the simulation and
+check bugs)
+        
+   if (exists("slimgui")){
+          defineGlobal("simulation_id", 1111);
+      defineGlobal("output_folder", "test");
+      defineGlobal("simulation_path", paste(output_folder, "/",
+simulation_id));
+      defineGlobal("pop_size", 200);
+      defineGlobal("num_loci", 40);
+      defineGlobal("mutation_rate", 0.001);
+      defineGlobal("recap_Ne", 200);
+      defineGlobal("seed", 123456);
+      defineGlobal("sample_size_Ne_0", 50);
+      defineGlobal("sample_size_Ne_1", 50);
+      defineGlobal("sample_size_CMR_0", 50);
+      defineGlobal("sample_size_CMR_1", 50);
+          defineGlobal("num_loci_sel", 20);
+          defineGlobal("positions_sel", 20:39);
+          defineGlobal("freqs_sel", rep(0.5,20));
+        
+        
+        
+        
+        
+        
+}else{
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+     // Read the config file made by python
+     config_data = paste(readFile(config_file), sep="/n");
+     config_lines = strsplit(config_data, "/n");
+
+     p = Dictionary();
+     for (line in config_lines) {
+         parts = strsplit(line, "=");
+         if (size(parts) == 2) {
+             key = parts[0];
+             value = parts[1];
+             p.setValue(key, value);
+         }
+     }
+
+     defineGlobal("params", p); // Get the parameters accessible to all
+script
+         defineGlobal("simulation_id", params.getValue("simulation_id"));
+         defineGlobal("output_folder", params.getValue("output_folder"));
+         defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
+     defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
+     defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
+     defineGlobal("sample1_generation",
+asInteger(params.getValue("sample1_generation")));
+     defineGlobal("sample2_generation",
+asInteger(params.getValue("sample2_generation")));
+     defineGlobal("mutation_rate",
+asFloat(params.getValue("mutation_rate")));
+     defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
+     defineGlobal("output_folder", params.getValue("output_folder"));
+         defineGlobal("max_value", asFloat(params.getValue("max_value")));
+         defineGlobal("Ne_values", c());
+     defineGlobal("seed", asInteger(params.getValue("seed")));
+
+     sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); //
+samples
+     defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
+     defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
+
+     sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); //
+samples
+     defineGlobal("sample_size_CMR", asInteger(sizes_CMR));
+
+         defineConstant("sample1_gen", sample1_generation);
+         defineConstant("end_generation", sample1_generation + sample2_generation);
+
+  // Gets specific parameters from config file
+         pos_str = asString(params.getValue("positions_sel"));
+         freq_str = asString(params.getValue("freqs_sel"));
+         catn("DEBUG pos_str : " + pos_str);
+         catn("DEBUG freq_str : " + freq_str);
+         pos_chunks = strsplit(pos_str, ",");
+         freq_chunks = strsplit(freq_str, ",");
+         catn("DEBUG pos_chunks size : " + asString(length(pos_chunks)));
+         catn("DEBUG freq_chunks size : " + asString(length(freq_chunks)));
+
+         positions_sel = integer(length(pos_chunks));
+         freqs_sel     = float(length(freq_chunks));
+  // For each locus, attribute a allelic frequency
+                 for (i in seqLen(length(pos_chunks))) {
+              positions_sel[i] = asInteger(pos_chunks[i]);
+              freqs_sel[i]     = asFloat(freq_chunks[i]);
+                  catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" +
+freqs_sel[i]);
+
+  // Define as global value each paramater
+                  defineGlobal("positions_sel", positions_sel);
+                  defineGlobal("freqs_sel", freqs_sel);
+                  defineGlobal("num_loci_sel", length(positions_sel));
+                  catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
+                 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
+     // SLiM model initialization
+     initializeSLiMModelType("nonWF");
+         initializeSLiMOptions(keepPedigrees = T);
+     initializeMutationRate(0);
+     initializeMutationType("m1", 0.5, "f", 0.0);
+         initializeMutationType("m2", 0.5, "f", 0.1);
+     initializeGenomicElementType("g1", m1, 1);
+     initializeGenomicElement(g1, 0, num_loci);
+     initializeRecombinationRate(0.5);
 
-    // Read the config file made by python
-    config_data = paste(readFile(config_file), sep="/n");
-    config_lines = strsplit(config_data, "/n");
-
-    p = Dictionary();
-    for (line in config_lines) {
-        parts = strsplit(line, "=");
-        if (size(parts) == 2) {
-            key = parts[0];
-            value = parts[1];
-            p.setValue(key, value);
-        }
-    }
-
-    defineGlobal("params", p); // Get the parameters accessible to all script
-	 defineGlobal("simulation_id", params.getValue("simulation_id"));
-	 defineGlobal("output_folder", params.getValue("output_folder"));
-	 defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
-    defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
-    defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
-    defineGlobal("sample1_generation", asInteger(params.getValue("sample1_generation")));
-    defineGlobal("sample2_generation", asInteger(params.getValue("sample2_generation")));
-    defineGlobal("mutation_rate", asFloat(params.getValue("mutation_rate")));
-    defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
-    defineGlobal("output_folder", params.getValue("output_folder"));
-	 defineGlobal("max_value", asFloat(params.getValue("max_value")));
-	 defineGlobal("Ne_values", c());
-    defineGlobal("seed", asInteger(params.getValue("seed")));
-
-    sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); // samples 
-    defineGlobal("sample_size_Ne_0", asInteger(sizes_Ne[0]));
-    defineGlobal("sample_size_Ne_1", asInteger(sizes_Ne[1]));
-
-    sizes_CMR = strsplit(params.getValue("sample_sizes_CMR"), ","); // samples 
-    defineGlobal("sample_size_CMR", asInteger(sizes_CMR));
-
-	 defineConstant("sample1_gen", sample1_generation);
-	 defineConstant("end_generation", sample1_generation + sample2_generation);
-
- // Gets specific parameters from config file
-	 pos_str = asString(params.getValue("positions_sel"));
-	 freq_str = asString(params.getValue("freqs_sel"));
-	 catn("DEBUG pos_str : " + pos_str);
-	 catn("DEBUG freq_str : " + freq_str);
-	 pos_chunks = strsplit(pos_str, ",");
-	 freq_chunks = strsplit(freq_str, ",");
-	 catn("DEBUG pos_chunks size : " + asString(length(pos_chunks)));
-	 catn("DEBUG freq_chunks size : " + asString(length(freq_chunks)));
-
-	 positions_sel = integer(length(pos_chunks));
-	 freqs_sel     = float(length(freq_chunks));
- // For each locus, attribute a allelic frequency
-	 	for (i in seqLen(length(pos_chunks))) {
-    	 positions_sel[i] = asInteger(pos_chunks[i]);
-    	 freqs_sel[i]     = asFloat(freq_chunks[i]);
-	 	 catn("DEBUG i=" + i + " | pos=" + positions_sel[i] + " | freq=" + freqs_sel[i]);
-
- // Define as global value each paramater
-	 	 defineGlobal("positions_sel", positions_sel);
-	 	 defineGlobal("freqs_sel", freqs_sel);
-	 	 defineGlobal("num_loci_sel", length(positions_sel));
-	 	 catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
-	 	}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-    // SLiM model initialization
-    initializeSLiMModelType("nonWF");
-	 initializeSLiMOptions(keepPedigrees = T);
-    initializeMutationRate(0);
-    initializeMutationType("m1", 0.5, "f", 0.0);
-	 initializeMutationType("m2", 0.5, "f", 0.1);
-    initializeGenomicElementType("g1", m1, 1);
-	 initializeGenomicElementType("g2", m2, 1);
-    initializeGenomicElement(g1, 0, num_loci);
-    initializeRecombinationRate(0.5);
-
-    // Tree Sequence Recording activation
-    initializeTreeSeq(retainCoalescentOnly=F);
+     // Tree Sequence Recording activation
+     initializeTreeSeq(retainCoalescentOnly=F);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pop Creation //
 1 early() {
-		sim.addSubpop("p1", pop_size);
+                sim.addSubpop("p1", pop_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 1 early() {
-    inds = p1.individuals;
-    catn("DEBUG : individuals = " + size(inds));
-    catn("DEBUG : Loci = " + num_loci_sel);
+     inds = p1.individuals;
+     catn("DEBUG : individuals = " + size(inds));
+     catn("DEBUG : Loci = " + num_loci_sel);
 
-    for (j in seqLen(num_loci_sel)) {
-        pos = positions_sel[j];
-        freq = freqs_sel[j];
-        n = asInteger(freq * size(inds));
+     for (j in seqLen(num_loci_sel)) {
+         pos = positions_sel[j];
+         freq = freqs_sel[j];
+         n = asInteger(freq * size(inds));
 
-        catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
-		 g = p1.genomes;
-		 cat(g);
-		 withMutation = asLogical(rbinom(size(g), 1, freq_sel[j]));
-		 g[withMutation].addNewDrawnMutation(m2, pos);
-    }
+         catn("Locus " + pos + " → Target frequency = " + freq + ", n =
+" + n);
+                 g = p1.genomes;
+                 cat(g);
+                 withMutation = asLogical(rbinom(size(g), 1, freqs_sel[j]));
+                 g[withMutation].addNewDrawnMutation(m2, pos);
+     }
 }
-
 
 ///////////////////
 
 // Gen sample 1 //
 (sample1_gen - 1) late() {
 
-	 // First sample
-    // Verify that there is enough individuals to sample
-	 K = pop_size;
-    if (size(p1.individuals) >= sample_size_Ne_0) {
-        sampled_first_gen = sample(p1.individuals, sample_size_Ne_0, replace=F);
-		  catn("[Sample 1] Sampling at generation " + sim.cycle);
+         // First sample
+     // Verify that there is enough individuals to sample
+         K = pop_size;
+     if (size(p1.individuals) >= sample_size_Ne_0) {
+         sampled_first_gen = sample(p1.individuals, sample_size_Ne_0,
+replace=F);
+                  catn("[Sample 1] Sampling at generation " + sim.cycle);
 
-        // Mark this individuals as "Remembered"
-        for (ind in sampled_first_gen) {
-            sim.treeSeqRememberIndividuals(ind, permanent=T);
-        }
+         // Mark this individuals as "Remembered"
+         for (ind in sampled_first_gen) {
+             sim.treeSeqRememberIndividuals(ind, permanent=T);
+         }
 
-    } else {
-        catn("Not enough individuals for the first sample");
-		}
+     } else {
+         catn("Not enough individuals for the first sample");
+                }
 
 }
 
@@ -158,37 +176,38 @@ initialize() {
 
 // CMR //
 late() {
-    // Relative number of generations
-    i = sim.cycle - sample1_gen + 2;
+     // Relative number of generations
+     i = sim.cycle - sample1_gen + 2;
 
-    // The counter starts only during the sample sessions
-    if (i < 1 | i > end_generation)
-        return;
+     // The counter starts only during the sample sessions
+     if (i < 1 | i > end_generation)
+         return;
 
-    // Pop size
-    N = p1.individualCount;
+     // Pop size
+     N = p1.individualCount;
 
-    // First sample - marking of individuals
-    sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
+     // First sample - marking of individuals
+     sample1 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Second sample
-    sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
+     // Second sample
+     sample2 = sample(p1.individuals, sample_size_CMR, replace = F);
 
-    // Match count for second sample
-    matchCount = 0;
-    for (ind1 in sample1) {
-        for (ind2 in sample2) {
-            if (ind1 == ind2) {
-                matchCount = matchCount + 1;
-            }
-        }
-    }
+     // Match count for second sample
+     matchCount = 0;
+     for (ind1 in sample1) {
+         for (ind2 in sample2) {
+             if (ind1 == ind2) {
+                 matchCount = matchCount + 1;
+             }
+         }
+     }
 
-    // Pop size estimation from match count
-    if (matchCount > 0) {
-        census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) / ((matchCount + 1) - 1));
-    } else {
-        census_N = "Infinite";
+     // Pop size estimation from match count
+     if (matchCount > 0) {
+         census_N = ((sample_size_CMR + 1) * (sample_size_CMR + 1) /
+((matchCount + 1) - 1));
+     } else {
+         census_N = "Infinite";
 }
 
 ///////////////////
@@ -199,7 +218,8 @@ writeFile(config_file, paste("census_N =", census_N), append=T);
 writeFile(config_file, paste("MatchCount =", matchCount), append=T);
 writeFile(config_file, "", append=T);
 
-	catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ", census_N = " + census_N);
+        catn("CMR - Gen " + sim.cycle + ": MatchCount = " + matchCount + ",
+census_N = " + census_N);
 
 }
 
@@ -207,51 +227,52 @@ writeFile(config_file, "", append=T);
 
 // Realized Ne //
 late() {
-    // Numéro relatif de génération depuis le début de l’intervalle
-    generation_index = sim.cycle - sample1_gen + 2;
+     // Numéro relatif de génération depuis le début de l’intervalle
+     generation_index = sim.cycle - sample1_gen + 2;
 
-    // Vérification que l'on se situe bien dans l'intervalle d'estimation
-    if (generation_index < 1 | generation_index > end_generation)
-        return;
+     // Vérification que l'on se situe bien dans l'intervalle d'estimation
+     if (generation_index < 1 | generation_index > end_generation)
+         return;
 
-    // Calcul des statistiques pour la génération courante
-    census_size = p1.individualCount;
-    reproductive_variance = var(p1.lifetimeReproductiveOutput);
-    realized_Ne = (2.0 * census_size - 1.0) / (1.0 + (reproductive_variance / 2.0));
+     // Calcul des statistiques pour la génération courante
+     census_size = p1.individualCount;
+     reproductive_variance = var(p1.lifetimeReproductiveOutput);
+     realized_Ne = (2.0 * census_size - 1.0) / (1.0 +
+(reproductive_variance / 2.0));
 
-    // Affichage console
-    catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne + 
-         " (var_k = " + reproductive_variance + ")");
+     // Affichage console
+     catn("Generation " + sim.cycle + ": Realized Ne = " + realized_Ne +
+          " (var_k = " + reproductive_variance + ")");
 
-    // Préparation de la ligne à écrire dans le fichier de configuration
-    log_line = "Index = " + generation_index + "\n" +
-               "Realized_Ne = " + realized_Ne + "\n" +
-               "Reproductive_Variance = " + reproductive_variance + "\n";
+     // Préparation de la ligne à écrire dans le fichier de configuration
+     log_line = "Index = " + generation_index + "\n" +
+                "Realized_Ne = " + realized_Ne + "\n" +
+                "Reproductive_Variance = " + reproductive_variance + "\n";
 
-    writeFile(config_file, log_line, append=T);
+     writeFile(config_file, log_line, append=T);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Reproduction assets //
 reproduction() {
-    K = pop_size;
-	 inds = p1.individuals;
-	 fecundity = 10^(runif(p1.individualCount, 0,max_value));
-	 parents1 = sample(inds, K, replace = T, weights = fecundity);
-	 parents2 = sample(inds, K, replace = T, weights = fecundity);
+     K = pop_size;
+         inds = p1.individuals;
+         fecundity = 10^(runif(p1.individualCount, 0,max_value));
+         parents1 = sample(inds, K, replace = T, weights = fecundity);
+         parents2 = sample(inds, K, replace = T, weights = fecundity);
 
-    for (i in seqLen(K))
-    	 p1.addCrossed(parents1[i], parents2[i]);
-    self.active = 0;
+     for (i in seqLen(K))
+              p1.addCrossed(parents1[i], parents2[i]);
+     self.active = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Death of individuals //
-survival() { 
-// survival is independent of fitness; parents die, offsprings live 
-return (individual.age == 0); 
+survival() {
+// survival is independent of fitness; parents die, offsprings live
+return (individual.age == 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,42 +280,45 @@ return (individual.age == 0);
 // Gen sample 2 //
 (end_generation - 1) late() {
 
-    // Verify that there is enough individuals to sample
-	 K = pop_size;
-    if (size(p1.individuals) >= sample_size_Ne_1) {
-        sampled_last_gen = sample(p1.individuals, sample_size_Ne_1, replace=F);
-        catn("[Sample 2] Echantillonnage à la génération " + sim.cycle);
+     // Verify that there is enough individuals to sample
+         K = pop_size;
+     if (size(p1.individuals) >= sample_size_Ne_1) {
+         sampled_last_gen = sample(p1.individuals, sample_size_Ne_1,
+replace=F);
+         catn("[Sample 2] Echantillonnage à la génération " + sim.cycle);
 
-        // Mark this individuals as "Retained"
-        for (ind in sampled_last_gen) {
-            sim.treeSeqRememberIndividuals(ind, permanent=F);
-        }
-    } else {
-        catn("Not enough individuals for the last sample");
+         // Mark this individuals as "Retained"
+         for (ind in sampled_last_gen) {
+             sim.treeSeqRememberIndividuals(ind, permanent=F);
+         }
+     } else {
+         catn("Not enough individuals for the last sample");
 
 }
 
-	if (!exists("slimgui")) {
-      // Output Folder
-   	output_folder = paste(strsplit(output_folder, " "), sep="");
+        if (!exists("slimgui")) {
+       // Output Folder
+            output_folder = paste(strsplit(output_folder, " "), sep="");
 
-      // Creating .trees file 
-		tree_file = output_folder + "/simulation.trees";
-		sim.treeSeqOutput(tree_file);
+       // Creating .trees file
+                tree_file = output_folder + "/simulation.trees";
+                sim.treeSeqOutput(tree_file);
 
-      // Making of the path to the log file
-		log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
+       // Making of the path to the log file
+                log_file = output_folder + "/" + simulation_id + "_slim_log.txt";
 
-		// Merge the new file with the old one containing the parameters
-		appendLine = "log_file=" + log_file;
-		writeFile(config_file, appendLine + "\n", append=T);
+                // Merge the new file with the old one containing the parameters
+                appendLine = "log_file=" + log_file;
+                writeFile(config_file, appendLine + "\n", append=T);
 
-		writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); // Add the SLiM seed 
-		writeFile(config_file, paste("Final tree file:", tree_file), append=T);
-		writeFile(config_file, "------------------------", append=T);
-	}else{
-		sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
-	}
+                writeFile(config_file, paste("SLiM seed:", getSeed()), append=T); //
+Add the SLiM seed
+                writeFile(config_file, paste("Final tree file:", tree_file), append=T);
+                writeFile(config_file, "------------------------", append=T);
+        }else{
+        
+sim.treeSeqOutput("C:/Users/poupe/simulation_pipeline/test/simulation.trees");
+        }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
