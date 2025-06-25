@@ -1,4 +1,3 @@
-
 initialize() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,22 +120,63 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 1 early() {
-     inds = p1.individuals;
-     catn("DEBUG : individuals = " + size(inds));
-     catn("DEBUG : Loci = " + num_loci_sel);
+    // 1) Entrée dans le block
+    catn("=== DEBUG early() start (génération " + sim.generation + ") ===");
 
-     for (j in seqLen(num_loci_sel)) {
-         pos = positions_sel[j];
-         freq = freqs_sel[j];
-         n = asInteger(freq * size(inds));
+    // 2) Vérifier que les globals sont bien chargés et de la bonne taille
+    catn("DEBUG: positions_sel  = " + asString(positions_sel));
+    catn("DEBUG: freqs_sel      = " + asString(freqs_sel));
+    catn("DEBUG: num_loci_sel   = " + num_loci_sel);
+    if (num_loci_sel != length(positions_sel)) stop("ERROR: num_loci_sel ≠ length(positions_sel)");
 
-         catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
-                 g = p1.genomes;
-                 cat(g);
-                 withMutation = asLogical(rbinom(size(g), 1, freqs_sel[j]));
-                 g[withMutation].addNewDrawnMutation(m2, pos);
-     }
+    // 3) Population
+    inds = p1.individuals;
+    catn("DEBUG: p1.individualCount = " + p1.individualCount);
+    catn("DEBUG: size(inds)         = " + size(inds));
+    if (size(inds) == 0) stop("ERROR: p1.individuals vide !");
+
+    // 4) Boucle sur chaque locus
+    for (j in seqLen(num_loci_sel)) {
+        catn("--- locus j = " + j + " ---");
+        // 4.1) coordonnées et fréquences
+        pos  = positions_sel[j];
+        freq = freqs_sel[j];
+        n    = asInteger(freq * size(inds));
+        catn("DEBUG: pos = " + pos + " ; freq = " + freq + " ; n (haplos à muter) = " + n);
+        // 4.2) sanity‐check sur pos et freq
+        if (pos < 0 | pos > sim.chromosomeLength()) stop("ERROR: position hors génome : " + pos);
+        if (freq < 0.0 | freq > 1.0)        stop("ERROR: fréquence hors [0,1] : " + freq);
+
+        // 4.3) Récupération des génomes
+        g = inds.genomes;
+        catn("DEBUG: size(génomes) = " + size(g));
+        // inspecter quelques IDs de génomes
+        cat("DEBUG: genome IDs (premiers 10) = ");
+        for (k in 0:(min(size(g),10)-1)) cat(g[k].id + " ");
+        catn("");
+
+        // 4.4) tirage des génomes à muter
+        withMut = asLogical(rbinom(size(g), 1, freq));
+        mutCount = sum(withMut);
+        catn("DEBUG: # à muter = " + mutCount + " / " + size(g));
+        if (mutCount != n & n > 0) catn("WARNING: n calculé = " + n + " ≠ # tirés = " + mutCount);
+
+        // 4.5) ajout des mutations
+        g[withMut].addNewDrawnMutation(m2, pos);
+
+        // 4.6) vérification post‐mut
+        // on prend par exemple le premier génome muté
+        if (mutCount > 0) {
+            firstIdx = which(withMut)[0];
+            mutsHere  = g[firstIdx].mutationsOfType(m2);
+            catn("DEBUG: genome " + firstIdx + " a maintenant " + size(mutsHere) + " mutations m2");
+        }
+    }
+
+    // 5) fin du block
+    catn("=== DEBUG early() end ===");
 }
+
 
 ///////////////////
 
