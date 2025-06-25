@@ -141,7 +141,7 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
         n    = asInteger(freq * size(inds));
         catn("DEBUG: pos = " + pos + " ; freq = " + freq + " ; n (haplos à muter) = " + n);
         // 4.2) sanity‐check sur pos et freq
-        if (pos < 0 | pos > sim.chromosomeLength()) stop("ERROR: position hors génome : " + pos);
+
         if (freq < 0.0 | freq > 1.0)        stop("ERROR: fréquence hors [0,1] : " + freq);
 
         // 4.3) Récupération des génomes
