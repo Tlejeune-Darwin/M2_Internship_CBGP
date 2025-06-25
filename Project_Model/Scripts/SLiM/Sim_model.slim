@@ -21,12 +21,7 @@ initialize() {
           defineGlobal("num_loci_sel", 20);
           defineGlobal("positions_sel", 20:39);
           defineGlobal("freqs_sel", rep(0.5,20));
-        
-        
-        
-        
-        
-        
+            
 }else{
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -79,8 +74,13 @@ initialize() {
          catn("DEBUG pos_chunks size : " + asString(length(pos_chunks)));
          catn("DEBUG freq_chunks size : " + asString(length(freq_chunks)));
 
-         positions_sel = integer(length(pos_chunks));
-         freqs_sel     = float(length(freq_chunks));
+if (length(pos_chunks) != length(freq_chunks)) {
+    stop("ERREUR : nombre de positions ≠ nombre de fréquences !");
+}
+
+positions_sel = integer(length(pos_chunks)) * 0;
+freqs_sel = float(length(freq_chunks)) * 0.0;
+
   // For each locus, attribute a allelic frequency
                  for (i in seqLen(length(pos_chunks))) {
               positions_sel[i] = asInteger(pos_chunks[i]);
@@ -93,7 +93,6 @@ initialize() {
                   defineGlobal("num_loci_sel", length(positions_sel));
                   catn("DEBUG num_loci_sel : " + asString(num_loci_sel));
                  }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -116,8 +115,6 @@ initialize() {
 // Pop Creation //
 1 early() {
                 sim.addSubpop("p1", pop_size);
-					 cat(p1.individuals);
-					 cat(p1.genomes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
