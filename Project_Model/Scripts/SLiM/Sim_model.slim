@@ -128,10 +128,8 @@ initialize() {
 
 		 if (n > 0) {
     	  selected_inds = sample(inds, n, replace=F);
-
-    // 
-			selected_inds.genomes.addNewMutation(m2, pos);
-
+		  g = selected_inds.genomes;
+	     g.addNewMutation(m2, pos);
 	 	  catn("→ " + n + " mutated individuals at locus " + pos);
 		 }
     }
