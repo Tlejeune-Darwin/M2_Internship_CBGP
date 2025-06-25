@@ -35,7 +35,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
                 f.write("# Main configuration of simulations\n")
-                f.write(f"{better_names['num_loci']} = 20\n")
+                f.write(f"{better_names['num_loci']} = 40\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
                 f.write(f"{better_names['mutation_rate']} = 0.001\n")
@@ -47,8 +47,6 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
                 f.write(f"{better_names['recap_Ne']} = 5000\n")
                 f.write(f"{better_names['num_loci_sel']} = 20\n")
-                f.write(f"{better_names['first_locus']} = 20\n")
-
 
         # Reading the file
         config = {}
