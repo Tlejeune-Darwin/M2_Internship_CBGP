@@ -110,12 +110,7 @@ initialize() {
 // Pop Creation //
 1 early() {
 		sim.addSubpop("p1", pop_size);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-1 early() {
-    inds = p1.individuals;
+inds = p1.individuals;
 	 K = size(inds);
     catn("DEBUG : Nb d'individus = " + size(inds));
     catn("DEBUG : Nb de loci = " + num_loci_sel);
@@ -135,6 +130,7 @@ for (i in seqLen(n_inds)) {
 }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////
 
