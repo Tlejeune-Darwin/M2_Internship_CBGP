@@ -45,9 +45,9 @@ initialize() {
      }
 
      defineGlobal("params", p); // Get the parameters accessible to all script
-         defineGlobal("simulation_id", params.getValue("simulation_id"));
-         defineGlobal("output_folder", params.getValue("output_folder"));
-         defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
+     defineGlobal("simulation_id", params.getValue("simulation_id"));
+     defineGlobal("output_folder", params.getValue("output_folder"));
+     defineGlobal("simulation_path", paste(output_folder, "/", simulation_id));
      defineGlobal("pop_size", asInteger(params.getValue("pop_size")));
      defineGlobal("num_loci", asInteger(params.getValue("num_loci")));
      defineGlobal("sample1_generation",asInteger(params.getValue("sample1_generation")));
@@ -55,8 +55,8 @@ initialize() {
      defineGlobal("mutation_rate",asFloat(params.getValue("mutation_rate")));
      defineGlobal("recap_Ne", asInteger(params.getValue("recap_Ne")));
      defineGlobal("output_folder", params.getValue("output_folder"));
-         defineGlobal("max_value", asFloat(params.getValue("max_value")));
-         defineGlobal("Ne_values", c());
+     defineGlobal("max_value", asFloat(params.getValue("max_value")));
+     defineGlobal("Ne_values", c());
      defineGlobal("seed", asInteger(params.getValue("seed")));
 
      sizes_Ne = strsplit(params.getValue("sample_sizes_Ne"), ","); //samples
@@ -99,12 +99,12 @@ initialize() {
 }
      // SLiM model initialization
      initializeSLiMModelType("nonWF");
-         initializeSLiMOptions(keepPedigrees = T);
+     initializeSLiMOptions(keepPedigrees = T);
      initializeMutationRate(0);
      initializeMutationType("m1", 0.5, "f", 0.0);
-         initializeMutationType("m2", 0.5, "f", 0.1);
+     initializeMutationType("m2", 0.5, "f", 0.1);
      initializeGenomicElementType("g1", m1, 1);
-     initializeGenomicElement(g1, 0, num_loci);
+     initializeGenomicElement(g1, 0, num_loci + num_loci_sel);
      initializeRecombinationRate(0.5);
 
      // Tree Sequence Recording activation
@@ -124,6 +124,7 @@ initialize() {
      inds = p1.individuals;
      catn("DEBUG : individuals = " + size(inds));
      catn("DEBUG : Loci = " + num_loci_sel);
+	  catn(num_loci)
 
      for (j in seqLen(num_loci_sel)) {
          pos = positions_sel[j];
