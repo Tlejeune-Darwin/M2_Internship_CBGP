@@ -116,13 +116,11 @@ initialize() {
 // Pop Creation //
 1 early() {
                 sim.addSubpop("p1", pop_size);
-					 cat(p1.individuals);
-					 cat(p1.genomes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-1 early() {
+2 early() {
      inds = p1.individuals;
      catn("DEBUG : individuals = " + size(inds));
      catn("DEBUG : Loci = " + num_loci_sel);
