@@ -107,8 +107,8 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         "high_repeats" : int(global_config["high_repeats"]),                                    # Highest number of repeats
         "mutation_rate" : float(global_config["mutation_rate"]),                                # Mutation rate used during mutation simulation
         "recap_Ne" : int(global_config["recap_Ne"]),                                            # Effective size attributed for the recapitation
-        "positions_sel" : positions_sel,   # les loci soumis à la sélection
-        "freqs_sel" : freqs_sel,       # leurs fréquences initiales
+        "positions_sel" : positions_sel,                                                        # Selected locus position
+        "freqs_sel" : freqs_sel,                                                                # Frequencies
         "output_folder" : sim_folder,                                                           # All simulations end up in the main sim_folder
         "timestamp" : timestamp,                                                                # Timestamp placed in the name of each simulation
         "seed" : random.randint(1, 10**6)                                                       # For analysis purpose
