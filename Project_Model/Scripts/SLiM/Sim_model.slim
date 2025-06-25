@@ -145,7 +145,7 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
         if (freq < 0.0 | freq > 1.0)        stop("ERROR: fréquence hors [0,1] : " + freq);
 
         // 4.3) Récupération des génomes
-        g = inds.genomes;
+        g = p1.genomes;
         catn("DEBUG: size(génomes) = " + size(g));
         // inspecter quelques IDs de génomes
         cat("DEBUG: genome IDs (premiers 10) = ");
