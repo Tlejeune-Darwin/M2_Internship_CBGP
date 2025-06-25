@@ -110,25 +110,30 @@ initialize() {
 // Pop Creation //
 1 early() {
 		sim.addSubpop("p1", pop_size);
-inds = p1.individuals;
-	 K = size(inds);
+    inds = p1.individuals;
     catn("DEBUG : Nb d'individus = " + size(inds));
     catn("DEBUG : Nb de loci = " + num_loci_sel);
 
-n_haps = asInteger(freqs_sel * 2 * K);  // pour haploïdes
-if (n_haps > 0) {
-  selected_genomes = sample(p1.genomes, n_haps, replace=F);
-  selected_genomes.addNewMutation(m2, pos);
-  catn("Ajout de mutation m2 sur " + n_haps + " génomes au locus " + pos);
+    for (j in seqLen(num_loci_sel)) {
+        pos = positions_sel[j];
+        freq = freqs_sel[j];
+        n = asInteger(freq * size(inds));
+
+        catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
+
+        if (n > 0) {
+            sel_inds = sample(inds, n, replace = F);
+
+            // Ajouter la mutation à chacun des 2 génomes de chaque individu
+            for (ind in sel_inds) {
+                ind.genome1.addNewMutation(m2, pos);
+                ind.genome2.addNewMutation(m2, pos);
+            }
+            catn("Mutations ajoutées à " + n + " individus (homozygotes) au locus " + pos);
+        }
+    }
 }
 
-for (i in seqLen(n_inds)) {
-  geno1 = selected_genomes[2*i - 1];
-  geno2 = selected_genomes[2*i];
-  geno1.addNewMutation(m2, pos);
-  geno2.addNewMutation(m2, pos);
-}
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
