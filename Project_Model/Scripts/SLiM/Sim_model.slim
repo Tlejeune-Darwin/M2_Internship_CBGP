@@ -120,9 +120,6 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 1 early() {
-    // 1) Entrée dans le block
-    catn("=== DEBUG early() start (génération " + sim.generation + ") ===");
-
     // 2) Vérifier que les globals sont bien chargés et de la bonne taille
     catn("DEBUG: positions_sel  = " + asString(positions_sel));
     catn("DEBUG: freqs_sel      = " + asString(freqs_sel));
