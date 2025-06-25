@@ -110,6 +110,11 @@ initialize() {
 // Pop Creation //
 1 early() {
 		sim.addSubpop("p1", pop_size);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+1 early() {
     inds = p1.individuals;
     catn("DEBUG : Nb d'individus = " + size(inds));
     catn("DEBUG : Nb de loci = " + num_loci_sel);
@@ -119,26 +124,24 @@ initialize() {
         freq = freqs_sel[j];
         n = asInteger(freq * size(inds));
 
-        catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
+        catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
 
-if (n > 0) {
-    selected_inds = sample(inds, n, replace=F);
+		 if (n > 0) {
+    	  selected_inds = sample(inds, n, replace=F);
 
-    for (k in seqLen(n)) {
-        selected_inds[k].genome1.addNewMutation(m2, pos);
-        selected_inds[k].genome2.addNewMutation(m2, pos);
+    // 
+    	 	for (indiv in selected_inds) {
+        	 g1 = indiv.genome1;
+        	 g2 = indiv.genome2;
+
+        	 g1.addNewMutation(m2, pos);
+        	 g2.addNewMutation(m2, pos);
+    		}
+	 	  catn("→ " + n + " mutated individuals at locus " + pos);
+		 }
     }
-
-    catn("Mutations ajoutées à " + n + " individus (homozygotes) au locus " + pos);
 }
 
-            catn("Mutations ajoutées à " + n + " individus (homozygotes) au locus " + pos);
-        }
-    }
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////
 
