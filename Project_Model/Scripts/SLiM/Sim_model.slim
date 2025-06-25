@@ -116,32 +116,23 @@ initialize() {
 
 1 early() {
     inds = p1.individuals;
+	 K = size(inds);
     catn("DEBUG : Nb d'individus = " + size(inds));
     catn("DEBUG : Nb de loci = " + num_loci_sel);
 
-    for (j in seqLen(num_loci_sel)) {
-        pos = positions_sel[j];
-        freq = freqs_sel[j];
-        n = asInteger(freq * size(inds));
+n_haps = asInteger(freqs_sel * 2 * K);  // pour haploïdes
+if (n_haps > 0) {
+  selected_genomes = sample(p1.genomes, n_haps, replace=F);
+  selected_genomes.addNewMutation(m2, pos);
+  catn("Ajout de mutation m2 sur " + n_haps + " génomes au locus " + pos);
+}
 
-        catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
-
-        if (n > 0) {
-            selected_inds = sample(inds, n, replace=F);
-
-            // ⚠️ Récupération explicite des deux chromosomes via sapply
-            genome1s = sapply(selected_inds, "genome1");
-            genome2s = sapply(selected_inds, "genome2");
-
-            // Fusion des deux listes
-            genomes = genome1s + genome2s;
-
-            // 💥 Mutation homozygote à la position souhaitée
-            genomes.addNewMutation(m2, pos);
-
-            catn("Mutations ajoutées à " + n + " individus (2n = " + size(genomes) + ") au locus " + pos);
-        }
-    }
+for (i in seqLen(n_inds)) {
+  geno1 = selected_genomes[2*i - 1];
+  geno2 = selected_genomes[2*i];
+  geno1.addNewMutation(m2, pos);
+  geno2.addNewMutation(m2, pos);
+}
 }
 
 
