@@ -115,6 +115,7 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 // Pop Creation //
 1 early() {
                 sim.addSubpop("p1", pop_size);
+					 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,7 +124,6 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
      inds = p1.individuals;
      catn("DEBUG : individuals = " + size(inds));
      catn("DEBUG : Loci = " + num_loci_sel);
-	  catn(num_loci);
 
      for (j in seqLen(num_loci_sel)) {
          pos = positions_sel[j];
