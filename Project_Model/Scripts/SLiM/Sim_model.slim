@@ -129,16 +129,15 @@ initialize() {
         if (n > 0) {
             selected_inds = sample(inds, n, replace=F);
 
-            // On récupère les deux génomes de tous les individus sélectionnés
-            gens = sapply(selected_inds, "genome1") + sapply(selected_inds, "genome2");
-
-            // Injection de mutation sur tous les génomes
+            // Version moderne : utilise .genomes et aplatit le vecteur (T)
+            gens = selected_inds.genomes;
             gens.addNewMutation(m2, pos);
 
-            catn("Mutations ajoutées à " + n + " individus au locus " + pos);
+            catn("Mutation homozygote ajoutée à " + n + " individus au locus " + pos);
         }
     }
 }
+
 
 ///////////////////
 
