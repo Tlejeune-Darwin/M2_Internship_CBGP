@@ -47,7 +47,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
                 f.write(f"{better_names['pop_size_logrange']} = 100,10000\n")
                 f.write(f"{better_names['recap_Ne']} = 5000\n")
                 f.write(f"{better_names['num_loci_sel']} = 20\n")
-                f.write(f"{better_names['first_locus']} = 21\n")
+                f.write(f"{better_names['first_locus']} = 20\n")
 
 
         # Reading the file
