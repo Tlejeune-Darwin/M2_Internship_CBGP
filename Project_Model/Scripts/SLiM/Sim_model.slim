@@ -116,8 +116,8 @@ initialize() {
 
 1 early() {
     inds = p1.individuals;
-    catn("DEBUG : Nb d'individus = " + size(inds));
-    catn("DEBUG : Nb de loci = " + num_loci_sel);
+    catn("DEBUG : individuals = " + size(inds));
+    catn("DEBUG : Loci = " + num_loci_sel);
 
     for (j in seqLen(num_loci_sel)) {
         pos = positions_sel[j];
@@ -125,13 +125,9 @@ initialize() {
         n = asInteger(freq * size(inds));
 
         catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
-
-		 if (n > 0) {
-    	  selected_inds = sample(inds, n, replace=F);
-		  g = selected_inds.genomes;
-	     g.addNewMutation(m2, pos);
-	 	  catn("→ " + n + " mutated individuals at locus " + pos);
-		 }
+		 g = sim.subpopulation.genomes;
+		 withMutation = asLogical(rbinom(size(g), freq_sel[j]));
+		 g[withMutation].addNewMutation(m2, pos);
     }
 }
 
