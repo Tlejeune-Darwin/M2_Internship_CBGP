@@ -129,16 +129,21 @@ initialize() {
         if (n > 0) {
             selected_inds = sample(inds, n, replace=F);
 
-            // Obtenir les deux génomes pour chaque individu sélectionné
-            genomes = sapply(selected_inds, "genomes[0]") + sapply(selected_inds, "genomes[1]");
+            // ⚠️ Récupération explicite des deux chromosomes via sapply
+            genome1s = sapply(selected_inds, "genome1");
+            genome2s = sapply(selected_inds, "genome2");
 
-            // Ajouter la mutation à tous les génomes
+            // Fusion des deux listes
+            genomes = genome1s + genome2s;
+
+            // 💥 Mutation homozygote à la position souhaitée
             genomes.addNewMutation(m2, pos);
 
-            catn("Mutations ajoutées à " + n + " individus au locus " + pos);
+            catn("Mutations ajoutées à " + n + " individus (2n = " + size(genomes) + ") au locus " + pos);
         }
     }
 }
+
 
 ///////////////////
 
