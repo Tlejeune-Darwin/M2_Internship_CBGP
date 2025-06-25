@@ -121,18 +121,21 @@ initialize() {
 
         catn("Locus " + pos + " → fréquence ciblée = " + freq + ", n = " + n);
 
-        if (n > 0) {
-            sel_inds = sample(inds, n, replace = F);
+if (n > 0) {
+    selected_inds = sample(inds, n, replace=F);
 
-            // Ajouter la mutation à chacun des 2 génomes de chaque individu
-            for (ind in sel_inds) {
-                ind.genome1.addNewMutation(m2, pos);
-                ind.genome2.addNewMutation(m2, pos);
-            }
+    for (k in seqLen(n)) {
+        selected_inds[k].genome1.addNewMutation(m2, pos);
+        selected_inds[k].genome2.addNewMutation(m2, pos);
+    }
+
+    catn("Mutations ajoutées à " + n + " individus (homozygotes) au locus " + pos);
+}
+
             catn("Mutations ajoutées à " + n + " individus (homozygotes) au locus " + pos);
         }
     }
-}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
