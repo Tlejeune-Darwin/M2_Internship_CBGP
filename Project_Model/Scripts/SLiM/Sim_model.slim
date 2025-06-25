@@ -139,8 +139,7 @@ freqs_sel[i]);
          freq = freqs_sel[j];
          n = asInteger(freq * size(inds));
 
-         catn("Locus " + pos + " → Target frequency = " + freq + ", n =
-" + n);
+         catn("Locus " + pos + " → Target frequency = " + freq + ", n = " + n);
                  g = p1.genomes;
                  cat(g);
                  withMutation = asLogical(rbinom(size(g), 1, freqs_sel[j]));
