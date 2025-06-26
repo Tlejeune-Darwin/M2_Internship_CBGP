@@ -18,6 +18,9 @@ conda activate stage_m2_env
 for ((i=0; i<NUM_SIMS; i++)); do
     global_offset=$((OFFSET + i))
     echo "🚀 Simulation $global_offset in batch $BATCH_NAME"
+    echo "→ Env conda actif :    $(conda info --envs | grep '*' )"
+    echo "→ Chemin du binaire    $(which slim)"
+    echo "→ Version de SLiM      $(slim -v)"
 
     python main_cluster.py \
         --batch "$BATCH_NAME" \
