@@ -86,7 +86,7 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
     global_config = get_global_config(all_simulations)
     if pop_size is None:
         num_loci_sel = 20
-        positions_sel = list(range(21, 21 + num_loci_sel))
+        positions_sel = list(range(20, 20 + num_loci_sel))
         freqs_sel = [round(random.uniform(0.05, 0.95), 3) for _ in positions_sel]
         low, high = map(float, global_config["pop_size_logrange"].split(","))
         pop_size = int(np.exp(np.random.uniform(np.log(low), np.log(high))))
