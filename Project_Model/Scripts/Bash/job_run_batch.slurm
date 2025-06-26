@@ -12,7 +12,7 @@
 # Conda environment activation
 cd ~/M2_Internship_CBGP/Project_Model/Scripts/Python
 source ~/miniconda3/etc/profile.d/conda.sh
-conda activate stage_m2_env
+conda activate slim-env
 
 # Launching simulation (from the python script)
 for ((i=0; i<NUM_SIMS; i++)); do
