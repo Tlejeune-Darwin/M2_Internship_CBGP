@@ -35,12 +35,12 @@ def run_simulation_cluster(base_dir="simulations", pop_size=None, num_loci=None,
         if not os.path.exists(global_config_path):
             with open(global_config_path, "w") as f:
                 f.write("# Main configuration of simulations\n")
-                f.write(f"{better_names['num_loci']} = 40\n")
+                f.write(f"{better_names['num_loci']} = 20\n")
                 f.write(f"{better_names['low_repeats']} = 1\n")
                 f.write(f"{better_names['high_repeats']} = 200\n")
                 f.write(f"{better_names['mutation_rate']} = 0.001\n")
                 f.write(f"{better_names['sample1_generation']} = 30\n")
-                f.write(f"{better_names['fecundity_max']} = 0,10\n")
+                f.write(f"{better_names['fecundity_max']} = 0,80\n")
                 f.write(f"{better_names['sample2_generation']} = 10\n")
                 f.write(f"{better_names['sample_sizes_Ne']} = 50,50\n")
                 f.write(f"{better_names['sample_sizes_CMR']} = 100\n")
