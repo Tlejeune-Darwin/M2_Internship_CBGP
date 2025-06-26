@@ -121,6 +121,14 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 
 1 early() {
     // 2) Vérifier que les globals sont bien chargés et de la bonne taille
+    allPos = seqLen(num_loci) - 1;        // génère [0,1,…,num_loci-1]
+    allPos = c(allPos, positions_sel);   // y ajoute vos loci ciblés
+
+    // 2) Ne garder que les positions uniques
+    uniqPos = unique(allPos);
+
+    // 3) Afficher le résultat
+    catn("TOTAL de loci uniques = " + size(uniqPos));
     catn("DEBUG: positions_sel  = " + asString(positions_sel));
     catn("DEBUG: freqs_sel      = " + asString(freqs_sel));
     catn("DEBUG: num_loci_sel   = " + num_loci_sel);
