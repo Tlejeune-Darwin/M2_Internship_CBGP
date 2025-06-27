@@ -114,14 +114,14 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 // Pop Creation //
 1 early() {
                 sim.addSubpop("p1", pop_size);
+        g = p1.genomes;
 					 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-2 early() {
+1 early() {
     inds = p1.individuals;
-        g = p1.genomes;
     if (size(inds) == 0) stop("ERROR: p1.individuals vide !");
     for (j in seqLen(num_loci_sel)) {
         catn("--- locus j = " + j + " ---");
