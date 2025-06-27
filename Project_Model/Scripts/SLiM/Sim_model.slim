@@ -119,32 +119,9 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-1 early() {
-    // 2) Vérifier que les globals sont bien chargés et de la bonne taille
-    allPos = seqLen(num_loci) - 1;        // génère [0,1,…,num_loci-1]
-    allPos = c(allPos, positions_sel);   // y ajoute vos loci ciblés
-
-    // 2) Ne garder que les positions uniques
-    uniqPos = unique(allPos);
-
-    // 3) Afficher le résultat
-    catn("TOTAL de loci uniques = " + size(uniqPos));
-    catn("Liste des loci :");
-    for (p in uniqPos) {
-        catn("  - Locus position = " + p);
-}
-    catn("DEBUG: positions_sel  = " + asString(positions_sel));
-    catn("DEBUG: freqs_sel      = " + asString(freqs_sel));
-    catn("DEBUG: num_loci_sel   = " + num_loci_sel);
-    if (num_loci_sel != length(positions_sel)) stop("ERROR: num_loci_sel ≠ length(positions_sel)");
-
-    // 3) Population
+1 late() {
     inds = p1.individuals;
-    catn("DEBUG: p1.individualCount = " + p1.individualCount);
-    catn("DEBUG: size(inds)         = " + size(inds));
     if (size(inds) == 0) stop("ERROR: p1.individuals vide !");
-
-    // 4) Boucle sur chaque locus
     for (j in seqLen(num_loci_sel)) {
         catn("--- locus j = " + j + " ---");
         // 4.1) coordonnées et fréquences
@@ -161,7 +138,6 @@ freqs_sel = float(length(freq_chunks)) * 0.0;
         catn("DEBUG: size(génomes) = " + size(g));
         // inspecter quelques IDs de génomes
         cat("DEBUG: genome IDs (premiers 10) = ");
-        for (k in 0:(min(size(g),10)-1)) cat(g[k].id + " ");
         catn("");
 
         // 4.4) tirage des génomes à muter
